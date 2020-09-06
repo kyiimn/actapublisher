@@ -1,10 +1,10 @@
 var ff;
 $(document).ready(e => {
-    var page = new ActaPage('25cm', '30cm');
-    page.padding = '0.5cm';
-
-    $(page.el).appendTo('body');
-
+    $('<x-page>').attr({
+        width: '25cm',
+        height: '30cm',
+        padding: '0.5cm'
+    }).appendTo('body');
     $('<x-guide>').append(
         $('<x-guide-col>')
     ).append(
@@ -68,14 +68,10 @@ function drawtext(target, font, text, size, color) {
     var pos = 0;
 
     textdata = [];
-    target.find('> x-paragraph-col > .canvas').each((i, el) => {
+    target.find('> x-paragraph-col > canvas').each((i, el) => {
         let paraCol = $(el).parent();
-        //el.width = paraCol.innerWidth();
-        //el.height = paraCol.innerHeight();
-        $(el).attr({
-            'width': paraCol.innerWidth(),
-            'height': paraCol.innerHeight()
-        });
+        el.width = paraCol.innerWidth();
+        el.height = paraCol.innerHeight();
         textdata[i] = [];
     });
     for (let i = 0; i < text.length; i++) {
@@ -114,7 +110,7 @@ function drawtext(target, font, text, size, color) {
         }
         while (1) {
             if (!line) {
-                let para = $(target.find('x-paragraph-col').get(pos)).find('.canvas');
+                let para = $(target.find('x-paragraph-col').get(pos)).find('canvas');
                 if (!para) break;
                 line = {
                     maxWidth: para.width(),
@@ -153,7 +149,7 @@ function drawtext(target, font, text, size, color) {
         if (charData.type == 'NEWLINE') {
             line = false;
         } else {
-            let para = $(target.find('x-paragraph-col').get(pos)).find('.canvas');
+            let para = $(target.find('x-paragraph-col').get(pos)).find('canvas');
             let lineHeightSum = 0;
             if (!para) break;
             $.each(textdata[pos], (j, pline) => lineHeightSum += pline.maxHeight);
@@ -167,17 +163,15 @@ function drawtext(target, font, text, size, color) {
     $(target).attr('data-text', text);
 
     $.each(textdata, (i, para) => {
-        let canvas = $(target.find('x-paragraph-col').get(i)).find('.canvas').get(0);
-        //let buf = new OffscreenCanvas(canvas.width, canvas.height);
-        //let bufCtx = buf.getContext('2d');
+        let canvas = $(target.find('x-paragraph-col').get(i)).find('canvas').get(0);
+        let buf = new OffscreenCanvas(canvas.width, canvas.height);
+        let bufCtx = buf.getContext('2d');
         let offsetY = 0;
-        //bufCtx.clearRect(0, 0, buf.width, buf.height);
-        $(canvas).empty();
-        let paths = '';
+        bufCtx.clearRect(0, 0, buf.width, buf.height);
         $.each(para, (j, line) => {
             let offsetX = 0;
             $.each(line.items, (k, item) => {
-                /*if (item.type == 'CANVAS') {
+                if (item.type == 'CANVAS') {
                     bufCtx.drawImage(item.data,
                         0, 0, item.data.width, item.data.height,
                         offsetX, offsetY + (line.maxHeight - item.height), item.data.width, item.data.height
@@ -197,17 +191,12 @@ function drawtext(target, font, text, size, color) {
                         URL.revokeObjectURL(url);
                     });
                     img.src = url;
-                }*/
-                if (item.type == 'GLYPH') {
-                    let path = item.data.getPath(item.drawOffsetX + offsetX, item.drawOffsetY + offsetY + (line.maxHeight - item.height), item.size);
-                    paths += path.toSVG(4);
                 }
                 offsetX += item.width;
             });
             offsetY += line.maxHeight;
         });
-        $(canvas).html(paths);
-        //canvas.getContext('2d').drawImage(buf, 0, 0);
+        canvas.getContext('2d').drawImage(buf, 0, 0);
     });
 }
 

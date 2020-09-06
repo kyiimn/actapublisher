@@ -1,4 +1,4 @@
-class ActaArticleElement extends HTMLElement {
+class ActaPageElement extends HTMLElement {
     constructor() { super(); }
     connectedCallback() {
         this.changeStyle();
@@ -8,7 +8,7 @@ class ActaArticleElement extends HTMLElement {
     }
     attributeChangedCallback(name, oldValue, newValue) {
         this.changeStyle();
-        $(this).find(' > x-col-area').each((i, el) => {
+        $(this).find(' > x-guide').each((i, el) => {
             el.changePadding();
         });
     }
@@ -30,9 +30,9 @@ class ActaArticleElement extends HTMLElement {
         if (paddingRight != undefined) this.style.paddingRight = paddingRight;
     }
 };
-customElements.define('x-article', ActaArticleElement);
+customElements.define('x-page', ActaPageElement);
 
-class ActaColumnAreaElement extends HTMLElement {
+class ActaGuideElement extends HTMLElement {
     constructor() {
         super();
     }
@@ -52,7 +52,7 @@ class ActaColumnAreaElement extends HTMLElement {
     changePadding() {
         let parent = $(this).parent();
         let top = 0, bottom = 0, left = 0, right = 0;
-        if ($(parent).prop('tagName') == 'X-ARTICLE') {
+        if ($(parent).prop('tagName').toLowerCase() == 'x-page') {
             let style = $(parent).prop('style');
             top = style.paddingTop || 0;
             bottom = style.paddingBottom || 0;
@@ -65,14 +65,14 @@ class ActaColumnAreaElement extends HTMLElement {
         this.style.width = `calc(100% - (${left} + ${right}))`;
     }
 };
-customElements.define('x-col-area', ActaColumnAreaElement);
+customElements.define('x-guide', ActaGuideElement);
 
-class ActaColumnElement extends HTMLElement {
+class ActaGuideColumnElement extends HTMLElement {
     constructor() { super(); }
 };
-customElements.define('x-col', ActaColumnElement);
+customElements.define('x-guide-col', ActaGuideColumnElement);
 
-class ActaParagraphElement extends HTMLElement {
+class ActaGalleyElement extends HTMLElement {
     constructor() { super(); }
     connectedCallback() {
         this.changeStyle();
@@ -97,13 +97,14 @@ class ActaParagraphElement extends HTMLElement {
         $(this).css('flex-direction', $(this).attr('direction') || 'row');
     }
 }
-customElements.define('x-para', ActaParagraphElement);
+customElements.define('x-galley', ActaGalleyElement);
 
-class ActaParagraphTextElement extends HTMLElement {}
-customElements.define('x-para-text', ActaParagraphTextElement);
-
-class ActaParagraphTextLineElement extends HTMLElement {}
-customElements.define('x-para-text-line', ActaParagraphTextLineElement);
-
-class ActaCharElement extends HTMLElement {}
-customElements.define('x-char', ActaCharElement);
+class ActaParagraphColumnElement extends HTMLElement {
+    constructor() { super(); }
+    connectedCallback() {
+        $(this).append(
+            $('<svg xmlns="http://www.w3.org/2000/svg"></svg>').addClass('canvas')
+        );
+    }
+}
+customElements.define('x-paragraph-col', ActaParagraphColumnElement);

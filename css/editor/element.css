@@ -1,4 +1,4 @@
-x-article {
+x-page {
     border-color: #cccccc;
     border-style: solid;
     border-width: 1px;
@@ -8,17 +8,17 @@ x-article {
     position: relative;
 }
 
-x-article > * {
+x-page > * {
     position: absolute;
 }
 
-x-col-area {
+x-guide {
     box-sizing: border-box;
     display: inline-flex;
     user-select: none;
 }
 
-x-col {
+x-guide-col {
     border-color: #cccccc;
     border-style: solid;
     border-width: 1px;
@@ -28,25 +28,44 @@ x-col {
     user-select: none;
 }
 
-x-para {
+x-galley {
+    border: 1px dashed #cccccc;
     box-sizing: border-box;
     display: inline-flex;
 }
 
-x-para-text {
+x-galley[direction="row"] x-paragraph-col {
+    height: 100%;
+}
+
+x-galley[direction="column"] x-paragraph-col {
+    width: 100%;
+}
+
+x-paragraph-col {
+    display: block;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+x-paragraph-col > .canvas {
+    position: absolute;
+}
+
+--x-paragraph-col {
     box-sizing: border-box;
     display: flex;
     flex: 1px;
     flex-direction: column;
-    -height: 100%;
-    -max-height: 100%;
     max-width: 100%;
     overflow: hidden;
     width: 100%;
     margin: 10px;
 }
 
-x-para-text-line {
+x-paragraph-col-line {
     display: flex;
     justify-content: flex-start;
 }
