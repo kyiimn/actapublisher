@@ -39,14 +39,19 @@ x-guide-margin {
 x-galley {
     border: 1px dashed #cccccc;
     box-sizing: border-box;
+    display: inline-block;
+}
+
+x-paragraph {
+    border: 0;
     display: inline-flex;
 }
 
-x-galley[direction="row"] x-paragraph-col {
+x-paragraph[direction="row"] x-paragraph-col {
     height: 100%;
 }
 
-x-galley[direction="column"] x-paragraph-col {
+x-paragraph[direction="column"] x-paragraph-col {
     width: 100%;
 }
 

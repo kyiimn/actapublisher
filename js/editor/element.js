@@ -69,12 +69,30 @@ customElements.define('x-guide', ActaGuideElement);
 
 class ActaGuideColumnElement extends HTMLElement {
     constructor() { super(); }
+    static get observedAttributes() {
+        return ['width'];
+    }
+    connectedCallback() {
+        this.changeWidth();
+    }
+    attributeChangedCallback(name, oldValue, newValue) {
+        this.changeWidth();
+    }
+    changeWidth() {
+        let width = $(this).attr('width');
+        if ((parseFloat(width) || 0.0) > 0.0) {
+            this.style.maxWidth = width;
+            this.style.minWidth = width;
+        } else {
+            this.style.maxWidth = undefined;
+            this.style.minWidth = undefined;
+            this.removeAttribute('width');
+        }
+    }
 };
 customElements.define('x-guide-col', ActaGuideColumnElement);
 
-class ActaGuideMarginElement extends HTMLElement {
-    constructor() { super(); }
-}
+class ActaGuideMarginElement extends ActaGuideColumnElement {};
 customElements.define('x-guide-margin', ActaGuideMarginElement);
 
 class ActaGalleyElement extends HTMLElement {
@@ -83,41 +101,106 @@ class ActaGalleyElement extends HTMLElement {
         this.changeStyle();
     }
     static get observedAttributes() {
-        return ['width', 'height', 'x', 'y', 'direction'];
+        return ['width', 'height', 'x', 'y'];
     }
     attributeChangedCallback(name, oldValue, newValue) {
         this.changeStyle();
     }
     changeStyle() {
-        let width = $(this).attr('width') || undefined;
-        let height = $(this).attr('height') || undefined;
-        if (width != undefined) this.style.width = width;
-        if (height != undefined) this.style.height = height;
+        this.style.width = $(this).attr('width') || undefined;
+        this.style.height = $(this).attr('height') || undefined;
 
-        let x = $(this).attr('x') || 0;
-        let y = $(this).attr('y') || 0;
-        this.style.left = x;
-        this.style.right = y;
+        this.style.left = $(this).attr('x') || 0;
+        this.style.right = $(this).attr('y') || 0;
 
-        $(this).css('flex-direction', $(this).attr('direction') || 'row');
+        $(this).find('> *').each((i, el) => {
+            el.changeSize();
+        });
     }
 }
 customElements.define('x-galley', ActaGalleyElement);
 
 class ActaParagraphElement extends HTMLElement {
     constructor() { super(); }
+    static get observedAttributes() {
+        return ['width', 'height', 'direction', 'text'];
+    }
     connectedCallback() {
-        this.changeStyle();
+        this.changeSize();
+        this.changeDirection();
+    }
+    attributeChangedCallback(name, oldValue, newValue) {
+        switch (name) {
+            case 'direction': this.changeDirection(); break;
+            case 'text': $(this).trigger('change'); break;
+            case 'width':
+            case 'height': this.changeSize(); break;
+            default: break;
+        }
+    }
+    changeSize() {
+        let parent = $(this).parent();
+        if (parent.prop('tagName').toLowerCase() === 'x-galley') {
+            this.style.width = $(parent).attr('width') || undefined;
+            this.style.height = $(parent).attr('height') || undefined;
+        }
+        $(this).trigger('resize');
+    }
+    changeDirection() {
+        $(this).css('flex-direction', $(this).attr('direction') || 'row');
     }
 }
 customElements.define('x-paragraph', ActaParagraphElement);
 
 class ActaParagraphColumnElement extends HTMLElement {
     constructor() { super(); }
+    static get observedAttributes() {
+        return ['width'];
+    }
     connectedCallback() {
         $(this).append(
             $('<svg xmlns="http://www.w3.org/2000/svg"></svg>').addClass('canvas')
         );
+        this.changeWidth();
+    }
+    attributeChangedCallback(name, oldValue, newValue) {
+        this.changeWidth();
+    }
+    changeWidth() {
+        let width = $(this).attr('width');
+        if ((parseFloat(width) || 0.0) > 0.0) {
+            this.style.maxWidth = width;
+            this.style.minWidth = width;
+        } else {
+            this.style.maxWidth = undefined;
+            this.style.minWidth = undefined;
+            this.removeAttribute('width');
+        }
     }
 }
 customElements.define('x-paragraph-col', ActaParagraphColumnElement);
+
+class ActaParagraphMarginElement extends HTMLElement {
+    constructor() { super(); }
+    static get observedAttributes() {
+        return ['width'];
+    }
+    connectedCallback() {
+        this.changeWidth();
+    }
+    attributeChangedCallback(name, oldValue, newValue) {
+        this.changeWidth();
+    }
+    changeWidth() {
+        let width = $(this).attr('width');
+        if ((parseFloat(width) || 0.0) > 0.0) {
+            this.style.maxWidth = width;
+            this.style.minWidth = width;
+        } else {
+            this.style.maxWidth = undefined;
+            this.style.minWidth = undefined;
+            this.removeAttribute('width');
+        }
+    }
+}
+customElements.define('x-paragraph-margin', ActaParagraphMarginElement);

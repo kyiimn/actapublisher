@@ -4,23 +4,14 @@ $(document).ready(e => {
     page.padding = '0.5cm';
 
     var guide = new ActaGuide(5, '2mm');
-    var galley = new ActaGalley('5mm', '5mm', '143.7mm', '140mm');
+    var galley = new ActaGalley('5mm', '5mm', '142.7mm', '140mm');
+    var para = new ActaParagraph(3, '2mm')
     $(page.el).append(guide.el);
     $(page.el).append(galley.el);
     $(page.el).appendTo('body');
 
-    $(galley.el).append(
-        $('<x-paragraph-col>')
-    ).append(
-        $('<x-paragraph-col>')
-    ).append(
-        $('<x-paragraph-col>')
-    ).attr({
-        'x': '0.5cm',
-        'y': '0.5cm',
-        'width': '14.37cm',
-        'height': '14cm'
-    });
+    $(galley.el).append(para.el);
+
     opentype.load('fonts/jabml.ttf', (err, font) => {
         ff = font;
         $('button').click(aa);
@@ -31,7 +22,7 @@ function aa() {
     var tt = $('textarea').val();
     tt = tt.substring(0, tt.length);
     console.log((new Date()).getTime());
-    drawtext($('x-galley'), ff, tt, 12, '#ff0000');
+    drawtext($('x-paragraph'), ff, tt, 12, '#ff0000');
     console.log((new Date()).getTime());
 }
 

@@ -53,32 +53,43 @@ class ActaPage {
 };
 
 class ActaGuide {
-    constructor(colCount, innerMargin, colWidths) {
+    constructor(columnCount, innerMargin, columnWidths) {
         this._element = document.createElement('x-guide');
-        this._innerMargin = innerMargin;
 
-        colCount = colCount || 1;
-        colWidths = colWidths || [];
-        for (let i = 0; i < colCount; i++) {
-            let col = document.createElement('x-guide-col');
-            if (colWidths[i]) {
-                col.style.minWidth = colWidths[i];
-                col.style.maxWidth = colWidths[i];
-            }
-            this._element.appendChild(col);
+        columnWidths = columnWidths || [];
 
-            if ((parseFloat(innerMargin) || 0.0) > 0.0 && i + 1 < colCount) {
-                let margin = document.createElement('x-guide-margin');
-                margin.style.minWidth = innerMargin;
-                margin.style.maxWidth = innerMargin;
-                this._element.appendChild(margin);
-            }
+        this.columnCount = columnCount;
+        for (let i = 0; i < columnCount; i++) {
+            if (columnWidths[i]) this.columnWidth(i, columnWidths[i]);
+        }
+        this.innerMargin = innerMargin;
+    }
+
+    columnWidth(idx, val) {
+        if (arguments.length > 1) { // set
+            $(this._element).find('x-guide-col').get(idx).setAttribute('width', val || 0);
+        } else { // get
+            return $(this._element).find('x-guide-col').get(idx).getAttribute('width') || false;
         }
     }
-    getColumnWidth(idx) {
-        if (!this._element.children(idx)) return false;
-        return this._element.children[idx].style.minWidth || -1;
+
+    set columnCount(count) {
+        this._element.innerHTML = '';
+        this._columnCount = count || 1;
+        for (let i = 0; i < this._columnCount; i++) {
+            this._element.appendChild(document.createElement('x-guide-col'));
+            if (i + 1 >= this._columnCount) continue;
+            this._element.appendChild(document.createElement('x-guide-margin'));
+        }
     }
+
+    set innerMargin(innerMargin) {
+        this._innerMargin = innerMargin;
+        $(this._element).find('x-guide-margin').attr('width', innerMargin);
+    }
+
+    get columnCount() { return this._columnCount; }
+    get innerMargin() { return this._innerMargin; }
 
     get el() { return this._element; }
 };
