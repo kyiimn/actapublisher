@@ -72,6 +72,11 @@ class ActaGuideColumnElement extends HTMLElement {
 };
 customElements.define('x-guide-col', ActaGuideColumnElement);
 
+class ActaGuideMarginElement extends HTMLElement {
+    constructor() { super(); }
+}
+customElements.define('x-guide-margin', ActaGuideMarginElement);
+
 class ActaGalleyElement extends HTMLElement {
     constructor() { super(); }
     connectedCallback() {
@@ -98,6 +103,14 @@ class ActaGalleyElement extends HTMLElement {
     }
 }
 customElements.define('x-galley', ActaGalleyElement);
+
+class ActaParagraphElement extends HTMLElement {
+    constructor() { super(); }
+    connectedCallback() {
+        this.changeStyle();
+    }
+}
+customElements.define('x-paragraph', ActaParagraphElement);
 
 class ActaParagraphColumnElement extends HTMLElement {
     constructor() { super(); }

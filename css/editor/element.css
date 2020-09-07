@@ -28,6 +28,14 @@ x-guide-col {
     user-select: none;
 }
 
+x-guide-margin {
+    border: 0;
+    box-sizing: border-box;
+    flex: 1;
+    height: 100%;
+    user-select: none;
+}
+
 x-galley {
     border: 1px dashed #cccccc;
     box-sizing: border-box;

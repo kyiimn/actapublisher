@@ -53,20 +53,32 @@ class ActaPage {
 };
 
 class ActaGuide {
-    constructor(colCount, colWidths) {
+    constructor(colCount, innerMargin, colWidths) {
         this._element = document.createElement('x-guide');
+        this._innerMargin = innerMargin;
 
+        colCount = colCount || 1;
         colWidths = colWidths || [];
-        for (let i = 0; i < colCount || 1; i++) {
+        for (let i = 0; i < colCount; i++) {
             let col = document.createElement('x-guide-col');
             if (colWidths[i]) {
                 col.style.minWidth = colWidths[i];
                 col.style.maxWidth = colWidths[i];
             }
             this._element.appendChild(col);
+
+            if ((parseFloat(innerMargin) || 0.0) > 0.0 && i + 1 < colCount) {
+                let margin = document.createElement('x-guide-margin');
+                margin.style.minWidth = innerMargin;
+                margin.style.maxWidth = innerMargin;
+                this._element.appendChild(margin);
+            }
         }
     }
     getColumnWidth(idx) {
-        return 
+        if (!this._element.children(idx)) return false;
+        return this._element.children[idx].style.minWidth || -1;
     }
-}
+
+    get el() { return this._element; }
+};

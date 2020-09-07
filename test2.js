@@ -3,21 +3,13 @@ $(document).ready(e => {
     var page = new ActaPage('25cm', '30cm');
     page.padding = '0.5cm';
 
+    var guide = new ActaGuide(5, '2mm');
+    var galley = new ActaGalley('5mm', '5mm', '143.7mm', '140mm');
+    $(page.el).append(guide.el);
+    $(page.el).append(galley.el);
     $(page.el).appendTo('body');
 
-    $('<x-guide>').append(
-        $('<x-guide-col>')
-    ).append(
-        $('<x-guide-col>')
-    ).append(
-        $('<x-guide-col>')
-    ).append(
-        $('<x-guide-col>')
-    ).append(
-        $('<x-guide-col>')
-    ).appendTo('x-page');
-
-    $('<x-galley>').append(
+    $(galley.el).append(
         $('<x-paragraph-col>')
     ).append(
         $('<x-paragraph-col>')
@@ -28,9 +20,7 @@ $(document).ready(e => {
         'y': '0.5cm',
         'width': '14.37cm',
         'height': '14cm'
-    }).appendTo('x-page');
-
-
+    });
     opentype.load('fonts/jabml.ttf', (err, font) => {
         ff = font;
         $('button').click(aa);
@@ -41,7 +31,7 @@ function aa() {
     var tt = $('textarea').val();
     tt = tt.substring(0, tt.length);
     console.log((new Date()).getTime());
-    drawtext($('x-galley'), ff, tt, 12, '#000000');
+    drawtext($('x-galley'), ff, tt, 12, '#ff0000');
     console.log((new Date()).getTime());
 }
 
@@ -70,8 +60,6 @@ function drawtext(target, font, text, size, color) {
     textdata = [];
     target.find('> x-paragraph-col > .canvas').each((i, el) => {
         let paraCol = $(el).parent();
-        //el.width = paraCol.innerWidth();
-        //el.height = paraCol.innerHeight();
         $(el).attr({
             'width': paraCol.innerWidth(),
             'height': paraCol.innerHeight()
@@ -91,23 +79,13 @@ function drawtext(target, font, text, size, color) {
             charData.width = size / 3;
             charData.orgWidth = charData.width;
         } else {
-            let glyphData = getTextGlyph(font, text[i], size, color);
-            if (glyphData.canvas) {
-                charData.type = 'CANVAS';
-                charData.data = glyphData.canvas;
-            } else if (glyphData.svg) {
-                charData.type = 'SVG';
-                charData.data = glyphData.svg;
-            } else if (glyphData.glyph) {
-                charData.type = 'GLYPH';
-                charData.data = glyphData.glyph;
-                charData.drawOffsetX = glyphData.offsetX;
-                charData.drawOffsetY = glyphData.offsetY;
-            } else {
-                continue;
-            }
+            let glyphData = getTextPath(font, text[i], size);
+            charData.type = 'PATH';
             charData.char = text[i];
-            charData.size = size;
+            charData.color = color;
+            charData.path = glyphData.path;
+            charData.drawOffsetX = glyphData.offsetX;
+            charData.drawOffsetY = glyphData.offsetY;
             charData.width = glyphData.width;
             charData.height = glyphData.height;
             charData.orgWidth = charData.width;
@@ -168,74 +146,37 @@ function drawtext(target, font, text, size, color) {
 
     $.each(textdata, (i, para) => {
         let canvas = $(target.find('x-paragraph-col').get(i)).find('.canvas').get(0);
-        //let buf = new OffscreenCanvas(canvas.width, canvas.height);
-        //let bufCtx = buf.getContext('2d');
         let offsetY = 0;
-        //bufCtx.clearRect(0, 0, buf.width, buf.height);
+        let paths = [];
         $(canvas).empty();
-        let paths = '';
         $.each(para, (j, line) => {
             let offsetX = 0;
             $.each(line.items, (k, item) => {
-                /*if (item.type == 'CANVAS') {
-                    bufCtx.drawImage(item.data,
-                        0, 0, item.data.width, item.data.height,
-                        offsetX, offsetY + (line.maxHeight - item.height), item.data.width, item.data.height
+                if (item.type == 'PATH') {
+                    paths.push(
+                        item.path.attr('fill', item.color).css('transform', 'translate(' + (item.drawOffsetX + offsetX) + 'px, ' + (item.drawOffsetY + offsetY - line.maxHeight) + 'px)')
                     );
-                } else if (item.type == 'SVG') {
-                    let img = new Image();
-                    let url = URL.createObjectURL(
-                        new Blob([item.data], {type: 'image/svg+xml'})
-                    );
-                    img.offsetX = offsetX;
-                    img.offsetY = offsetY + (line.maxHeight - item.height);
-                    $(img).on('load', function () {
-                        canvas.getContext('2d').drawImage(this,
-                            0, 0, this.width, this.height,
-                            this.offsetX, this.offsetY, this.width, this.height
-                        );
-                        URL.revokeObjectURL(url);
-                    });
-                    img.src = url;
-                }*/
-                if (item.type == 'GLYPH') {
-                    let path = item.data.getPath(item.drawOffsetX + offsetX, item.drawOffsetY + offsetY + (line.maxHeight - item.height), item.size);
-                    paths += path.toSVG(4);
                 }
                 offsetX += item.width;
             });
             offsetY += line.maxHeight;
         });
-        $(canvas).html(paths);
-        //canvas.getContext('2d').drawImage(buf, 0, 0);
+        $(canvas).append(paths);
     });
 }
 
-function getTextGlyph(font, char, size, color) {
-    var options = { kerning: true, hinting: true, features: { liga: true, rlig: true } };
+function getTextPath(font, char, size) {
     var glyph = font.charToGlyph(char);
     var unitsPerSize = font.unitsPerEm / size;
 	var charWidth = glyph.advanceWidth / unitsPerSize;
 	var charHeight = (font.tables.os2.usWinAscent + font.tables.os2.usWinDescent) / unitsPerSize;
-	var yMin = font.tables.head.yMin / unitsPerSize;
-	var path = font.getPath(char, 0, charHeight + yMin, size);
+    var yMin = font.tables.head.yMin / unitsPerSize;
+    var path = glyph.getPath(0, charHeight, size);
 
-    /*var offCanvas = new OffscreenCanvas(charWidth, charHeight);
-    //font.draw(offCanvas.getContext('2d'), char, 0, charHeight + yMin, size, options);
-    //glyph.draw(offCanvas.getContext('2d'), 0, charHeight + yMin, size);
-    path.draw(offCanvas.getContext('2d'));
-
-    var svg = $('<svg xmlns="http://www.w3.org/2000/svg"></svg>').attr({
-        'width': charWidth,
-        'height': charHeight
-    }).html(path.toSVG(4)).get(0).outerHTML;
-*/
     return {
-        glyph: glyph,
+        path: $(document.createElementNS('http://www.w3.org/2000/svg', 'path')).attr('d', $(path.toSVG(4)).attr('d')),
         offsetX: 0,
         offsetY: charHeight + yMin,
-        //svg: svg,
-        //canvas: offCanvas,
         width: charWidth,
         height: charHeight
     };
