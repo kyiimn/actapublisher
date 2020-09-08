@@ -33,30 +33,27 @@ class ActaParagraph {
         let font = ff;
         this._SVGPath = [];
         for (let i = 0; i < (this._text.length || 0); i++) {
-            let charData = {};
+            let charData = {
+                index: i,
+                char: this._text[i],
+                color: '#000000',
+                size: size
+            };
             if (this._text[i] == "\n") {
-                charData.char = "\n";
-                charData.size = size;
                 charData.type = 'NEWLINE';
                 charData.width = 0;
             } else if (this._text[i] == ' ') {
-                charData.char = ' ';
-                charData.size = size;
                 charData.type = 'SPACE';
                 charData.width = size / 3;
             } else {
                 let glyphData = getTextPath(font, this._text[i], size);
                 charData.type = 'PATH';
-                charData.char = this._text[i];
-                charData.color = '#000000';
                 charData.path = glyphData.path;
                 charData.drawOffsetX = glyphData.offsetX;
                 charData.drawOffsetY = glyphData.offsetY;
                 charData.width = glyphData.width;
                 charData.height = glyphData.height;
             }
-            charData.index = i;
-
             this._SVGPath.push(charData);
         }
     }
