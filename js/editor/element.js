@@ -7,6 +7,7 @@ class ActaPageElement extends HTMLElement {
         return ['width', 'height', 'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'];
     }
     attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue == newValue) return;
         this.changeStyle();
         $(this).find(' > x-guide').each((i, el) => {
             el.changePadding();
@@ -44,6 +45,7 @@ class ActaGuideElement extends HTMLElement {
         this.changePadding();
     }
     attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue == newValue) return;
         this.changeFlexDirection();
     }
     changeFlexDirection() {
@@ -59,10 +61,10 @@ class ActaGuideElement extends HTMLElement {
             left = style.paddingLeft || 0;
             right = style.paddingRight || 0;
         }
-        this.style.left = left;
-        this.style.top = top;
-        this.style.height = `calc(100% - (${top} + ${bottom}))`;
-        this.style.width = `calc(100% - (${left} + ${right}))`;
+        this.style.left = `calc(${left} - 1px)`;
+        this.style.top = `calc(${top} - 1px)`;
+        this.style.height = `calc(100% - (${top} + ${bottom}) + 2px)`;
+        this.style.width = `calc(100% - (${left} + ${right}) + 2px)`;
     }
 };
 customElements.define('x-guide', ActaGuideElement);
@@ -76,6 +78,7 @@ class ActaGuideColumnElement extends HTMLElement {
         this.changeWidth();
     }
     attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue == newValue) return;
         this.changeWidth();
     }
     changeWidth() {
@@ -98,23 +101,63 @@ customElements.define('x-guide-margin', ActaGuideMarginElement);
 class ActaGalleyElement extends HTMLElement {
     constructor() { super(); }
     connectedCallback() {
-        this.changeStyle();
+        this.changePosition();
+        this.changeSize();
     }
     static get observedAttributes() {
-        return ['width', 'height', 'x', 'y'];
+        return [
+            'width', 'height', 'x', 'y',
+            'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
+            'border-color', 'border', 'border-top', 'border-bottom', 'border-left', 'border-right'
+        ];
+    }
+    getAttributes() {
+        return {
+            paddingTop: this.getAttribute('padding-top') || this.getAttribute('padding') || 0,
+            paddingBottom: this.getAttribute('padding-bottom') || this.getAttribute('padding') || 0,
+            paddingLeft: this.getAttribute('padding-left') || this.getAttribute('padding') || 0,
+            paddingRight: this.getAttribute('padding-right') || this.getAttribute('padding') || 0,
+            borderTop: this.getAttribute('border-top') || this.getAttribute('border') || 0,
+            borderBottom: this.getAttribute('border-bottom') || this.getAttribute('border') || 0,
+            borderLeft: this.getAttribute('border-left') || this.getAttribute('border') || 0,
+            borderRight: this.getAttribute('border-right') || this.getAttribute('border') || 0,
+            borderColor: this.getAttribute('border-color') || '#000000',
+            left: this.getAttribute('x') || 0,
+            top: this.getAttribute('y') || 0,
+            width: this.getAttribute('width') || undefined,
+            height: this.getAttribute('height') || undefined
+        }
     }
     attributeChangedCallback(name, oldValue, newValue) {
-        this.changeStyle();
+        if (oldValue == newValue) return;
+        switch (name) {
+            case 'x':
+            case 'y': this.changePosition(); break;
+            default: this.changeSize(); break;
+        }
     }
-    changeStyle() {
-        this.style.width = $(this).attr('width') || undefined;
-        this.style.height = $(this).attr('height') || undefined;
+    changePosition() {
+        let attr = this.getAttributes();
+        this.style.left = `calc(${attr.left} - ${attr.borderLeft ? '0px' : '1px'})`;
+        this.style.top = `calc(${attr.top} - ${attr.borderTop ? '0px' : '1px'})`;
+    }
+    changeSize() {
+        let attr = this.getAttributes();
+        this.style.width = `calc(${attr.width} + ${attr.borderLeft ? '0px' : '1px'} + ${attr.borderRight ? '0px' : '1px'})`;
+        this.style.height = `calc(${attr.height} + ${attr.borderTop ? '0px' : '1px'} + ${attr.borderBottom ? '0px' : '1px'})`;
 
-        this.style.left = $(this).attr('x') || 0;
-        this.style.right = $(this).attr('y') || 0;
+        this.style.paddingTop = attr.paddingTop;
+        this.style.paddingBottom = attr.paddingBottom;
+        this.style.paddingLeft = attr.paddingLeft;
+        this.style.paddingRight = attr.paddingRight;
+
+        this.style.borderTop = attr.borderTop ? `${attr.borderTop} solid ${attr.borderColor}` : undefined;
+        this.style.borderBottom = attr.borderBottom ? `${attr.borderBottom} solid ${attr.borderColor}` : undefined;
+        this.style.borderLeft = attr.borderLeft ? `${attr.borderLeft} solid ${attr.borderColor}` : undefined;
+        this.style.borderRight = attr.borderRight ? `${attr.borderRight} solid ${attr.borderColor}` : undefined;
 
         $(this).find('> *').each((i, el) => {
-            el.changeSize();
+            el['changeSize'] ? el.changeSize() : function(){}();
         });
     }
 }
@@ -130,6 +173,7 @@ class ActaParagraphElement extends HTMLElement {
         this.changeDirection();
     }
     attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue == newValue) return;
         switch (name) {
             case 'direction': this.changeDirection(); break;
             case 'text': $(this).trigger('change'); break;
@@ -141,8 +185,9 @@ class ActaParagraphElement extends HTMLElement {
     changeSize() {
         let parent = $(this).parent();
         if (parent.prop('tagName').toLowerCase() === 'x-galley') {
-            this.style.width = $(parent).attr('width') || undefined;
-            this.style.height = $(parent).attr('height') || undefined;
+            let attr = parent.get(0).getAttributes();
+            this.style.width = `calc(${attr.width} - ${attr.paddingLeft ? attr.paddingLeft : '0px'} - ${attr.paddingRight ? attr.paddingRight : '0px'})`;
+            this.style.height = `calc(${attr.height} - ${attr.paddingTop ? attr.paddingTop : '0px'} - ${attr.paddingBottom ? attr.paddingBottom : '0px'})`;
         }
         $(this).trigger('resize');
     }
@@ -164,16 +209,22 @@ class ActaParagraphColumnElement extends HTMLElement {
         this.changeWidth();
     }
     attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue == newValue) return;
         this.changeWidth();
     }
     changeWidth() {
         let width = $(this).attr('width');
+        let direction = $(this).parent().css('flex-direction') || 'row';
         if ((parseFloat(width) || 0.0) > 0.0) {
-            this.style.maxWidth = width;
-            this.style.minWidth = width;
+            this.style.minWidth = direction == 'row' ? width : undefined;
+            this.style.maxWidth = direction == 'row' ? width : undefined;
+            this.style.minHeight = direction != 'row' ? width : undefined;
+            this.style.maxHeight = direction != 'row' ? width : undefined;
         } else {
-            this.style.maxWidth = undefined;
             this.style.minWidth = undefined;
+            this.style.maxWidth = undefined;
+            this.style.minHeight = undefined;
+            this.style.maxHeight = undefined;
             this.removeAttribute('width');
         }
     }
@@ -189,16 +240,22 @@ class ActaParagraphMarginElement extends HTMLElement {
         this.changeWidth();
     }
     attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue == newValue) return;
         this.changeWidth();
     }
     changeWidth() {
         let width = $(this).attr('width');
+        let direction = $(this).parent().css('flex-direction') || 'row';
         if ((parseFloat(width) || 0.0) > 0.0) {
-            this.style.maxWidth = width;
-            this.style.minWidth = width;
+            this.style.minWidth = direction == 'row' ? width : undefined;
+            this.style.maxWidth = direction == 'row' ? width : undefined;
+            this.style.minHeight = direction != 'row' ? width : undefined;
+            this.style.maxHeight = direction != 'row' ? width : undefined;
         } else {
-            this.style.maxWidth = undefined;
             this.style.minWidth = undefined;
+            this.style.maxWidth = undefined;
+            this.style.minHeight = undefined;
+            this.style.maxHeight = undefined;
             this.removeAttribute('width');
         }
     }

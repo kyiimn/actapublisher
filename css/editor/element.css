@@ -13,15 +13,18 @@ x-page > * {
 }
 
 x-guide {
-    box-sizing: border-box;
+    border-color: #eeeeee;
+    border-style: solid;
+    border-width: 0 1px;
+    box-sizing: content-box;
     display: inline-flex;
     user-select: none;
 }
 
 x-guide-col {
-    border-color: #cccccc;
+    border-color: #eeeeee;
     border-style: solid;
-    border-width: 1px;
+    border-width: 1px 0;
     box-sizing: border-box;
     flex: 1;
     height: 100%;
@@ -29,7 +32,9 @@ x-guide-col {
 }
 
 x-guide-margin {
-    border: 0;
+    border-color: #eeeeee;
+    border-style: solid;
+    border-width: 0 1px;
     box-sizing: border-box;
     flex: 1;
     height: 100%;
@@ -37,69 +42,34 @@ x-guide-margin {
 }
 
 x-galley {
-    border: 1px dashed #cccccc;
+    border: 1px dashed #dddddd;
     box-sizing: border-box;
     display: inline-block;
 }
 
 x-paragraph {
     border: 0;
+    box-sizing: border-box;
     display: inline-flex;
 }
 
-x-paragraph[direction="row"] x-paragraph-col {
+x-paragraph:not([direction="column"]) x-paragraph-col,
+x-paragraph:not([direction="column"]) x-paragraph-margin {
     height: 100%;
 }
 
-x-paragraph[direction="column"] x-paragraph-col {
+x-paragraph[direction="column"] x-paragraph-col,
+x-paragraph[direction="column"] x-paragraph-margin {
     width: 100%;
 }
 
 x-paragraph-col {
     display: block;
     flex: 1;
-    height: 100%;
     overflow: hidden;
     position: relative;
 }
 
 x-paragraph-col > .canvas {
     position: absolute;
-}
-
---x-paragraph-col {
-    box-sizing: border-box;
-    display: flex;
-    flex: 1px;
-    flex-direction: column;
-    max-width: 100%;
-    overflow: hidden;
-    width: 100%;
-    margin: 10px;
-}
-
-x-paragraph-col-line {
-    display: flex;
-    justify-content: flex-start;
-}
-
-x-char {
-    color: transparent;
-    display: inline-block;
-    overflow: hidden;
-    line-height: 1em;
-    vertical-align: top;
-    user-select: none;
-}
-
-x-char.newline {
-    display: block;
-}
-
-x-char.space {
-    height: 1px;
-}
-
-x-char > svg {
-    vertical-align: top;
 }

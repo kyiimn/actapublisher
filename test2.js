@@ -1,16 +1,19 @@
 var ff;
+var para;
 $(document).ready(e => {
     var page = new ActaPage('25cm', '30cm');
     page.padding = '0.5cm';
 
     var guide = new ActaGuide(5, '2mm');
-    var galley = new ActaGalley('5mm', '5mm', '142.7mm', '140mm');
-    var para = new ActaParagraph(3, '2mm')
+    var galley = new ActaGalley('5mm', '5mm', '143.25mm', '140mm');
+    para = new ActaParagraph(3, '2mm')
     $(page.el).append(guide.el);
     $(page.el).append(galley.el);
     $(page.el).appendTo('body');
 
     $(galley.el).append(para.el);
+
+    galley.padding = '3mm';
 
     opentype.load('fonts/jabml.ttf', (err, font) => {
         ff = font;
@@ -22,7 +25,8 @@ function aa() {
     var tt = $('textarea').val();
     tt = tt.substring(0, tt.length);
     console.log((new Date()).getTime());
-    drawtext($('x-paragraph'), ff, tt, 12, '#ff0000');
+    para.text = tt;
+    //drawtext($('x-paragraph'), ff, tt, 12, '#ff0000');
     console.log((new Date()).getTime());
 }
 
