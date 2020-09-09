@@ -30,7 +30,7 @@ class ActaParagraph {
 
     convertTextSVGPath() {
         let size = 12;
-        let font = ff;
+        let font = ActaFontManager.getInstance().font(0);
         this._SVGPath = [];
         for (let i = 0; i < (this._text.length || 0); i++) {
             let charData = {
@@ -142,7 +142,16 @@ class ActaParagraph {
                 $.each(lineData.items, (j, item) => {
                     if (item.type == 'PATH') {
                         paths.push(
-                            item.path.attr('fill', item.color).css('transform', 'translate(' + (item.drawOffsetX + offsetX) + 'px, ' + (item.drawOffsetY + offsetY - lineData.maxHeight) + 'px)')
+                            item.path.attr({
+                                'data-index': item.index,
+                                'data-x': item.drawOffsetX + offsetX,
+                                'data-y': item.drawOffsetY + offsetY - lineData.maxHeight,
+                                'data-width': item.calcWidth,
+                                'data-height': lineData.maxHeight,
+                                'fill': item.color
+                            }).css({
+                                'transform': `translate(${item.drawOffsetX + offsetX}px, ${item.drawOffsetY + offsetY - lineData.maxHeight}px)`
+                            })
                         );
                     }
                     offsetX += item.calcWidth;

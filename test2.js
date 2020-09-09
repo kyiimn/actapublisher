@@ -1,6 +1,6 @@
 var ff;
 var para;
-$(document).ready(e => {
+$(document).ready(async function (e){
     var page = new ActaPage('25cm', '30cm');
     page.padding = '0.5cm';
 
@@ -15,10 +15,10 @@ $(document).ready(e => {
 
     galley.padding = '3mm';
 
-    opentype.load('fonts/jabml.ttf', (err, font) => {
-        ff = font;
-        $('button').click(aa);
-    });
+    let i = await ActaFontManager.getInstance().add('fonts/jabml.ttf');
+    let j = await ActaFontManager.getInstance().add('fonts/jahgl.ttf');
+    console.log(i, j);
+    $('button').click(aa);
 });
 
 function aa() {
