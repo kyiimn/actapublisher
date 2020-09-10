@@ -29,8 +29,9 @@ class ActaParagraph {
     }
 
     convertTextSVGPath() {
-        let size = 12;
-        let font = ActaFontManager.getInstance().font(0);
+        let style = ActaTextStyleManager.getInstance().get('본문2');
+        let size = style.fontSize;
+        let font = style.font;
         this._SVGPath = [];
         for (let i = 0; i < (this._text.length || 0); i++) {
             let charData = {
@@ -46,7 +47,7 @@ class ActaParagraph {
                 charData.type = 'SPACE';
                 charData.width = size / 3;
             } else {
-                let glyphData = getTextPath(font, this._text[i], size);
+                let glyphData = getTextPath(font.font, this._text[i], size);
                 charData.type = 'PATH';
                 charData.path = glyphData.path;
                 charData.drawOffsetX = glyphData.offsetX;

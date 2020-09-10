@@ -5,60 +5,66 @@ class ActaFontManager {
     }
 
     constructor() {
-        this._fontList = [];
+        this._list = [];
     }
 
     async add(url) {
-        for (let i = 0; i < this._fontList.length; i++) {
-            if (this._fontList[i].url == url) return new Promise((resolve, reject) => {
+        for (let i = 0; i < this._list.length; i++) {
+            if (this._list[i].url == url) return new Promise((resolve, reject) => {
                 resolve(i);
             });
         }
         return new Promise((resolve, reject) => {
             opentype.load(url, (err, font) => {
                 if (!err) {
-                    let info = {
-                        url: url,
-                        font: font,
-                        fontFamilyEN: font.names.fontFamily.en,
-                        fontSubfamilyEN: font.names.fontSubfamily.en,
-                        fontFamilyKO: font.names.fontFamily.ko,
-                        fontSubfamilyKO: font.names.fontSubfamily.ko,
-                        fontFullnameEN: $.trim(`${font.names.fontFamily.en} ${font.names.fontSubfamily.en}`),
-                        fontFullnameKO: $.trim(`${font.names.fontFamily.ko} ${font.names.fontSubfamily.ko}`)
-                    };
-                    info.fontFamily = info.fontFamilyKO || info.fontFamilyEN;
-                    info.fontSubfamily = info.fontSubfamilyKO || info.fontSubfamilyEN;
-                    info.fontFullname = info.fontFullnameKO || info.fontFullnameEN;
-
-                    resolve(this._fontList.push(info) - 1);
-                } else reject(err);
+                    resolve(this._list.push(new ActaFont(url, font)) - 1);
+                } else {
+                    reject(err);
+                }
             });
         });
     }
 
-    info(idx) {
+    get(idx) {
         if (typeof idx == 'number') {
-            return this._fontList[idx];
+            return this._list[idx];
         } else {
-            for (let i = 0; i < this._fontList.length; i++) {
-                if (this._fontList[i].fontFamilyEN != idx &&
-                    this._fontList[i].fontFamilyKO != idx &&
-                    this._fontList[i].fontFullnameEN != idx &&
-                    this._fontList[i].fontFullnameKO != idx
+            for (let i = 0; i < this._list.length; i++) {
+                if (this._list[i].familyEN != idx &&
+                    this._list[i].familyKO != idx &&
+                    this._list[i].fullnameEN != idx &&
+                    this._list[i].fullnameKO != idx
                 ) continue;
-                return this._fontList[i];
+                return this._list[i];
             }
         }
         return false;
     }
 
-    font(idx) {
-        let info = this.info(idx);
-        if (info === false) return false;
-        return info.font;
-    }
-
-    get list() { return this._fontList; }
+    get list() { return this._list; }
     get length() { return this.list.length; }
-}
+};
+
+class ActaFont {
+    constructor(url, font) {
+        this._url = url;
+        this._font = font;
+        this._fontFamilyEN = font.names.fontFamily.en;
+        this._fontSubfamilyEN = font.names.fontSubfamily.en;
+        this._fontFamilyKO = font.names.fontFamily.ko || font.names.fontFamily.en;
+        this._fontSubfamilyKO = font.names.fontSubfamily.ko || font.names.fontSubfamily.en;
+        this._fontFullnameEN = $.trim(`${this._fontFamilyEN} ${this._fontSubfamilyEN}`);
+        this._fontFullnameKO = $.trim(`${this._fontFamilyKO} ${this._fontSubfamilyKO}`);
+    }
+    get url() { return this._url; }
+    get font() { return this._font; }
+    get familyEN() { return this._fontFamilyEN; }
+    get subfamilyEN() { return this._fontSubfamilyEN; }
+    get familyKO() { return this._fontFamilyKO; }
+    get subfamilyKO() { return this._fontSubfamilyKO; }
+    get fullnameEN() { return this._fontFullnameEN; }
+    get fullnameKO() { return this._fontFullnameKO; }
+    get family() { return this.familyKO || this.familyEN; }
+    get subfamily() { return this.subfamilyKO || this.subfamilyEN; }
+    get fullname() { return this.fullnameKO || this.fullnameEN; }
+};

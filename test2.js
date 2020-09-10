@@ -12,12 +12,22 @@ $(document).ready(async function (e){
     $(page.el).appendTo('body');
 
     $(galley.el).append(para.el);
-
     galley.padding = '3mm';
 
-    let i = await ActaFontManager.getInstance().add('fonts/jabml.ttf');
-    let j = await ActaFontManager.getInstance().add('fonts/jahgl.ttf');
-    console.log(i, j);
+    await ActaFontManager.getInstance().add('fonts/jabml.ttf');
+    await ActaFontManager.getInstance().add('fonts/jahgl.ttf');
+
+    let s;
+    s = new ActaTextStyle();
+    s.font = ActaFontManager.getInstance().get(0);
+    s.fontSize = 14;
+    ActaTextStyleManager.getInstance().add('본문1', s);
+
+    s = new ActaTextStyle();
+    s.font = ActaFontManager.getInstance().get(1);
+    s.fontSize = 17;
+    ActaTextStyleManager.getInstance().add('본문2', s);
+
     $('button').click(aa);
 });
 
