@@ -1,6 +1,6 @@
 var ff;
 var para;
-$(document).ready(async function (e){
+$(document).ready(async e => {
     var page = new ActaPage('25cm', '30cm');
     page.padding = '0.5cm';
 
@@ -19,12 +19,12 @@ $(document).ready(async function (e){
 
     let s;
     s = new ActaTextStyle();
-    s.font = ActaFontManager.getInstance().get(0);
+    s.font = '중앙신문명조';
     s.fontSize = 14;
     ActaTextStyleManager.getInstance().add('본문1', s);
 
     s = new ActaTextStyle();
-    s.font = ActaFontManager.getInstance().get(1);
+    s.font = '중앙세고딕';
     s.fontSize = 17;
     ActaTextStyleManager.getInstance().add('본문2', s);
 

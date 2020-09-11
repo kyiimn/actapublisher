@@ -3,22 +3,11 @@ class ActaTextStyleManager {
         if (!ActaTextStyleManager._instance) ActaTextStyleManager._instance = new ActaTextStyleManager();
         return ActaTextStyleManager._instance;
     }
+    constructor() { this._list = {}; }
 
-    constructor() {
-        this._list = {};
-    }
-
-    add(name, style) {
-        this._list[name] = style;
-    }
-
-    remove(name) {
-        delete this._list[name];
-    }
-
-    get(name) {
-        return this._list[name];
-    }
+    add(name, style) { this._list[name] = style; }
+    remove(name) { delete this._list[name]; }
+    get(name) { return this._list[name]; }
 
     get list() { return this._list; }
     get length() { return Object.keys(this.list).length; }
@@ -30,16 +19,16 @@ class ActaTextStyle {
     static TEXTALIGN_RIGHT = 2;
     static TEXTALIGN_CENTER = 3;
 
-    constructor() {
+    constructor(inherit) {
         this._font = undefined;
-        this._fontSize = 10;
-        this._xscale = 1;
-        this._letterSpacing = 0;
-        this._lineHeight = 1.2;
-        this._textAlign = this.TEXTALIGN_JUSTIFY;
-        this._underline = false;
-        this._strikeline = false;
-        this._indent = 0;
+        this._fontSize = inherit ? undefined : 10;
+        this._xscale = inherit ? undefined : 1;
+        this._letterSpacing = inherit ? undefined : 0;
+        this._lineHeight = inherit ? undefined : 1.2;
+        this._textAlign = inherit ? undefined : this.TEXTALIGN_JUSTIFY;
+        this._underline = inherit ? undefined : false;
+        this._strikeline = inherit ? undefined : false;
+        this._indent = inherit ? undefined : 0;
     }
 
     set font(font) {

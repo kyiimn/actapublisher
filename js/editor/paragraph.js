@@ -29,7 +29,7 @@ class ActaParagraph {
     }
 
     convertTextSVGPath() {
-        let style = ActaTextStyleManager.getInstance().get('본문2');
+        let style = ActaTextStyleManager.getInstance().get('본문1');
         let size = style.fontSize;
         let font = style.font;
         this._SVGPath = [];
