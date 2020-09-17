@@ -3,6 +3,7 @@ import { ActaTextConverter } from './textconverter';
 import { ActaTextNode } from './textnode';
 import { ActaTextStyle, TextAlign } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
+import Hangul from 'hangul-js';
 import opentype from 'opentype.js';
 import $ from 'jquery';
 
@@ -12,6 +13,7 @@ interface IDrawableTextItem {
     textStyle: ActaTextStyle;
     indexOfNode: number;
     indexOfText: number;
+    line: IDrawableLineData | null;
     char: string;
     type: DrawableTextItemType;
     calcWidth: number;
@@ -24,6 +26,8 @@ interface IDrawableTextItem {
 };
 
 interface IDrawableLineData {
+    indexOfColumn: number;
+    indexOfLine: number;
     limitWidth: number;
     maxHeight: number;
     maxLeading: number;
@@ -33,7 +37,7 @@ interface IDrawableLineData {
 };
 
 interface ICursorPosition {
-    column: HTMLElement;
+    column: number;
     line: number;
     position: number;
 }
@@ -79,6 +83,13 @@ export class ActaParagraph {
         };
     }
 
+    private _initElement() {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'text');
+        this._element.innerHTML = '';
+        this._element.appendChild(input);
+    }
+
     constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
         this._element = document.createElement('x-paragraph');
         this._columnCount = 1;
@@ -104,15 +115,23 @@ export class ActaParagraph {
             this.drawText();
             return false;
         });
+        $(this._element).on('keyup', 'input[type="text"]', function (e) {
+            this.blur();
+            const val = this.value;
+            console.log(Hangul.a(val), val);
+            this.focus();
+            return false;
+        });
         $(this._element).on('mousedown', 'x-paragraph-col', (e) => {
             if (!this._editable) return false;
             const eventElement = this.getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
             if (eventElement.length > 0) {
-                this._selectionStartItem = eventElement[0];
                 this._cursorMode = CursorMode.SELECTION;
                 this._cursorPosition = null;
-                this.setCursor(this._selectionStartItem, e.offsetX);
+                this._selectionStartItem = this.setCursor(eventElement[0], e.offsetX);
+                this.redrawCursor();
             }
+            $(this._element).find('input[type="text"]').get(0).focus();
             $(this._element).addClass('focus').trigger('focus');
             return false;
         });
@@ -120,14 +139,18 @@ export class ActaParagraph {
             if (!this._editable) return false;
             if (this._cursorMode !== CursorMode.SELECTION) return false;
             const eventElement = this.getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
-            if (eventElement.length > 0 && this._selectionStartItem != null) this.setSelection(this._selectionStartItem, eventElement[0]);
+            if (eventElement.length > 0 && this._selectionStartItem != null) {
+                this.setCursor(eventElement[0], e.offsetX);
+                this.redrawCursor();
+            }
             return false;
         });
         $(this._element).on('mouseup', 'x-paragraph-col', (e) => {
             if (!this._editable) return false;
-            if (this._cursorMode !== CursorMode.SELECTION) {
-                const eventElement = this.getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
-                if (eventElement.length > 0 && this._selectionStartItem != null) this.setSelection(this._selectionStartItem, eventElement[0]);
+            const eventElement = this.getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
+            if (eventElement.length > 0 && this._selectionStartItem != null) {
+                this.setCursor(eventElement[0], e.offsetX);
+                this.redrawCursor();
             }
             this._cursorMode = CursorMode.EDIT;
             return false;
@@ -135,67 +158,137 @@ export class ActaParagraph {
     }
 
     blur() {
-        $(this._element).removeClass('focus').find('svg rect.cursor').remove();
+        $(this._element).removeClass('focus').find('svg .cursor').remove();
         $(this._element).trigger('blur');
         this._cursorMode = CursorMode.NONE;
         this._selectionStartItem = null;
     }
 
-    setCursor(item: IDrawableTextItem, x?: number) {
-        const path = $(this._element).find(`svg path[data-id="${item.id}"]`);
-        if (path.length < 1) return;
-
-        const line = parseInt($(path).attr('data-line') || '', 10);
-        this._cursorPosition = {
-            column: $(path).parent().parent().get(0),
-            position: 0,
-            line
-        };
+    setCursorPosition(column: number, line: number, position: number) {
+        this._cursorPosition = { column, line, position };
     }
 
-    setSelection(startItem: IDrawableTextItem, endItem: IDrawableTextItem) {
-        let startpos = this._drawableTextData.indexOf(startItem);
-        let endpos = this._drawableTextData.indexOf(endItem);
-
-        let currentColumn: HTMLElement | undefined;
-        let currentLine = -1;
-        let selection;
-        let startx = 0;
-
-        if (startpos > endpos) {
-            const t = startpos;
-            startpos = endpos;
-            endpos = t;
+    getTextItemsByLine(column: number, line: number) {
+        const lineData: IDrawableTextItem[] = [];
+        for (const textItem of this._drawableTextData) {
+            if (textItem.line === null) continue;
+            if (textItem.line.indexOfColumn !== column) continue;
+            if (textItem.line.indexOfLine !== line) continue;
+            lineData.push(textItem);
         }
-        $(this._element).find('svg rect.cursor').remove();
+        return lineData;
+    }
 
-        for (let i = startpos; i <= endpos; i++) {
-            const path = $(this._element).find(`svg path[data-id="${this._drawableTextData[i].id}"]`);
-            if (path.length < 1) continue;
+    getTextData(column: number): IDrawableLineData[] {
+        const columnEl: HTMLElement | undefined = $(this._element).find('x-paragraph-col svg').get(column);
+        if (columnEl === undefined) return [];
+        return $(columnEl).data('drawableTextData');
+    }
 
-            const line = parseInt($(path).attr('data-line') || '', 10);
-            if (isNaN(line)) continue;
-            if (currentColumn !== $(path).parent().parent().get(0) || currentLine !== line || selection === undefined) {
-                currentColumn = $(path).parent().parent().get(0);
-                currentLine = line;
-                startx = parseInt($(path).attr('data-x') || '0', 10);
-                selection = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                $(selection).attr({
-                    'x': startx,
-                    'y': $(path).attr('data-y') || 0,
-                    'width': parseInt($(path).attr('data-width') || '0', 10),
-                    'height': parseInt($(path).attr('data-height') || '0', 10),
-                    'fill': '#5555ff',
-                    'fill-opacity': 0.4,
-                    'stroke': '#0000ff',
-                    'data-start-id': this._drawableTextData[startpos].id,
-                    'data-end-id': this._drawableTextData[startpos].id
-                }).addClass('cursor');
-                $(currentColumn).find('svg').append(selection);
-            } else {
-                const endx = parseInt($(path).attr('data-x') || '0', 10) + parseInt($(path).attr('data-width') || '0', 10);
-                $(selection).attr('width', endx - startx);
+    getLineData(column: number, line: number): IDrawableLineData | undefined {
+        const textData = this.getTextData(column);
+        return textData[line];
+    }
+
+    setCursor(textItem: IDrawableTextItem, x?: number) {
+        const path = $(this._element).find(`svg path[data-id="${textItem.id}"]`);
+        if (textItem.line === null) return null;
+
+        const lineItem = this.getTextItemsByLine(textItem.line.indexOfColumn, textItem.line.indexOfLine);
+        let position = lineItem.indexOf(textItem);
+        if (x !== undefined && path.length > 0) {
+            const pathX = parseFloat(path.attr('data-x') || '0');
+            const pathWidth = parseFloat(path.attr('data-width') || '0');
+            if (pathWidth > 0) {
+                const offsetX = x - pathX;
+                if (pathWidth / 2 < offsetX) position++;
             }
+        }
+        this.setCursorPosition(textItem.line.indexOfColumn, textItem.line.indexOfLine, position);
+
+        return lineItem[position];
+    };
+
+    redrawCursor() {
+        $(this._element).find('svg .cursor').remove();
+        if (this._cursorPosition === null) return;
+
+        const lineItems = this.getTextItemsByLine(this._cursorPosition.column, this._cursorPosition.line);
+        if (this._cursorMode === CursorMode.SELECTION && lineItems[this._cursorPosition.position] !== this._selectionStartItem) {
+            let currentColumn: HTMLElement | undefined;
+            let currentLine = -1;
+            let selection;
+            let startx = 0;
+
+            if (this._selectionStartItem === null) return;
+
+            let startpos = this._drawableTextData.indexOf(this._selectionStartItem);
+            let endpos = this._drawableTextData.indexOf(lineItems[this._cursorPosition.position]);
+
+            if (startpos > endpos) {
+                [startpos, endpos] = [endpos, startpos];
+            } else {
+                endpos--;
+            }
+            for (let i = startpos; i <= endpos; i++) {
+                const textItem = this._drawableTextData[i];
+                const path = $(this._element).find(`svg path[data-id="${textItem.id}"]`);
+                if (path.length < 1) continue;
+
+                const column = $(path).parent().parent().get(0);
+
+                if (textItem.line === null) continue;
+                if (currentColumn !== column || currentLine !== textItem.line.indexOfLine || selection === undefined) {
+                    currentColumn = column;
+                    currentLine = textItem.line.indexOfLine;
+                    startx = parseFloat($(path).attr('data-x') || '0');
+                    selection = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    $(selection).attr({
+                        'x': startx,
+                        'y': $(path).attr('data-y') || 0,
+                        'width': parseFloat($(path).attr('data-width') || '0'),
+                        'height': parseFloat($(path).attr('data-height') || '0'),
+                        'fill': '#5555ff',
+                        'fill-opacity': 0.4,
+                        'stroke': '#0000ff',
+                        'data-start-id': this._drawableTextData[startpos].id,
+                        'data-end-id': this._drawableTextData[startpos].id
+                    }).addClass('cursor');
+                    $(currentColumn).find('svg').append(selection);
+                } else {
+                    const endx = parseFloat($(path).attr('data-x') || '0') + parseFloat($(path).attr('data-width') || '0');
+                    $(selection).attr('width', endx - startx);
+                }
+            }
+        } else {
+            const currentColumn: HTMLElement | undefined = $(this._element).find('x-paragraph-col').get(this._cursorPosition.column);
+            let x = 0;
+            let y = 0;
+            let height = 0;
+
+            if (this._cursorPosition.position === lineItems.length) {
+                const path = $(this._element).find(`svg path[data-id="${lineItems[lineItems.length - 1].id}"]`);
+                x = parseFloat(path.attr('data-x') || '0') + parseFloat(path.attr('data-width') || '0');
+                y = parseFloat(path.attr('data-y') || '0');
+                height = parseFloat(path.attr('data-height') || '0');
+            } else {
+                if (lineItems.length > 0) {
+                    const path = $(this._element).find(`svg path[data-id="${lineItems[this._cursorPosition.position].id}"]`);
+                    x = parseFloat(path.attr('data-x') || '0');
+                    y = parseFloat(path.attr('data-y') || '0');
+                    height = parseFloat(path.attr('data-height') || '0');
+                }
+            }
+            const cursor = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            $(cursor).attr({
+                'x1': x,
+                'x2': x,
+                'y1': y - 1,
+                'y2': y + height + 1,
+                'stroke-width': 1,
+                'stroke': '#0000ff'
+            }).addClass('cursor');
+            $(currentColumn).find('svg').append(cursor);
         }
     }
 
@@ -267,24 +360,25 @@ export class ActaParagraph {
                     const char = textvalue[indexOfText];
                     if (char === "\n") {
                         this._drawableTextData.push({
-                            textNode, textStyle, indexOfNode, indexOfText, char,
                             id: uuidv4(),
                             type: DrawableTextItemType.NEWLINE,
                             calcWidth: 0,
-                            width: 0
+                            width: 0,
+                            line: null,
+                            textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     } else if (char === ' ') {
                         this._drawableTextData.push({
-                            textNode, textStyle, indexOfNode, indexOfText, char,
                             id: uuidv4(),
                             type: DrawableTextItemType.SPACE,
                             calcWidth: textStyle.fontSize / 3,
-                            width: textStyle.fontSize / 3
+                            width: textStyle.fontSize / 3,
+                            line: null,
+                            textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     } else {
                         const glyphData = this._getTextPath(textStyle.font.font, char, textStyle.fontSize);
                         this._drawableTextData.push({
-                            textNode, textStyle, indexOfNode, indexOfText, char,
                             id: uuidv4(),
                             type: DrawableTextItemType.PATH,
                             path: glyphData.path,
@@ -292,7 +386,9 @@ export class ActaParagraph {
                             drawOffsetY: glyphData.offsetY,
                             calcWidth: glyphData.width,
                             width: glyphData.width,
-                            height: glyphData.height
+                            height: glyphData.height,
+                            line: null,
+                            textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     }
                 }
@@ -322,6 +418,8 @@ export class ActaParagraph {
                     const canvas = canvasList[canvasPos];
                     if (!canvas) break;
                     lineData = {
+                        indexOfColumn: canvasPos,
+                        indexOfLine: $(canvas).data('drawableTextData').length,
                         limitWidth: $(canvas).width() || 0,
                         maxHeight: 0,
                         maxLeading: 0,
@@ -382,6 +480,7 @@ export class ActaParagraph {
             lineData.maxLeading = Math.max((textItem.height || 0) * ((textItem.textStyle.lineHeight || 1) - 1), lineData.maxLeading);
             lineData.textAlign = Math.max(textItem.textStyle.textAlign || TextAlign.JUSTIFY, lineData.textAlign);
             lineData.items.push(textItem);
+            textItem.line = lineData;
             if (textItem.type === DrawableTextItemType.NEWLINE) {
                 indent = true;
                 lineData = null;
@@ -417,66 +516,91 @@ export class ActaParagraph {
             let offsetY = 0;
 
             $(canvas).empty();
-            for (let i = 0; i < textData.length; i++) {
-                const lineData = textData[i];
+            for (const lineData of textData) {
                 let offsetX = lineData.indent;
                 let leading = 0;
-                for (const item of lineData.items) {
-                    if (item.type === DrawableTextItemType.PATH && item.path !== undefined && item.textStyle !== undefined) {
-                        let transform = `translate(${(item.drawOffsetX || 0) + ((item.textStyle.letterSpacing || 0) / 2) + offsetX}px, ${(item.drawOffsetY || 0) + offsetY - lineData.maxHeight + ((lineData.maxHeight - (item.height || 0)) * 2)}px)`;
-                        transform += ` scaleX(${item.textStyle.xscale})`;
-                        leading = Math.max(leading, (item.textStyle.fontSize || 10) * ((item.textStyle.lineHeight || 1) - 1));
-                        $(item.path).attr({
-                            'data-id': item.id,
-                            'data-line': i + 1,
-                            'data-textnode': item.textNode.uuid,
-                            'data-index-of-node': item.indexOfNode,
-                            'data-index-of-text': item.indexOfText,
-                            'data-x': offsetX,
-                            'data-y': offsetY,
-                            'data-width': item.calcWidth,
-                            'data-height': lineData.maxHeight,
-                            'data-leading': lineData.maxLeading,
-                            'fill': item.textStyle.color || '#000000'
-                        }).css('transform', transform);
+                for (const textItem of lineData.items) {
+                    if (textItem.line === null) textItem.line = lineData;
+                    if (textItem.type !== DrawableTextItemType.NEWLINE) {
+                        let transform = 'translate(';
+                        transform += `${(textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX}px`;
+                        transform += ', ';
+                        transform += `${(textItem.drawOffsetY || 0) + offsetY - lineData.maxHeight + ((lineData.maxHeight - (textItem.height || 0)) * 2)}px`;
+                        transform += ')';
+                        transform += ` scaleX(${textItem.textStyle.xscale})`;
+                        leading = Math.max(leading, (textItem.textStyle.fontSize || 10) * ((textItem.textStyle.lineHeight || 1) - 1));
 
-                        if (item.textStyle.strikeline) {
-                            const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                            $(strikeline).attr({
-                                'data-id': item.id,
-                                'data-textnode': item.textNode.uuid,
-                                'data-index-of-node': item.indexOfNode,
-                                'data-index-of-text': item.indexOfText,
-                                'x1': (item.drawOffsetX || 0) + ((item.textStyle.letterSpacing || 0) / 2) + offsetX,
-                                'x2': (item.drawOffsetX || 0) + ((item.textStyle.letterSpacing || 0) / 2) + offsetX + item.calcWidth,
-                                'y1': (item.drawOffsetY || 0) + offsetY - (lineData.maxHeight / 3),
-                                'y2': (item.drawOffsetY || 0) + offsetY - (lineData.maxHeight / 3),
-                                'stroke': item.textStyle.color,
-                                'stroke-width': 1,
-                                'stroke-linecap': 'butt'
-                            });
-                            lines.push(strikeline);
+                        if (textItem.path !== undefined) {
+                            $(textItem.path).attr({
+                                'data-id': textItem.id,
+                                'data-line': textItem.line.indexOfLine,
+                                'data-textnode': textItem.textNode.uuid,
+                                'data-index-of-node': textItem.indexOfNode,
+                                'data-index-of-text': textItem.indexOfText,
+                                'data-x': offsetX,
+                                'data-y': offsetY,
+                                'data-width': textItem.calcWidth,
+                                'data-height': lineData.maxHeight,
+                                'data-leading': lineData.maxLeading,
+                                'fill': textItem.textStyle.color || '#000000'
+                            }).css('transform', transform);
+                            paths.push(textItem.path);
+                        } else {
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            $(path).attr({
+                                'data-id': textItem.id,
+                                'data-line': textItem.line.indexOfLine,
+                                'data-textnode': textItem.textNode.uuid,
+                                'data-index-of-node': textItem.indexOfNode,
+                                'data-index-of-text': textItem.indexOfText,
+                                'data-x': offsetX,
+                                'data-y': offsetY,
+                                'data-width': textItem.calcWidth,
+                                'data-height': lineData.maxHeight,
+                                'data-leading': lineData.maxLeading
+                            }).css('transform', transform);
+                            paths.push(path);
                         }
-                        if (item.textStyle.underline) {
-                            const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                            $(underline).attr({
-                                'data-id': item.id,
-                                'data-textnode': item.textNode.uuid,
-                                'data-index-of-node': item.indexOfNode,
-                                'data-index-of-text': item.indexOfText,
-                                'x1': (item.drawOffsetX || 0) + ((item.textStyle.letterSpacing || 0) / 2) + offsetX,
-                                'x2': (item.drawOffsetX || 0) + ((item.textStyle.letterSpacing || 0) / 2) + offsetX + item.calcWidth,
-                                'y1': (item.drawOffsetY || 0) + offsetY,
-                                'y2': (item.drawOffsetY || 0) + offsetY,
-                                'stroke': item.textStyle.color,
-                                'stroke-width': 1,
-                                'stroke-linecap': 'butt'
-                            });
-                            lines.push(underline);
+                        if (textItem.textStyle !== undefined) {
+                            if (textItem.textStyle.strikeline) {
+                                const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                                $(strikeline).attr({
+                                    'data-id': textItem.id,
+                                    'data-line': textItem.line.indexOfLine,
+                                    'data-textnode': textItem.textNode.uuid,
+                                    'data-index-of-node': textItem.indexOfNode,
+                                    'data-index-of-text': textItem.indexOfText,
+                                    'x1': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX,
+                                    'x2': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX + textItem.calcWidth,
+                                    'y1': (textItem.drawOffsetY || 0) + offsetY - (lineData.maxHeight / 3),
+                                    'y2': (textItem.drawOffsetY || 0) + offsetY - (lineData.maxHeight / 3),
+                                    'stroke': textItem.textStyle.color,
+                                    'stroke-width': 1,
+                                    'stroke-linecap': 'butt'
+                                });
+                                lines.push(strikeline);
+                            }
+                            if (textItem.textStyle.underline) {
+                                const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                                $(underline).attr({
+                                    'data-id': textItem.id,
+                                    'data-line': textItem.line.indexOfLine,
+                                    'data-textnode': textItem.textNode.uuid,
+                                    'data-index-of-node': textItem.indexOfNode,
+                                    'data-index-of-text': textItem.indexOfText,
+                                    'x1': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX,
+                                    'x2': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX + textItem.calcWidth,
+                                    'y1': (textItem.drawOffsetY || 0) + offsetY,
+                                    'y2': (textItem.drawOffsetY || 0) + offsetY,
+                                    'stroke': textItem.textStyle.color,
+                                    'stroke-width': 1,
+                                    'stroke-linecap': 'butt'
+                                });
+                                lines.push(underline);
+                            }
                         }
-                        paths.push(item.path);
                     }
-                    offsetX += item.calcWidth;
+                    offsetX += textItem.calcWidth;
                 }
                 offsetY += lineData.maxHeight;
                 offsetY += lineData.maxLeading;
@@ -498,11 +622,16 @@ export class ActaParagraph {
     }
 
     set columnCount(count) {
-        this._element.innerHTML = '';
+        this._initElement();
+
         this._columnCount = count || 1;
         for (let i = 0; i < this._columnCount; i++) {
-            this._element.appendChild(document.createElement('x-paragraph-col'));
+            const column = document.createElement('x-paragraph-col');
+            this._element.appendChild(column);
+            $(column).find('svg').data('drawableTextData', []);
+
             if (i + 1 >= this._columnCount) continue;
+
             const margin = document.createElement('x-paragraph-margin');
             $(margin).attr('width', this.innerMargin);
             this._element.appendChild(margin);
