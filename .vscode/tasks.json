@@ -1,0 +1,23 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "dev:assets",
+			"problemMatcher": [],
+			"label": "npm: dev:assets",
+			"detail": "webpack -d --watch"
+		},
+		{
+			"type": "npm",
+			"script": "build:assets",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [],
+			"label": "npm: build:assets",
+			"detail": "webpack -p"
+		}
+	]
+}

@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 class ActaPageElement extends HTMLElement {
     constructor() { super(); }
     connectedCallback() {
@@ -31,7 +33,6 @@ class ActaPageElement extends HTMLElement {
         if (paddingRight != undefined) this.style.paddingRight = paddingRight;
     }
 };
-customElements.define('x-page', ActaPageElement);
 
 class ActaGuideElement extends HTMLElement {
     constructor() {
@@ -67,7 +68,6 @@ class ActaGuideElement extends HTMLElement {
         this.style.width = `calc(100% - (${left} + ${right}) + 2px)`;
     }
 };
-customElements.define('x-guide', ActaGuideElement);
 
 class ActaGuideColumnElement extends HTMLElement {
     constructor() { super(); }
@@ -93,10 +93,8 @@ class ActaGuideColumnElement extends HTMLElement {
         }
     }
 };
-customElements.define('x-guide-col', ActaGuideColumnElement);
 
 class ActaGuideMarginElement extends ActaGuideColumnElement {};
-customElements.define('x-guide-margin', ActaGuideMarginElement);
 
 class ActaGalleyElement extends HTMLElement {
     constructor() { super(); }
@@ -161,7 +159,6 @@ class ActaGalleyElement extends HTMLElement {
         });
     }
 }
-customElements.define('x-galley', ActaGalleyElement);
 
 class ActaParagraphElement extends HTMLElement {
     constructor() { super(); }
@@ -195,7 +192,6 @@ class ActaParagraphElement extends HTMLElement {
         $(this).css('flex-direction', $(this).attr('direction') || 'row');
     }
 }
-customElements.define('x-paragraph', ActaParagraphElement);
 
 class ActaParagraphColumnElement extends HTMLElement {
     constructor() { super(); }
@@ -229,7 +225,6 @@ class ActaParagraphColumnElement extends HTMLElement {
         }
     }
 }
-customElements.define('x-paragraph-col', ActaParagraphColumnElement);
 
 class ActaParagraphMarginElement extends HTMLElement {
     constructor() { super(); }
@@ -260,4 +255,12 @@ class ActaParagraphMarginElement extends HTMLElement {
         }
     }
 }
+
+customElements.define('x-page', ActaPageElement);
+customElements.define('x-guide', ActaGuideElement);
+customElements.define('x-guide-col', ActaGuideColumnElement);
+customElements.define('x-guide-margin', ActaGuideMarginElement);
+customElements.define('x-galley', ActaGalleyElement);
+customElements.define('x-paragraph', ActaParagraphElement);
+customElements.define('x-paragraph-col', ActaParagraphColumnElement);
 customElements.define('x-paragraph-margin', ActaParagraphMarginElement);
