@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ActaTextStyleManager } from './textstylemgr';
 
 export class ActaTextNode {
-    private _uuid: string;
+    private _id: string;
     private _tagname: string;
     private _defaultTextStyleName: string | null;
     private _customTextStyle: ActaTextStyle;
@@ -11,7 +11,7 @@ export class ActaTextNode {
     private _modified: boolean;
 
     constructor(tagname: string = '') {
-        this._uuid = uuidv4();
+        this._id = uuidv4();
         this._tagname = tagname.toLowerCase();
         this._defaultTextStyleName = null;
         this._customTextStyle = new ActaTextStyle(true);
@@ -21,7 +21,7 @@ export class ActaTextNode {
 
     add(val: any) {
         this._value.push(val);
-        this._modified = true;
+        this.modified = true;
     }
 
     remove(idx?: number) {
@@ -30,12 +30,12 @@ export class ActaTextNode {
         } else {
             this._value = [];
         }
-        this._modified = true;
+        this.modified = true;
     }
 
-    modify(idx: number, val: any) {
+    edit(idx: number, val: any) {
         this._value[idx] = val;
-        this._modified = true;
+        this.modified = true;
     }
 
     appliedTextStyle(parentTextStyle: ActaTextStyle) {
@@ -59,18 +59,19 @@ export class ActaTextNode {
 
     set defaultTextStyleName(styleName: string | null) {
         this._defaultTextStyleName = styleName;
-        this._modified = true;
+        this.modified = true;
     }
 
     set customTextStyle(style: ActaTextStyle) {
         this._customTextStyle = style;
-        this._modified = true;
+        this.modified = true;
     }
 
     set value(values: any[]) { this._value = values; }
+    set modified(val) { this._modified = val; }
 
     get tagName() { return this._tagname; }
-    get uuid() { return this._uuid; }
+    get id() { return this._id; }
     get defaultTextStyleName() { return this._defaultTextStyleName; }
     get customTextStyle() { return this._customTextStyle; }
     get modified() { return this._modified; }

@@ -28,7 +28,7 @@
   },
   "scripts": {
     "dev:assets": "webpack -d --watch",
-    "build:assets": "webpack -p"
+    "build:assets": "webpack -p --optimize-minimize"
   },
   "repository": {
     "type": "git",

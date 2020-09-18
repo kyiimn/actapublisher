@@ -5,7 +5,8 @@
     ],
     "jsRules": {},
     "rules": {
-        "adjacent-overload-signatures": false
+        "adjacent-overload-signatures": false,
+        "one-variable-per-declaration": false
     },
     "rulesDirectory": []
 }
