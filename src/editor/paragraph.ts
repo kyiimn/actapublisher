@@ -110,7 +110,7 @@ export class ActaParagraph {
         return ActaParagraph._inputMethod;
     }
 
-    static inputChar(e: KeyboardEvent) {
+    static getKeycode2Char(e: KeyboardEvent) {
         const isCapsLock = e.getModifierState('CapsLock');
         const isShiftKey = e.shiftKey;
         const keyCode = e.keyCode;
@@ -641,7 +641,7 @@ export class ActaParagraph {
             } else if (ev.keyCode === 25) {
                 // 한자변환
             } else {
-                const char = ActaParagraph.inputChar(ev);
+                const char = ActaParagraph.getKeycode2Char(ev);
                 if (char) {
                     console.log(char);
                     return false;
