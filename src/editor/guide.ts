@@ -1,3 +1,5 @@
+import { ActaGuideElement } from './element/guide-el';
+import { ActaGuideColumnElement, ActaGuideMarginElement } from './element/guide-col-el';
 import $ from 'jquery';
 
 export class ActaGuide {
@@ -6,7 +8,7 @@ export class ActaGuide {
     private _innerMargin: string | number;
 
     constructor(columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
-        this._element = document.createElement('x-guide');
+        this._element = document.createElement('x-guide') as ActaGuideElement;
         this._columnCount = 1;
         this._innerMargin = 0;
 
@@ -29,9 +31,13 @@ export class ActaGuide {
         this._element.innerHTML = '';
         this._columnCount = count || 1;
         for (let i = 0; i < this._columnCount; i++) {
-            this._element.appendChild(document.createElement('x-guide-col'));
+            this._element.appendChild(
+                document.createElement('x-guide-col') as ActaGuideColumnElement
+            );
             if (i + 1 >= this._columnCount) continue;
-            this._element.appendChild(document.createElement('x-guide-margin'));
+            this._element.appendChild(
+                document.createElement('x-guide-margin') as ActaGuideMarginElement
+            );
         }
     }
 

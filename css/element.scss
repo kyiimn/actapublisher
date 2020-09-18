@@ -55,22 +55,11 @@ x-paragraph {
     box-shadow: 0 0 0;
     display: inline-flex;
     overflow: hidden;
-    transition: 0.2s box-shadow;
+    transition: 0.2s outline;
 }
 
-x-paragraph.focus {
-    box-shadow: inset 0 0 1px #0022aa;
-}
-
-x-paragraph > input[type="text"] {
-    border: 0;
-    height: 1px;
-    left: -2px;
-    outline: none;
-    padding: 0;
-    position: absolute;
-    top: -2px;
-    width: 1px;
+x-paragraph:focus {
+    outline: #0022aa77 auto 1px;
 }
 
 x-paragraph:not([direction="column"]) x-paragraph-col,

@@ -1,3 +1,4 @@
+import { ActaGalleyElement } from './element/galley-el';
 import $ from 'jquery';
 
 export class ActaGalley {
@@ -12,7 +13,7 @@ export class ActaGalley {
     private _paddingRight: string | number;
 
     constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
-        this._element = document.createElement('x-galley');
+        this._element = document.createElement('x-galley') as ActaGalleyElement;
         this._x = 0;
         this._y = 0;
         this._width = 0;

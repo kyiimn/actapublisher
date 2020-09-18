@@ -1,3 +1,5 @@
+import { ActaPageElement } from './element/page-el';
+
 export class ActaPage {
     private _element: HTMLElement;
     private _width: string | number;
@@ -8,7 +10,7 @@ export class ActaPage {
     private _paddingRight: string | number;
 
     constructor(width: string | number, height: string | number) {
-        this._element = document.createElement('x-page');
+        this._element = document.createElement('x-page') as ActaPageElement;
         this._paddingTop = 0;
         this._paddingBottom = 0;
         this._paddingLeft = 0;

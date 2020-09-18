@@ -18,6 +18,15 @@
 			"problemMatcher": [],
 			"label": "npm: build:assets",
 			"detail": "webpack -p"
+		},
+		{
+			"type": "typescript",
+			"tsconfig": "tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build",
+			"label": "tsc: 빌드 - tsconfig.json"
 		}
 	]
 }

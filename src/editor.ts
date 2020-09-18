@@ -5,11 +5,10 @@ import { ActaParagraph } from './editor/paragraph';
 import { ActaFontManager } from './editor/fontmgr';
 import { ActaTextStyleManager } from './editor/textstylemgr';
 import { ActaTextStyle, TextAlign } from './editor/textstyle';
-import { ActaTextConverter } from './editor/textconverter';
-
-import $ from 'jquery';
 
 import './editor/element';
+
+import $ from 'jquery';
 
 import '../css/element.scss';
 
@@ -53,7 +52,6 @@ const main = async () => {
         let tt = ($('textarea').val() || '').toString();
         tt = tt.substring(0, tt.length);
         para.text = tt;
-        console.log(ActaTextConverter.textobject(tt));
     });
 };
 main();

@@ -1,11 +1,45 @@
+import { ActaParagraphElement } from './element/paragraph-el';
+import { ActaParagraphColumnElement } from './element/paragraph-col-el';
+import { ActaParagraphMarginElement } from './element/paragraph-margin-el';
+
 import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextConverter } from './textconverter';
 import { ActaTextNode } from './textnode';
 import { ActaTextStyle, TextAlign } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
+
 import Hangul from 'hangul-js';
 import opentype from 'opentype.js';
 import $ from 'jquery';
+
+const KEYCODE_MAP: { [key: number]: string[] } = {
+    81: ['q','ㅂ','ㅃ'],
+    87: ['w','ㅈ','ㅉ'],
+    69: ['e','ㄷ','ㄸ'],
+    82: ['r','ㄱ','ㄲ'],
+    84: ['t','ㅅ','ㅆ'],
+    89: ['y','ㅛ','ㅛ'],
+    85: ['u','ㅕ','ㅕ'],
+    73: ['i','ㅑ','ㅑ'],
+    79: ['o','ㅐ','ㅒ'],
+    80: ['p','ㅔ','ㅖ'],
+    65: ['a','ㅁ','ㅁ'],
+    83: ['s','ㄴ','ㄴ'],
+    68: ['d','ㅇ','ㅇ'],
+    70: ['f','ㄹ','ㄹ'],
+    71: ['g','ㅎ','ㅎ'],
+    72: ['h','ㅗ','ㅗ'],
+    74: ['j','ㅓ','ㅓ'],
+    75: ['k','ㅏ','ㅏ'],
+    76: ['l','ㅣ','ㅣ'],
+    90: ['z','ㅋ','ㅋ'],
+    88: ['x','ㅌ','ㅌ'],
+    67: ['c','ㅊ','ㅊ'],
+    86: ['v','ㅍ','ㅍ'],
+    66: ['b','ㅠ','ㅠ'],
+    78: ['n','ㅜ','ㅜ'],
+    77: ['m','ㅡ','ㅡ']
+};
 
 interface IDrawableTextItem {
     id: string;
@@ -50,8 +84,12 @@ enum DrawableTextItemType {
     NEWLINE, SPACE, PATH
 };
 
+enum InputMethod {
+    EN, KO
+};
+
 export class ActaParagraph {
-    private _element: HTMLElement;
+    private _element: ActaParagraphElement;
     private _columnCount: number;
     private _innerMargin: string | number;
     private _textObject: ActaTextNode | null;
@@ -61,6 +99,41 @@ export class ActaParagraph {
     private _cursorMode: CursorMode;
     private _cursorPosition: ICursorPosition | null;
     private _editable: boolean;
+
+    private static _inputMethod:InputMethod = InputMethod.EN;
+
+    static toggleInputMethod() {
+        ActaParagraph._inputMethod = ActaParagraph._inputMethod === InputMethod.KO ? InputMethod.EN : InputMethod.KO;
+    }
+
+    static getInputMethod() {
+        return ActaParagraph._inputMethod;
+    }
+
+    static inputChar(e: KeyboardEvent) {
+        const isCapsLock = e.getModifierState('CapsLock');
+        const isShiftKey = e.shiftKey;
+        const keyCode = e.keyCode;
+        let retChar: string | undefined;
+
+        retChar = undefined;
+        if (ActaParagraph.getInputMethod() === InputMethod.KO) {
+            if (KEYCODE_MAP[keyCode]) retChar = KEYCODE_MAP[keyCode][isShiftKey ? 2 : 1];
+        } else {
+            if (isCapsLock) {
+                if (KEYCODE_MAP[keyCode]) {
+                    retChar = KEYCODE_MAP[keyCode][0];
+                    if (!isShiftKey) retChar = retChar.toUpperCase();
+                }
+            } else {
+                if (KEYCODE_MAP[keyCode]) {
+                    retChar = KEYCODE_MAP[keyCode][0];
+                    if (isShiftKey) retChar = retChar.toUpperCase();
+                }
+            }
+        }
+        return retChar;
+    }
 
     private _getTextPath(font: opentype.Font, char: string, size: number) {
         const glyph = font.charToGlyph(char);
@@ -84,91 +157,14 @@ export class ActaParagraph {
     }
 
     private _initElement() {
-        const input = document.createElement('input');
-        input.setAttribute('type', 'text');
         this._element.innerHTML = '';
-        this._element.appendChild(input);
     }
 
-    constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
-        this._element = document.createElement('x-paragraph');
-        this._columnCount = 1;
-        this._innerMargin = 0;
-        this._textObject = null;
-        this._defaultTextStyleName = defaultTextStyleName;
-
-        this._editable = true;
-        this._selectionStartItem = null;
-        this._cursorMode = CursorMode.NONE;
-        this._cursorPosition = null;
-
-        this.columnCount = columnCount;
-        for (let i = 0; i < columnCount; i++) {
-            if (columnWidths[i]) this.columnWidth(i, columnWidths[i]);
-        }
-        this.innerMargin = innerMargin;
-
-        this._drawableTextData = [];
-
-        $(this._element).on('resize', e => {
-            this.computeDrawableTextSize();
-            this.drawText();
-            return false;
-        });
-        $(this._element).on('keyup', 'input[type="text"]', function (e) {
-            this.blur();
-            const val = this.value;
-            console.log(Hangul.a(val), val);
-            this.focus();
-            return false;
-        });
-        $(this._element).on('mousedown', 'x-paragraph-col', (e) => {
-            if (!this._editable) return false;
-            const eventElement = this.getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
-            if (eventElement.length > 0) {
-                this._cursorMode = CursorMode.SELECTION;
-                this._cursorPosition = null;
-                this._selectionStartItem = this.setCursor(eventElement[0], e.offsetX);
-                this.redrawCursor();
-            }
-            $(this._element).find('input[type="text"]').get(0).focus();
-            $(this._element).addClass('focus').trigger('focus');
-            return false;
-        });
-        $(this._element).on('mousemove', 'x-paragraph-col', (e) => {
-            if (!this._editable) return false;
-            if (this._cursorMode !== CursorMode.SELECTION) return false;
-            const eventElement = this.getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
-            if (eventElement.length > 0 && this._selectionStartItem != null) {
-                this.setCursor(eventElement[0], e.offsetX);
-                this.redrawCursor();
-            }
-            return false;
-        });
-        $(this._element).on('mouseup', 'x-paragraph-col', (e) => {
-            if (!this._editable) return false;
-            const eventElement = this.getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
-            if (eventElement.length > 0 && this._selectionStartItem != null) {
-                this.setCursor(eventElement[0], e.offsetX);
-                this.redrawCursor();
-            }
-            this._cursorMode = CursorMode.EDIT;
-            return false;
-        });
-    }
-
-    blur() {
-        $(this._element).removeClass('focus').find('svg .cursor').remove();
-        $(this._element).trigger('blur');
-        this._cursorMode = CursorMode.NONE;
-        this._selectionStartItem = null;
-    }
-
-    setCursorPosition(column: number, line: number, position: number) {
+    private _setCursorPosition(column: number, line: number, position: number) {
         this._cursorPosition = { column, line, position };
     }
 
-    getTextItemsByLine(column: number, line: number) {
+    private _getTextItemsByLine(column: number, line: number) {
         const lineData: IDrawableTextItem[] = [];
         for (const textItem of this._drawableTextData) {
             if (textItem.line === null) continue;
@@ -179,22 +175,22 @@ export class ActaParagraph {
         return lineData;
     }
 
-    getTextData(column: number): IDrawableLineData[] {
-        const columnEl: HTMLElement | undefined = $(this._element).find('x-paragraph-col svg').get(column);
+    private _getTextData(column: number): IDrawableLineData[] {
+        const columnEl: ActaParagraphColumnElement | undefined = this._element.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col').item(column);
         if (columnEl === undefined) return [];
-        return $(columnEl).data('drawableTextData');
+        return $(columnEl.svg).data('drawableTextData');
     }
 
-    getLineData(column: number, line: number): IDrawableLineData | undefined {
-        const textData = this.getTextData(column);
+    private _getLineData(column: number, line: number): IDrawableLineData | undefined {
+        const textData = this._getTextData(column);
         return textData[line];
     }
 
-    setCursor(textItem: IDrawableTextItem, x?: number) {
-        const path = $(this._element).find(`svg path[data-id="${textItem.id}"]`);
+    private _setCursor(textItem: IDrawableTextItem, x?: number) {
+        const path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
         if (textItem.line === null) return null;
 
-        const lineItem = this.getTextItemsByLine(textItem.line.indexOfColumn, textItem.line.indexOfLine);
+        const lineItem = this._getTextItemsByLine(textItem.line.indexOfColumn, textItem.line.indexOfLine);
         let position = lineItem.indexOf(textItem);
         if (x !== undefined && path.length > 0) {
             const pathX = parseFloat(path.attr('data-x') || '0');
@@ -204,18 +200,18 @@ export class ActaParagraph {
                 if (pathWidth / 2 < offsetX) position++;
             }
         }
-        this.setCursorPosition(textItem.line.indexOfColumn, textItem.line.indexOfLine, position);
+        this._setCursorPosition(textItem.line.indexOfColumn, textItem.line.indexOfLine, position);
 
         return lineItem[position];
     };
 
-    redrawCursor() {
-        $(this._element).find('svg .cursor').remove();
+    private _redrawCursor() {
+        $(this._element.svg).find('.cursor').remove();
         if (this._cursorPosition === null) return;
 
-        const lineItems = this.getTextItemsByLine(this._cursorPosition.column, this._cursorPosition.line);
+        const lineItems = this._getTextItemsByLine(this._cursorPosition.column, this._cursorPosition.line);
         if (this._cursorMode === CursorMode.SELECTION && lineItems[this._cursorPosition.position] !== this._selectionStartItem) {
-            let currentColumn: HTMLElement | undefined;
+            let currentColumn: ActaParagraphColumnElement | undefined;
             let currentLine = -1;
             let selection;
             let startx = 0;
@@ -223,7 +219,7 @@ export class ActaParagraph {
             if (this._selectionStartItem === null) return;
 
             let startpos = this._drawableTextData.indexOf(this._selectionStartItem);
-            let endpos = this._drawableTextData.indexOf(lineItems[this._cursorPosition.position]);
+            let endpos = this._drawableTextData.indexOf(lineItems[Math.min(this._cursorPosition.position, lineItems.length - 1)]);
 
             if (startpos > endpos) {
                 [startpos, endpos] = [endpos, startpos];
@@ -231,15 +227,24 @@ export class ActaParagraph {
                 endpos--;
             }
             for (let i = startpos; i <= endpos; i++) {
-                const textItem = this._drawableTextData[i];
-                const path = $(this._element).find(`svg path[data-id="${textItem.id}"]`);
-                if (path.length < 1) continue;
+                const textItem = this._drawableTextData[Math.min(i, this._drawableTextData.length - 1)];
+                let path: SVGPathElement | null = null;
+                let columnIdx = -1;
 
-                const column = $(path).parent().parent().get(0);
+                $(this._element.svg).each((j, svg) => {
+                    path = svg.querySelector<SVGPathElement>(`path[data-id="${textItem.id}"]`);
+                    if (!path) return;
+
+                    columnIdx = j;
+                    return false;
+                });
+                if (path === null) continue;
+
+                const column = $(this._element).find('x-paragraph-col').get(columnIdx);
 
                 if (textItem.line === null) continue;
                 if (currentColumn !== column || currentLine !== textItem.line.indexOfLine || selection === undefined) {
-                    currentColumn = column;
+                    currentColumn = column as ActaParagraphColumnElement;
                     currentLine = textItem.line.indexOfLine;
                     startx = parseFloat($(path).attr('data-x') || '0');
                     selection = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -254,26 +259,26 @@ export class ActaParagraph {
                         'data-start-id': this._drawableTextData[startpos].id,
                         'data-end-id': this._drawableTextData[startpos].id
                     }).addClass('cursor');
-                    $(currentColumn).find('svg').append(selection);
+                    $(currentColumn.svg).append(selection);
                 } else {
                     const endx = parseFloat($(path).attr('data-x') || '0') + parseFloat($(path).attr('data-width') || '0');
                     $(selection).attr('width', endx - startx);
                 }
             }
         } else {
-            const currentColumn: HTMLElement | undefined = $(this._element).find('x-paragraph-col').get(this._cursorPosition.column);
+            const currentColumn: ActaParagraphColumnElement | undefined = $(this._element).find('x-paragraph-col').get(this._cursorPosition.column) as ActaParagraphColumnElement;
             let x = 0;
             let y = 0;
             let height = 0;
 
             if (this._cursorPosition.position === lineItems.length) {
-                const path = $(this._element).find(`svg path[data-id="${lineItems[lineItems.length - 1].id}"]`);
+                const path = $(this._element.svg).find(`path[data-id="${lineItems[lineItems.length - 1].id}"]`);
                 x = parseFloat(path.attr('data-x') || '0') + parseFloat(path.attr('data-width') || '0');
                 y = parseFloat(path.attr('data-y') || '0');
                 height = parseFloat(path.attr('data-height') || '0');
             } else {
                 if (lineItems.length > 0) {
-                    const path = $(this._element).find(`svg path[data-id="${lineItems[this._cursorPosition.position].id}"]`);
+                    const path = $(this._element.svg).find(`path[data-id="${lineItems[this._cursorPosition.position].id}"]`);
                     x = parseFloat(path.attr('data-x') || '0');
                     y = parseFloat(path.attr('data-y') || '0');
                     height = parseFloat(path.attr('data-height') || '0');
@@ -288,11 +293,11 @@ export class ActaParagraph {
                 'stroke-width': 1,
                 'stroke': '#0000ff'
             }).addClass('cursor');
-            $(currentColumn).find('svg').append(cursor);
+            $(currentColumn.svg).append(cursor);
         }
     }
 
-    getTextDataByPosition(canvas: HTMLElement, x: number, y: number, width?: number, height?: number) {
+    private _getTextDataByPosition(column: ActaParagraphColumnElement, x: number, y: number, width?: number, height?: number) {
         const textData: IDrawableTextItem[] = [];
         const idList: string[] = [];
 
@@ -302,7 +307,7 @@ export class ActaParagraph {
         const x2 = x + width;
         const y2 = y + height;
 
-        $(canvas).find('path').each((i: number, path: SVGPathElement) => {
+        $(column.svg).find('path').each((i: number, path: SVGPathElement) => {
             const itemX1 = parseFloat($(path).attr('data-x') || '');
             const itemX2 = parseFloat($(path).attr('data-x') || '') + parseFloat($(path).attr('data-width') || '');
             const itemY1 = parseFloat($(path).attr('data-y') || '');
@@ -319,25 +324,16 @@ export class ActaParagraph {
         return textData;
     }
 
-    columnWidth(idx: number, val: string | number) {
-        if (arguments.length > 1) {
-            $(this._element).find('x-paragraph-col').get(idx).setAttribute('width', (val || 0).toString());
-            $(this._element).trigger('resize');
-        } else {
-            return $(this._element).find('x-paragraph-col').get(idx).getAttribute('width') || false;
-        }
-    }
-
-    generateDrawableTextData() {
+    private _generateDrawableTextData() {
         this._drawableTextData = [];
         if (this._textObject == null) return false;
-        return this.convertTextNodeToData(
+        return this._convertTextNodeToData(
             this._textObject,
             ActaTextStyleManager.getInstance().get(this._defaultTextStyleName || '') || new ActaTextStyle()
         );
     }
 
-    convertTextNodeToData(textNode: ActaTextNode, parentTextStyle: ActaTextStyle) {
+    private _convertTextNodeToData(textNode: ActaTextNode, parentTextStyle: ActaTextStyle) {
         const textStyle = textNode.appliedTextStyle(parentTextStyle);
         if (textStyle.font == null ||
             textStyle.fontSize == null ||
@@ -353,7 +349,7 @@ export class ActaParagraph {
 
         for (let indexOfNode = 0; indexOfNode < textNode.length; indexOfNode++) {
             if (textNode.value[indexOfNode] instanceof ActaTextNode) {
-                if (!this.convertTextNodeToData(textNode.value[indexOfNode], textStyle)) return false;
+                if (!this._convertTextNodeToData(textNode.value[indexOfNode], textStyle)) return false;
             } else {
                 const textvalue = textNode.value[indexOfNode].toString();
                 for (let indexOfText = 0; indexOfText < textvalue.length; indexOfText++) {
@@ -397,18 +393,19 @@ export class ActaParagraph {
         return true;
     }
 
-    computeDrawableTextSize() {
-        const canvasList: HTMLElement[] = [];
+    private _computeDrawableTextSize() {
+        const canvasList: SVGElement[] = [];
         let canvasPos = 0;
         let lineData: IDrawableLineData | null = null;
         let indent = true;
 
-        $(this._element).find('x-paragraph-col > svg').each((i, canvas) => {
-            $(canvas).attr({
-                width: ($(canvas).parent().innerWidth() || 0),
-                height: ($(canvas).parent().innerHeight() || 0)
+        $(this._element).find('x-paragraph-col').each((i, child) => {
+            const column = child as ActaParagraphColumnElement;
+            $(column.svg).attr({
+                width: ($(column).innerWidth() || 0),
+                height: ($(column).innerHeight() || 0)
             }).data('drawableTextData', []);
-            canvasList.push(canvas);
+            canvasList.push(column.svg);
         });
         for (const textItem of this._drawableTextData) {
             textItem.calcWidth = textItem.width * (textItem.textStyle.xscale || 1);
@@ -508,8 +505,8 @@ export class ActaParagraph {
         }
     }
 
-    drawText() {
-        $(this._element).find('x-paragraph-col > svg').each((i, canvas) => {
+    private _drawText() {
+        $(this._element.svg).each((i, canvas) => {
             const textData: IDrawableLineData[] = $(canvas).data('drawableTextData');
             const paths: SVGPathElement[] = [];
             const lines: SVGLineElement[] = [];
@@ -610,10 +607,104 @@ export class ActaParagraph {
         });
     }
 
+    constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
+        this._element = document.createElement('x-paragraph') as ActaParagraphElement;
+        this._columnCount = 1;
+        this._innerMargin = 0;
+        this._textObject = null;
+        this._defaultTextStyleName = defaultTextStyleName;
+
+        this._editable = true;
+        this._selectionStartItem = null;
+        this._cursorMode = CursorMode.NONE;
+        this._cursorPosition = null;
+
+        this.columnCount = columnCount;
+        for (let i = 0; i < columnCount; i++) {
+            if (columnWidths[i]) this.columnWidth(i, columnWidths[i]);
+        }
+        this.innerMargin = innerMargin;
+
+        this._drawableTextData = [];
+
+        $(this._element).on('resize', e => {
+            this._computeDrawableTextSize();
+            this._drawText();
+            return false;
+        });
+        $(this._element).on('keyup', e => {
+            const ev = e.originalEvent;
+            if (!ev) return;
+            if (ev.keyCode === 21) {
+                ActaParagraph.toggleInputMethod();
+                return false;
+            } else if (ev.keyCode === 25) {
+                // 한자변환
+            } else {
+                const char = ActaParagraph.inputChar(ev);
+                if (char) {
+                    console.log(char);
+                    return false;
+                }
+            }
+        });
+        $(this._element).on('mousedown', 'x-paragraph-col', (e) => {
+            if (!this._editable) return false;
+            const eventElement = this._getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
+            if (eventElement.length > 0) {
+                this._cursorMode = CursorMode.SELECTION;
+                this._cursorPosition = null;
+                this._selectionStartItem = this._setCursor(eventElement[0], e.offsetX);
+                this._redrawCursor();
+            }
+            this._element.focus();
+
+            return false;
+        });
+        $(this._element).on('focus', (e) => {
+            this._redrawCursor();
+            return false;
+        });
+        $(this._element).on('blur', (e) => {
+            $(this._element.svg).find('.cursor').remove();
+            this._selectionStartItem = null;
+            return false;
+        });
+        $(this._element).on('mousemove', 'x-paragraph-col', (e) => {
+            if (!this._editable) return false;
+            if (this._cursorMode !== CursorMode.SELECTION || e.which !== 1) return false;
+            const eventElement = this._getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
+            if (eventElement.length > 0 && this._selectionStartItem != null) {
+                this._setCursor(eventElement[0], e.offsetX);
+                this._redrawCursor();
+            }
+            return false;
+        });
+        $(this._element).on('mouseup', 'x-paragraph-col', (e) => {
+            if (!this._editable) return false;
+            const eventElement = this._getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
+            if (eventElement.length > 0 && this._selectionStartItem != null) {
+                this._setCursor(eventElement[0], e.offsetX);
+                this._redrawCursor();
+            }
+            this._cursorMode = CursorMode.EDIT;
+            return false;
+        });
+    }
+
+    columnWidth(idx: number, val: string | number) {
+        if (arguments.length > 1) {
+            $(this._element).find('x-paragraph-col').get(idx).setAttribute('width', (val || 0).toString());
+            $(this._element).trigger('resize');
+        } else {
+            return $(this._element).find('x-paragraph-col').get(idx).getAttribute('width') || false;
+        }
+    }
+
     redraw() {
-        this.generateDrawableTextData();
-        this.computeDrawableTextSize();
-        this.drawText();
+        this._generateDrawableTextData();
+        this._computeDrawableTextSize();
+        this._drawText();
     }
 
     set text(text: string) {
@@ -626,13 +717,13 @@ export class ActaParagraph {
 
         this._columnCount = count || 1;
         for (let i = 0; i < this._columnCount; i++) {
-            const column = document.createElement('x-paragraph-col');
+            const column = document.createElement('x-paragraph-col') as ActaParagraphColumnElement;
             this._element.appendChild(column);
-            $(column).find('svg').data('drawableTextData', []);
+            $(column.svg).data('drawableTextData', []);
 
             if (i + 1 >= this._columnCount) continue;
 
-            const margin = document.createElement('x-paragraph-margin');
+            const margin = document.createElement('x-paragraph-margin') as ActaParagraphMarginElement;
             $(margin).attr('width', this.innerMargin);
             this._element.appendChild(margin);
         }
