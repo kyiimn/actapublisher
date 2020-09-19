@@ -120,12 +120,6 @@ interface IDrawableLineData {
     items: IDrawableTextItem[];
 };
 
-interface ICursorPosition {
-    column: number;
-    line: number;
-    position: number;
-}
-
 enum CursorMode {
     NONE, EDIT, INPUT, SELECTION
 };
@@ -144,7 +138,7 @@ export class ActaParagraph {
     private _innerMargin: string | number;
     private _textObject: ActaTextNode | null;
     private _defaultTextStyleName: string | null;
-    private _drawableTextData: IDrawableTextItem[];
+    private _drawableTextItems: IDrawableTextItem[];
     private _drawableTextNodeList: string[];
     private _selectionStartItem: IDrawableTextItem | null;
     private _cursorMode: CursorMode;
@@ -190,7 +184,12 @@ export class ActaParagraph {
         return CharType.NONE;
     }
 
-    private _getTextPath(font: opentype.Font, char: string, size: number) {
+    private static getCharHeight(font: opentype.Font, size: number) {
+        const unitsPerSize = font.unitsPerEm / size;
+        return (font.tables.os2.usWinAscent + font.tables.os2.usWinDescent) / unitsPerSize;
+    }
+
+    private static getCharPath(font: opentype.Font, char: string, size: number) {
         const glyph = font.charToGlyph(char);
         const unitsPerSize = font.unitsPerEm / size;
         const charWidth = glyph.advanceWidth / unitsPerSize;
@@ -264,6 +263,7 @@ export class ActaParagraph {
     }
 
     private _editorKeyboardControl(e: KeyboardEvent) {
+        if (this._cursor === null) return;
         switch (e.keyCode as Keycode) {
             case Keycode.SHIFT:
             case Keycode.CONTROL:
@@ -285,22 +285,35 @@ export class ActaParagraph {
                 return;
 
             case Keycode.LEFT:
-                if (this._cursor !== null) {
-                    this._cursor = Math.max(this._cursor - 1, 0);
-                    this._redrawCursor();
-                }
-                break;
-
             case Keycode.RIGHT:
-                if (this._cursor !== null) {
-                    this._cursor = Math.min(this._cursor + 1, this._drawableTextData.length);
-                    this._redrawCursor();
+                if (e.shiftKey) {
+                    if (this._cursorMode !== CursorMode.SELECTION) this._selectionStartItem = this._getTextItemByCursor();
+                    this._cursorMode = CursorMode.SELECTION;
+                } else {
+                    this._cursorMode = CursorMode.EDIT;
                 }
+                this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this._drawableTextItems.length);
+                this._redrawCursor();
                 break;
 
             case Keycode.UP:
             case Keycode.DOWN:
-                return;
+                const nearLineData = (e.keyCode === Keycode.UP) ? this._getPrevLineDataByCursor() : this._getNextLineDataByCursor();
+                if (nearLineData !== null) {
+                    const nearestItem = this._computeNearestItem(this._getTextItemByCursor(), nearLineData.items);
+                    if (nearestItem) {
+                        if (e.shiftKey) {
+                            if (this._cursorMode !== CursorMode.SELECTION) this._selectionStartItem = this._getTextItemByCursor();
+                            this._cursorMode = CursorMode.SELECTION;
+                        } else {
+                            this._cursorMode = CursorMode.EDIT;
+                        }
+                        this._cursor = this._drawableTextItems.indexOf(nearestItem);
+                        this._redrawCursor();
+                        return false;
+                    }
+                }
+                break;
 
             default:
                 return this._editorInputChar(e);
@@ -308,20 +321,63 @@ export class ActaParagraph {
         }
     }
 
+    private _computeNearestItem(curItem: IDrawableTextItem | null, targetItems: IDrawableTextItem[]) {
+        if (!curItem) return null;
+
+        const curPath = $(this._element.svg).find(`path[data-id="${curItem.id}"]`);
+        if (curPath.length < 1) return null;
+
+        const curOffsetX = parseFloat(curPath.attr('data-x') || '0');
+        const distance: number[] = [];
+        let prevOffsetX = 0;
+
+        for (const targetItem of targetItems) {
+            const path = $(this._element.svg).find(`path[data-id="${targetItem.id}"]`);
+            if (path.length > 0) {
+                const targetOffsetX = parseFloat(path.attr('data-x') || '0')
+                prevOffsetX = Math.max(targetOffsetX, prevOffsetX);
+            }
+            distance.push(Math.abs(prevOffsetX - curOffsetX));
+        }
+        return targetItems[distance.indexOf(Math.min(...distance))];
+    }
+
     private _getTextItemByCursor() {
-        if (this._cursor === null) return;
-        return this._drawableTextData[this._cursor];
+        if (this._cursor === null) return null;
+        return this._drawableTextItems[this._cursor];
     }
 
     private _getLineDataByCursor() {
-        if (this._cursor === null) return;
-        const textItem = this._drawableTextData[this._cursor];
-        return textItem.line || undefined;
+        if (this._cursor === null) return null;
+        const textItem = this._drawableTextItems[this._cursor];
+        return textItem.line || null;
+    }
+
+    private _getPrevLineDataByCursor() {
+        const curLineData = this._getLineDataByCursor();
+        if (!curLineData) return null;
+
+        const firstTextItemOfLine = curLineData.items[0];
+        const firstTextItemIdx = this._drawableTextItems.indexOf(firstTextItemOfLine);
+        if (firstTextItemIdx === 0)  return null;
+
+        return this._drawableTextItems[firstTextItemIdx - 1].line;
+    }
+
+    private _getNextLineDataByCursor() {
+        const curLineData = this._getLineDataByCursor();
+        if (!curLineData) return null;
+
+        const lastTextItemOfLine = curLineData.items[curLineData.items.length - 1];
+        const lastTextItemIdx = this._drawableTextItems.indexOf(lastTextItemOfLine);
+        if (lastTextItemIdx === this._drawableTextItems.length - 1)  return null;
+
+        return this._drawableTextItems[lastTextItemIdx + 1].line;
     }
 
     private _setCursor(textItem: IDrawableTextItem, x?: number) {
         const path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
-        let position = this._drawableTextData.indexOf(textItem);
+        let position = this._drawableTextItems.indexOf(textItem);
 
         if (textItem.line === null) return null;
         if (x !== undefined && path.length > 0) {
@@ -334,7 +390,7 @@ export class ActaParagraph {
         }
         this._cursor = position;
 
-        return this._drawableTextData[position];
+        return this._drawableTextItems[position];
     };
 
     private _redrawCursor() {
@@ -352,7 +408,7 @@ export class ActaParagraph {
 
             if (this._selectionStartItem === null) return;
 
-            let startpos = this._drawableTextData.indexOf(this._selectionStartItem);
+            let startpos = this._drawableTextItems.indexOf(this._selectionStartItem);
             let endpos = this._cursor;
 
             if (startpos > endpos) {
@@ -361,7 +417,7 @@ export class ActaParagraph {
                 endpos--;
             }
             for (let i = startpos; i <= endpos; i++) {
-                const selectTextItem = this._drawableTextData[Math.min(i, this._drawableTextData.length - 1)];
+                const selectTextItem = this._drawableTextItems[Math.min(i, this._drawableTextItems.length - 1)];
                 let path: SVGPathElement | null = null;
                 let columnIdx = -1;
 
@@ -390,8 +446,8 @@ export class ActaParagraph {
                         'fill': '#5555ff',
                         'fill-opacity': 0.4,
                         'stroke': '#0000ff',
-                        'data-start-id': this._drawableTextData[startpos].id,
-                        'data-end-id': this._drawableTextData[startpos].id
+                        'data-start-id': this._drawableTextItems[startpos].id,
+                        'data-end-id': this._drawableTextItems[startpos].id
                     }).addClass('cursor');
                     $(currentColumn.svg).append(selection);
                 } else {
@@ -444,7 +500,7 @@ export class ActaParagraph {
             if (isNaN(itemX1) || isNaN(itemX2) || isNaN(itemY1) || isNaN(itemY2) || id === undefined) return;
             if (itemX1 < x2 && itemX2 > x && itemY1 < y2 && itemY2 > y) idList.push(id);
         });
-        for (const textItem of this._drawableTextData) {
+        for (const textItem of this._drawableTextItems) {
             if (idList.indexOf(textItem.id) < 0) continue;
             textData.push(textItem);
         }
@@ -452,7 +508,7 @@ export class ActaParagraph {
     }
 
     private _generateDrawableTextData() {
-        this._drawableTextData = [];
+        this._drawableTextItems = [];
         this._drawableTextNodeList = [];
         if (this._textObject == null) return false;
         return this._convertTextNodeToData(
@@ -463,7 +519,7 @@ export class ActaParagraph {
 
     private _updateDrawableTextData() {
         if (this._textObject == null) {
-            this._drawableTextData = [];
+            this._drawableTextItems = [];
             this._drawableTextNodeList = [];
             return false;
         }
@@ -481,21 +537,21 @@ export class ActaParagraph {
 
         if (indexOfNode === undefined) {
             const tmpNodeIDList: string[] = [];
-            for (const tmpTextItem of this._drawableTextData) tmpNodeIDList.push(tmpTextItem.textNode.id);
+            for (const tmpTextItem of this._drawableTextItems) tmpNodeIDList.push(tmpTextItem.textNode.id);
 
             s = tmpNodeIDList.indexOf(id);
             e = tmpNodeIDList.lastIndexOf(id);
         } else {
-            for (let i = 0; i < this._drawableTextData.length; i++) {
-                const tmpTextItem =this._drawableTextData[i];
+            for (let i = 0; i < this._drawableTextItems.length; i++) {
+                const tmpTextItem =this._drawableTextItems[i];
                 if (tmpTextItem.textNode.id !== id || tmpTextItem.indexOfNode !== indexOfNode) continue;
                 if (s < 0) s = i;
                 e = i;
             }
         }
         if (s > -1) {
-            preList = this._drawableTextData.slice(undefined, s);
-            postList = this._drawableTextData.slice(e + 1);
+            preList = this._drawableTextItems.slice(undefined, s);
+            postList = this._drawableTextItems.slice(e + 1);
         }
         return [preList, postList];
     }
@@ -519,7 +575,7 @@ export class ActaParagraph {
         if (modifyOnly && textNode.modified && !textNode.partModified) {
             [preList, postList] = this._splitTextDataByNodeID(textNode.id);
             if (preList === undefined || postList === undefined) return false;
-            this._drawableTextData = preList;
+            this._drawableTextItems = preList;
         }
         for (let indexOfNode = 0; indexOfNode < textNode.length; indexOfNode++) {
             let childModifyOnly = modifyOnly;
@@ -532,14 +588,14 @@ export class ActaParagraph {
                         textNode.modified = true;
                         return this._convertTextNodeToData(textNode, parentTextStyle, true);
                     }
-                    this._drawableTextData = preList;
+                    this._drawableTextItems = preList;
                 }
             }
             if (textNode.value[indexOfNode] instanceof ActaTextNode) {
                 if (!this._convertTextNodeToData(textNode.value[indexOfNode], textStyle, childModifyOnly)) return false;
                 if (indexOfNode >= textNode.length - 1) {
                     // 노드 업데이트를 위해 노드 마지막부분을 마킹
-                    this._drawableTextData.push({
+                    this._drawableTextItems.push({
                         id: uuidv4(),
                         type: DrawableTextItemType.END_OF_NODE,
                         calcWidth: 0,
@@ -557,26 +613,28 @@ export class ActaParagraph {
                 for (let indexOfText = 0; indexOfText < textvalue.length; indexOfText++) {
                     const char = textvalue[indexOfText];
                     if (char === "\n") {
-                        this._drawableTextData.push({
+                        this._drawableTextItems.push({
                             id: uuidv4(),
                             type: DrawableTextItemType.NEWLINE,
                             calcWidth: 0,
                             width: 0,
+                            height: ActaParagraph.getCharHeight(textStyle.font.font, textStyle.fontSize),
                             line: null,
                             textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     } else if (char === ' ') {
-                        this._drawableTextData.push({
+                        this._drawableTextItems.push({
                             id: uuidv4(),
                             type: DrawableTextItemType.SPACE,
                             calcWidth: textStyle.fontSize / 3,
                             width: textStyle.fontSize / 3,
+                            height: ActaParagraph.getCharHeight(textStyle.font.font, textStyle.fontSize),
                             line: null,
                             textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     } else {
-                        const glyphData = this._getTextPath(textStyle.font.font, char, textStyle.fontSize);
-                        this._drawableTextData.push({
+                        const glyphData = ActaParagraph.getCharPath(textStyle.font.font, char, textStyle.fontSize);
+                        this._drawableTextItems.push({
                             id: uuidv4(),
                             type: DrawableTextItemType.PATH,
                             path: glyphData.path,
@@ -592,13 +650,13 @@ export class ActaParagraph {
                 }
             }
             if (modifyOnly && textNode.modified && textNode.partModified && textNode.isModified(indexOfNode) && postList !== undefined) {
-                this._drawableTextData = this._drawableTextData.concat(postList);
+                this._drawableTextItems = this._drawableTextItems.concat(postList);
                 preList = undefined;
                 postList = undefined;
             }
         }
         if (modifyOnly && textNode.modified && !textNode.partModified && postList !== undefined) {
-            this._drawableTextData = this._drawableTextData.concat(postList);
+            this._drawableTextItems = this._drawableTextItems.concat(postList);
         }
         if (this._drawableTextNodeList.indexOf(textNode.id) < 0) {
             this._drawableTextNodeList.push(textNode.id);
@@ -619,18 +677,18 @@ export class ActaParagraph {
             $(column.svg).attr({
                 width: ($(column).innerWidth() || 0),
                 height: ($(column).innerHeight() || 0)
-            }).data('drawableTextData', []);
+            }).data('drawableLineDatas', []);
             canvasList.push(column.svg);
         });
-        for (const textItem of this._drawableTextData) {
+        for (const textItem of this._drawableTextItems) {
             if (textItem.type === DrawableTextItemType.END_OF_NODE) continue;
             if (this._drawableTextNodeList.indexOf(textItem.textNode.id) < 0) {
                 const [preList, postList] = this._splitTextDataByNodeID(textItem.textNode.id);
                 if (preList === undefined || postList === undefined) {
                     this._generateDrawableTextData();
                 } else {
-                    this._drawableTextData = [];
-                    this._drawableTextData.concat(preList).concat(postList);
+                    this._drawableTextItems = [];
+                    this._drawableTextItems.concat(preList).concat(postList);
                 }
                 return this._computeDrawableTextSize();
             } else if (textItem.textNode.modified) {
@@ -645,7 +703,7 @@ export class ActaParagraph {
                     if (!canvas) break;
                     lineData = {
                         indexOfColumn: canvasPos,
-                        indexOfLine: $(canvas).data('drawableTextData').length,
+                        indexOfLine: $(canvas).data('drawableLineDatas').length,
                         limitWidth: $(canvas).width() || 0,
                         maxHeight: 0,
                         maxLeading: 0,
@@ -655,7 +713,7 @@ export class ActaParagraph {
                     };
                     indent = false;
 
-                    $(canvas).data('drawableTextData').push(lineData);
+                    $(canvas).data('drawableLineDatas').push(lineData);
                     if (textItem.type === DrawableTextItemType.SPACE) textItem.calcWidth = 0;
                 } else {
                     let itemcnt = 0;
@@ -715,7 +773,7 @@ export class ActaParagraph {
                 let filledHeight = 0;
                 if (!canvas) break;
 
-                const drawableTextData: IDrawableLineData[] = $(canvas).data('drawableTextData');
+                const drawableTextData: IDrawableLineData[] = $(canvas).data('drawableLineDatas');
                 for (let j = 0; j < drawableTextData.length; j++) {
                     const line = drawableTextData[j];
                     filledHeight += line.maxHeight;
@@ -723,7 +781,7 @@ export class ActaParagraph {
                 }
                 if (filledHeight > ($(canvas).height() || 0)) {
                     lineData = drawableTextData.pop() || null;
-                    $(canvas).data('drawableTextData', drawableTextData);
+                    $(canvas).data('drawableLineDatas', drawableTextData);
 
                     canvas = canvasList[++canvasPos];
                     if (!canvas) break;
@@ -732,7 +790,7 @@ export class ActaParagraph {
                         lineData.indexOfColumn = canvasPos;
                         lineData.indexOfLine = 0;
                     }
-                    $(canvas).data('drawableTextData').push(lineData)
+                    $(canvas).data('drawableLineDatas').push(lineData)
                 }
             }
         }
@@ -740,7 +798,7 @@ export class ActaParagraph {
 
     private _drawText() {
         $(this._element.svg).each((i, canvas) => {
-            const textData: IDrawableLineData[] = $(canvas).data('drawableTextData');
+            const textData: IDrawableLineData[] = $(canvas).data('drawableLineDatas');
             const paths: SVGPathElement[] = [];
             const lines: SVGLineElement[] = [];
             let offsetY = 0;
@@ -843,7 +901,7 @@ export class ActaParagraph {
         }
         this.innerMargin = innerMargin;
 
-        this._drawableTextData = [];
+        this._drawableTextItems = [];
         this._drawableTextNodeList = [];
 
         $(this._element).on('resize', e => {
@@ -922,7 +980,7 @@ export class ActaParagraph {
         for (let i = 0; i < this._columnCount; i++) {
             const column = document.createElement('x-paragraph-col') as ActaParagraphColumnElement;
             this._element.appendChild(column);
-            $(column.svg).data('drawableTextData', []);
+            $(column.svg).data('drawableLineDatas', []);
 
             if (i + 1 >= this._columnCount) continue;
 
