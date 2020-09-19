@@ -141,6 +141,7 @@ export class ActaParagraph {
     private _drawableTextNodeList: string[];
     private _selectionStartItem: IDrawableTextItem | null;
     private _cursorMode: CursorMode;
+    private _cursor: number | null;
     private _cursorPosition: ICursorPosition | null;
     private _editable: boolean;
     private _inputChar: string;
@@ -282,8 +283,9 @@ export class ActaParagraph {
     }
 
     private _getLineDataByCursor() {
-        if (this._cursorPosition === null) return;
-        return this._getLineData(this._cursorPosition.column, this._cursorPosition.line);
+        if (this._cursor === null) return;
+        const textItem = this._drawableTextData[this._cursor];
+        return textItem.line;
     }
 
     private _getTextItemsByLine(column: number, line: number) {
@@ -312,7 +314,7 @@ export class ActaParagraph {
         const path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
         if (textItem.line === null) return null;
 
-        const lineItem = this._getTextItemsByLine(textItem.line.indexOfColumn, textItem.line.indexOfLine);
+        const lineItem = textItem.line.items;
         let position = lineItem.indexOf(textItem);
         if (x !== undefined && path.length > 0) {
             const pathX = parseFloat(path.attr('data-x') || '0');
@@ -322,6 +324,7 @@ export class ActaParagraph {
                 if (pathWidth / 2 < offsetX) position++;
             }
         }
+        this._cursor = this._drawableTextData.indexOf(textItem);
         this._setCursorPosition(textItem.line.indexOfColumn, textItem.line.indexOfLine, position);
 
         return lineItem[position];
@@ -827,6 +830,7 @@ export class ActaParagraph {
         this._editable = true;
         this._selectionStartItem = null;
         this._cursorMode = CursorMode.NONE;
+        this._cursor = null;
         this._cursorPosition = null;
         this._inputChar = '';
 
@@ -849,6 +853,7 @@ export class ActaParagraph {
             const eventElement = this._getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
             if (eventElement.length > 0) {
                 this._cursorMode = CursorMode.SELECTION;
+                this._cursor = null;
                 this._cursorPosition = null;
                 this._selectionStartItem = this._setCursor(eventElement[0], e.offsetX);
                 this._redrawCursor();
