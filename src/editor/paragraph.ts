@@ -251,7 +251,12 @@ export class ActaParagraph {
 
     private _editorKeyboardControl(e: KeyboardEvent) {
         if (this._cursor === null) return;
-펴        if ([Keycode.HOME, Keycode.END, Keycode.UP, Keycode.DOWN, Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1 && e.shiftKey) {
+
+        // 컨트롤, 시프트, 알트키는 무시
+        if ([Keycode.CONTROL, Keycode.SHIFT, Keycode.ALT].indexOf(e.keyCode) > -1) return;
+
+        // 커서 이동
+        if ([Keycode.HOME, Keycode.END, Keycode.UP, Keycode.DOWN, Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
             // Shift키를 누르고 커서이동시 셀럭션모드
             if (e.shiftKey) {
                 if (this._cursorMode !== CursorMode.SELECTION) this._selectionStartItem = this._getTextItemByCursor();
@@ -259,62 +264,14 @@ export class ActaParagraph {
             } else {
                 this._cursorMode = CursorMode.EDIT;
             }
-        }
-        switch (e.keyCode as Keycode) {
-            case Keycode.CONTROL:
-            case Keycode.SHIFT:
-            case Keycode.ALT:
-                // 컨트롤키는 무시
-                return;
-
-            case Keycode.HANGUL:
-                ActaParagraph.toggleInputMethod();
-                return false;
-
-            case Keycode.HANJA:
-                return false;
-
-            case Keycode.TAB:
-                return false;
-
-            case Keycode.BACKSPACE:
-            case Keycode.DELETE:
-                if (this._cursorMode === CursorMode.SELECTION) {
-                    const selectionTextItems = this._getSelectionTextItems();
-                    if (selectionTextItems.length > 0) {
-                        this._cursor = this._drawableTextItems.indexOf(selectionTextItems[0]);
-                        this._removeTextItems(selectionTextItems);
-                        this._cursorMode = CursorMode.EDIT;
-                    } else return false;
-                } else {
-                    if (e.keyCode === Keycode.BACKSPACE) {
-                        if (this._cursor === 0) return false;
-                        this._cursor--;
-                    }
-                    this._removeTextItems([this._drawableTextItems[this._cursor]]);
-                }
-                this._redrawCursor();
-                return false;
-
-            case Keycode.HOME:
-            case Keycode.END:
+            if ([Keycode.HOME, Keycode.END].indexOf(e.keyCode) > -1) {
                 const lineData = this._getLineDataByCursor();
                 if (lineData && lineData.items.length > 0) {
                     this._cursor = this._drawableTextItems.indexOf((e.keyCode === Keycode.HOME) ? lineData.items[0] : lineData.items[lineData.items.length - 1]);
                     this._redrawCursor();
                     return false;
                 }
-                this._cursorMode = CursorMode.EDIT;
-                break;
-
-            case Keycode.LEFT:
-            case Keycode.RIGHT:
-                this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this._drawableTextItems.length);
-                this._redrawCursor();
-                return false;
-
-            case Keycode.UP:
-            case Keycode.DOWN:
+            } else if ([Keycode.UP, Keycode.DOWN].indexOf(e.keyCode) > -1) {
                 const nearLineData = (e.keyCode === Keycode.UP) ? this._getPrevLineDataByCursor() : this._getNextLineDataByCursor();
                 if (nearLineData !== null) {
                     const nearestItem = this._computeNearestItem(this._getTextItemByCursor(), nearLineData.items);
@@ -325,11 +282,40 @@ export class ActaParagraph {
                     }
                 }
                 this._cursorMode = CursorMode.EDIT;
-                break;
-
-            default:
-                return (!e.ctrlKey) ? this._editorInputChar(e) : undefined;
+            } else if ([Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
+                this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this._drawableTextItems.length);
+                this._redrawCursor();
+                return false;
+            }
         }
+
+        if ([Keycode.BACKSPACE, Keycode.DELETE].indexOf(e.keyCode) > -1) {
+            if (this._cursorMode === CursorMode.SELECTION) {
+                const selectionTextItems = this._getSelectionTextItems();
+                if (selectionTextItems.length > 0) {
+                    this._cursor = this._drawableTextItems.indexOf(selectionTextItems[0]);
+                    this._removeTextItems(selectionTextItems);
+                } else return false;
+            } else {
+                if (e.keyCode === Keycode.BACKSPACE) {
+                    if (this._cursor === 0) return false;
+                    this._cursor--;
+                }
+                this._removeTextItems([this._drawableTextItems[this._cursor]]);
+            }
+            this._cursorMode = CursorMode.EDIT;
+            this._redrawCursor();
+            return false;
+        }
+
+        if (e.keyCode === Keycode.HANGUL) {
+            ActaParagraph.toggleInputMethod();
+            return false;
+        }
+
+        if (e.keyCode === Keycode.HANJA) {}
+
+        return (!e.ctrlKey) ? this._editorInputChar(e) : undefined;
     }
 
     private _applyDefinedTextStyle(textItems: IDrawableTextItem[], textStyleName: string) {
