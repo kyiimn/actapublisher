@@ -1,6 +1,6 @@
+import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextStyle } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
-import { ActaTextStyleManager } from './textstylemgr';
 
 export class ActaTextNode {
     private _id: string;
@@ -8,7 +8,7 @@ export class ActaTextNode {
     private _defaultTextStyleName: string | null;
     private _customTextStyle: ActaTextStyle;
     private _value: any[];
-    private _modified: boolean;
+    private _modified: boolean | number[];
 
     constructor(tagname: string = '') {
         this._id = uuidv4();
@@ -20,8 +20,7 @@ export class ActaTextNode {
     }
 
     add(val: any) {
-        this._value.push(val);
-        this.modified = true;
+        this.modified = this._value.push(val);
     }
 
     remove(idx?: number) {
@@ -35,7 +34,7 @@ export class ActaTextNode {
 
     edit(idx: number, val: any) {
         this._value[idx] = val;
-        this.modified = true;
+        this.modified = idx;
     }
 
     appliedTextStyle(parentTextStyle: ActaTextStyle) {
@@ -67,14 +66,41 @@ export class ActaTextNode {
         this.modified = true;
     }
 
+    isModified(idx: number) {
+        if (typeof(this._modified) === 'object') {
+            if (typeof(this.value[idx]) !== 'string') return false;
+            return this._modified.indexOf(idx) < 0 ? false : true;
+        } if (this._modified === true) {
+            return true;
+        }
+        return false;
+    }
+
+    set modified(val: number[] | number | boolean) {
+        if (typeof(val) === 'boolean') {
+            this._modified = val;
+        } else if (typeof(val) === 'object') {
+            if (this._modified === false) {
+                this._modified = val;
+            } else if (typeof(this._modified) === 'object') {
+                this._modified = this._modified.concat(val);
+            }
+        } else {
+            if (this._modified === false) {
+                this._modified = [val];
+            } else if (typeof(this._modified) === 'object') {
+                this._modified.push(val);
+            }
+        }
+    }
     set value(values: any[]) { this._value = values; }
-    set modified(val) { this._modified = val; }
 
     get tagName() { return this._tagname; }
     get id() { return this._id; }
     get defaultTextStyleName() { return this._defaultTextStyleName; }
     get customTextStyle() { return this._customTextStyle; }
-    get modified() { return this._modified; }
+    get modified() { return this._modified === false ? false : true; }
+    get partModified() { return typeof(this._modified) === 'object' ? true : false; }
     get value() { return this._value; }
     get length() { return this.value.length; }
 };

@@ -65,6 +65,9 @@ export class ActaTextConverter {
                 }
             }
             str += char;
+            if (str.length > 0 && char === '\n') {
+                currentnode.add(str); str = '';
+            }
         }
         if (str.length > 0) { currentnode.add(str); str = ''; }
 

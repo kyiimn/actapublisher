@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Hangul from 'hangul-js';
 import opentype from 'opentype.js';
 import $ from 'jquery';
+import { clone } from '../utils';
 
 const KEYCODE_CHAR_MAP: { [key: number]: string[] } = {
     81: ['q','Q','ㅂ','ㅃ'],
@@ -66,18 +67,22 @@ const KEYCODE_SPECIALCHAR_MAP: { [key: number ]: string[] } = {
     221: [']','}'],
     222: ['\'','"']
 };
-const KEYCODE_BACKSPACE = 8;
-const KEYCODE_TAB = 9;
-const KEYCODE_ENTER = 13;
-const KEYCODE_HANGUL = 21;
-const KEYCODE_HANJA = 25;
-const KEYCODE_END = 35;
-const KEYCODE_HOME = 36;
-const KEYCODE_LEFT = 37;
-const KEYCODE_UP = 38;
-const KEYCODE_RIGHT = 39;
-const KEYCODE_DOWN = 40;
-const KEYCODE_DELETE = 46;
+
+enum Keycode {
+    BACKSPACE = 8,
+    TAB = 9,
+    ENTER = 13,
+    HANGUL = 21,
+    HANJA = 25,
+    SPACE = 32,
+    END = 35,
+    HOME = 36,
+    LEFT = 37,
+    UP = 38,
+    RIGHT = 39,
+    DOWN = 40,
+    DELETE = 46
+};
 
 interface IDrawableTextItem {
     id: string;
@@ -158,7 +163,7 @@ export class ActaParagraph {
 
         retChar = undefined;
         if (ActaParagraph.getInputMethod() === InputMethod.KO) {
-            if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 2 : 1];
+            if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 3 : 2];
         } else {
             if (isCapsLock) {
                 if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 0 : 1];
@@ -242,27 +247,24 @@ export class ActaParagraph {
     }
 
     private _editorKeyboardControl(e: KeyboardEvent) {
-
-        if (this._cursorPosition === null) return;
-
-        switch (e.keyCode) {
-            case KEYCODE_HANGUL:
+        switch (e.keyCode as Keycode) {
+            case Keycode.HANGUL:
                 ActaParagraph.toggleInputMethod();
                 return false;
 
-            case KEYCODE_HANJA:
+            case Keycode.HANJA:
                 return false;
 
-            case KEYCODE_BACKSPACE:
-            case KEYCODE_TAB:
-            case KEYCODE_ENTER:
-            case KEYCODE_END:
-            case KEYCODE_HOME:
-            case KEYCODE_LEFT:
-            case KEYCODE_UP:
-            case KEYCODE_RIGHT:
-            case KEYCODE_DOWN:
-            case KEYCODE_DELETE:
+            case Keycode.BACKSPACE:
+            case Keycode.TAB:
+            case Keycode.ENTER:
+            case Keycode.END:
+            case Keycode.HOME:
+            case Keycode.LEFT:
+            case Keycode.UP:
+            case Keycode.RIGHT:
+            case Keycode.DOWN:
+            case Keycode.DELETE:
             default:
                 return this._editorInputChar(e);
                 break;
@@ -465,16 +467,25 @@ export class ActaParagraph {
         );
     }
 
-    private _splitTextDataByNodeID(id: string) {
+    private _splitTextDataByNodeID(id: string, indexOfNode?: number) {
         let preList: IDrawableTextItem[] | undefined;
         let postList: IDrawableTextItem[] | undefined;
+        let s = -1, e = -1;
 
-        const tmpNodeIDList: string[] = [];
-        for (const tmpTextItem of this._drawableTextData) tmpNodeIDList.push(tmpTextItem.textNode.id);
+        if (indexOfNode === undefined) {
+            const tmpNodeIDList: string[] = [];
+            for (const tmpTextItem of this._drawableTextData) tmpNodeIDList.push(tmpTextItem.textNode.id);
 
-        const s = tmpNodeIDList.indexOf(id);
-        const e = tmpNodeIDList.lastIndexOf(id);
-
+            s = tmpNodeIDList.indexOf(id);
+            e = tmpNodeIDList.lastIndexOf(id);
+        } else {
+            for (let i = 0; i < this._drawableTextData.length; i++) {
+                const tmpTextItem =this._drawableTextData[i];
+                if (tmpTextItem.textNode.id !== id || tmpTextItem.indexOfNode !== indexOfNode) continue;
+                if (s < 0) s = i;
+                e = i;
+            }
+        }
         if (s > -1) {
             preList = this._drawableTextData.slice(undefined, s);
             postList = this._drawableTextData.slice(e + 1);
@@ -482,7 +493,7 @@ export class ActaParagraph {
         return [preList, postList];
     }
 
-    private _convertTextNodeToData(textNode: ActaTextNode, parentTextStyle: ActaTextStyle, modifyOnly: boolean = false) {
+    private _convertTextNodeToData(textNode: ActaTextNode, parentTextStyle: ActaTextStyle, modifyOnly: boolean = false): boolean {
         const textStyle = textNode.appliedTextStyle(parentTextStyle);
         if (textStyle.font == null ||
             textStyle.fontSize == null ||
@@ -498,14 +509,27 @@ export class ActaParagraph {
 
         let preList: IDrawableTextItem[] | undefined;
         let postList: IDrawableTextItem[] | undefined;
-        if (modifyOnly && textNode.modified) {
+        if (modifyOnly && textNode.modified && !textNode.partModified) {
             [preList, postList] = this._splitTextDataByNodeID(textNode.id);
             if (preList === undefined || postList === undefined) return false;
             this._drawableTextData = preList;
         }
         for (let indexOfNode = 0; indexOfNode < textNode.length; indexOfNode++) {
+            let childModifyOnly = modifyOnly;
+            if (modifyOnly && textNode.modified) {
+                if (!textNode.partModified) {
+                    childModifyOnly = false;
+                } else if (textNode.isModified(indexOfNode)) {
+                    [preList, postList] = this._splitTextDataByNodeID(textNode.id, indexOfNode);
+                    if (preList === undefined || postList === undefined) {
+                        textNode.modified = true;
+                        return this._convertTextNodeToData(textNode, parentTextStyle, true);
+                    }
+                    this._drawableTextData = preList;
+                }
+            }
             if (textNode.value[indexOfNode] instanceof ActaTextNode) {
-                if (!this._convertTextNodeToData(textNode.value[indexOfNode], textStyle, modifyOnly && !textNode.modified ? true : false)) return false;
+                if (!this._convertTextNodeToData(textNode.value[indexOfNode], textStyle, childModifyOnly)) return false;
                 if (indexOfNode >= textNode.length - 1) {
                     // 노드 업데이트를 위해 노드 마지막부분을 마킹
                     this._drawableTextData.push({
@@ -520,7 +544,7 @@ export class ActaParagraph {
                     });
                 }
             } else {
-                if (modifyOnly && !textNode.modified) continue;
+                if (modifyOnly && !textNode.isModified(indexOfNode)) continue;
 
                 const textvalue = textNode.value[indexOfNode].toString();
                 for (let indexOfText = 0; indexOfText < textvalue.length; indexOfText++) {
@@ -560,9 +584,14 @@ export class ActaParagraph {
                     }
                 }
             }
+            if (modifyOnly && textNode.modified && textNode.partModified && textNode.isModified(indexOfNode) && postList !== undefined) {
+                this._drawableTextData = this._drawableTextData.concat(postList);
+                preList = undefined;
+                postList = undefined;
+            }
         }
-        if (modifyOnly && textNode.modified) {
-            this._drawableTextData = this._drawableTextData.concat(postList || []);
+        if (modifyOnly && textNode.modified && !textNode.partModified && postList !== undefined) {
+            this._drawableTextData = this._drawableTextData.concat(postList);
         }
         if (this._drawableTextNodeList.indexOf(textNode.id) < 0) {
             this._drawableTextNodeList.push(textNode.id);
@@ -723,73 +752,52 @@ export class ActaParagraph {
                         transform += ')';
                         transform += ` scaleX(${textItem.textStyle.xscale})`;
                         leading = Math.max(leading, (textItem.textStyle.fontSize || 10) * ((textItem.textStyle.lineHeight || 1) - 1));
-
+                        const attr = {
+                            'data-id': textItem.id,
+                            'data-line': textItem.line.indexOfLine,
+                            'data-textnode': textItem.textNode.id,
+                            'data-index-of-node': textItem.indexOfNode,
+                            'data-index-of-text': textItem.indexOfText
+                        };
+                        const attrText = Object.assign(clone(attr), {
+                            'data-x': offsetX,
+                            'data-y': offsetY,
+                            'data-width': textItem.calcWidth,
+                            'data-height': lineData.maxHeight,
+                            'data-leading': lineData.maxLeading
+                        });
+                        const attrStyle = Object.assign(clone(attr), {
+                            'x1': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX,
+                            'x2': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX + textItem.calcWidth,
+                            'stroke': textItem.textStyle.color,
+                            'stroke-width': 1,
+                            'stroke-linecap': 'butt'
+                        });
                         if (textItem.path !== undefined) {
-                            $(textItem.path).attr({
-                                'data-id': textItem.id,
-                                'data-line': textItem.line.indexOfLine,
-                                'data-textnode': textItem.textNode.id,
-                                'data-index-of-node': textItem.indexOfNode,
-                                'data-index-of-text': textItem.indexOfText,
-                                'data-x': offsetX,
-                                'data-y': offsetY,
-                                'data-width': textItem.calcWidth,
-                                'data-height': lineData.maxHeight,
-                                'data-leading': lineData.maxLeading,
-                                'fill': textItem.textStyle.color || '#000000'
-                            }).css('transform', transform);
+                            $(textItem.path).attr(
+                                Object.assign(attrText, { 'fill': textItem.textStyle.color || '#000000'})
+                            ).css('transform', transform);
                             paths.push(textItem.path);
                         } else {
                             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                            $(path).attr({
-                                'data-id': textItem.id,
-                                'data-line': textItem.line.indexOfLine,
-                                'data-textnode': textItem.textNode.id,
-                                'data-index-of-node': textItem.indexOfNode,
-                                'data-index-of-text': textItem.indexOfText,
-                                'data-x': offsetX,
-                                'data-y': offsetY,
-                                'data-width': textItem.calcWidth,
-                                'data-height': lineData.maxHeight,
-                                'data-leading': lineData.maxLeading
-                            }).css('transform', transform);
+                            $(path).attr(attrText).css('transform', transform);
                             paths.push(path);
                         }
                         if (textItem.textStyle !== undefined) {
                             if (textItem.textStyle.strikeline) {
                                 const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                                $(strikeline).attr({
-                                    'data-id': textItem.id,
-                                    'data-line': textItem.line.indexOfLine,
-                                    'data-textnode': textItem.textNode.id,
-                                    'data-index-of-node': textItem.indexOfNode,
-                                    'data-index-of-text': textItem.indexOfText,
-                                    'x1': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX,
-                                    'x2': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX + textItem.calcWidth,
+                                $(strikeline).attr(Object.assign(attrStyle, {
                                     'y1': (textItem.drawOffsetY || 0) + offsetY - (lineData.maxHeight / 3),
                                     'y2': (textItem.drawOffsetY || 0) + offsetY - (lineData.maxHeight / 3),
-                                    'stroke': textItem.textStyle.color,
-                                    'stroke-width': 1,
-                                    'stroke-linecap': 'butt'
-                                });
+                                }));
                                 lines.push(strikeline);
                             }
                             if (textItem.textStyle.underline) {
                                 const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                                $(underline).attr({
-                                    'data-id': textItem.id,
-                                    'data-line': textItem.line.indexOfLine,
-                                    'data-textnode': textItem.textNode.id,
-                                    'data-index-of-node': textItem.indexOfNode,
-                                    'data-index-of-text': textItem.indexOfText,
-                                    'x1': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX,
-                                    'x2': (textItem.drawOffsetX || 0) + ((textItem.textStyle.letterSpacing || 0) / 2) + offsetX + textItem.calcWidth,
+                                $(underline).attr(Object.assign(attrStyle, {
                                     'y1': (textItem.drawOffsetY || 0) + offsetY,
                                     'y2': (textItem.drawOffsetY || 0) + offsetY,
-                                    'stroke': textItem.textStyle.color,
-                                    'stroke-width': 1,
-                                    'stroke-linecap': 'butt'
-                                });
+                                }));
                                 lines.push(underline);
                             }
                         }
@@ -836,7 +844,6 @@ export class ActaParagraph {
             return false;
         });
         $(this._element).on('keydown', (e) => e.originalEvent ? this._editorKeyboardControl(e.originalEvent) : {});
-
         $(this._element).on('mousedown', 'x-paragraph-col', (e) => {
             if (!this._editable) return false;
             const eventElement = this._getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);

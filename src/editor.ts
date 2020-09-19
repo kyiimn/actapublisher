@@ -11,6 +11,7 @@ import './editor/element';
 import $ from 'jquery';
 
 import '../css/element.scss';
+import { ActaTextConverter } from './editor/textconverter';
 
 const main = async () => {
     const page = new ActaPage('25cm', '30cm');

@@ -7,3 +7,7 @@ export class Stack {
     pop() { return this._store.pop(); }
     get length() { return this._store.length; }
 };
+
+export function clone(obj: any) {
+    return JSON.parse(JSON.stringify(obj));
+};
