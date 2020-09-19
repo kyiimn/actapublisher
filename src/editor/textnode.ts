@@ -7,7 +7,7 @@ export class ActaTextNode {
     private _tagname: string;
     private _defaultTextStyleName: string | null;
     private _customTextStyle: ActaTextStyle;
-    private _value: any[];
+    private _value: (string | ActaTextNode)[];
     private _modified: boolean | number[];
 
     constructor(tagname: string = '') {
@@ -33,6 +33,7 @@ export class ActaTextNode {
     }
 
     edit(idx: number, val: any) {
+        if (this._value[idx] === val) return;
         this._value[idx] = val;
         this.modified = idx;
     }

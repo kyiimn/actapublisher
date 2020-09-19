@@ -68,10 +68,17 @@ const KEYCODE_SPECIALCHAR_MAP: { [key: number ]: string[] } = {
     222: ['\'','"']
 };
 
+enum CharType {
+    TEXT, SPECIAL, NONE
+};
+
 enum Keycode {
     BACKSPACE = 8,
     TAB = 9,
     ENTER = 13,
+    SHIFT = 16,
+    CONTROL = 17,
+    ALT = 18,
     HANGUL = 21,
     HANJA = 25,
     SPACE = 32,
@@ -142,28 +149,27 @@ export class ActaParagraph {
     private _selectionStartItem: IDrawableTextItem | null;
     private _cursorMode: CursorMode;
     private _cursor: number | null;
-    private _cursorPosition: ICursorPosition | null;
     private _editable: boolean;
     private _inputChar: string;
 
     private static _inputMethod:InputMethod = InputMethod.EN;
 
-    static toggleInputMethod() {
+    private static toggleInputMethod() {
         ActaParagraph._inputMethod = ActaParagraph._inputMethod === InputMethod.KO ? InputMethod.EN : InputMethod.KO;
     }
 
-    static getInputMethod() {
+    private static get inputMethod() {
         return ActaParagraph._inputMethod;
     }
 
-    static getKeycode2Char(e: KeyboardEvent) {
+    private static getChar(e: KeyboardEvent) {
         const isCapsLock = e.getModifierState('CapsLock');
         const isShiftKey = e.shiftKey;
         const keyCode = e.keyCode;
         let retChar: string | undefined;
 
         retChar = undefined;
-        if (ActaParagraph.getInputMethod() === InputMethod.KO) {
+        if (ActaParagraph.inputMethod === InputMethod.KO) {
             if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 3 : 2];
         } else {
             if (isCapsLock) {
@@ -176,6 +182,12 @@ export class ActaParagraph {
             if (KEYCODE_SPECIALCHAR_MAP[keyCode]) retChar = KEYCODE_SPECIALCHAR_MAP[keyCode][isShiftKey ? 1 : 0];
         }
         return retChar;
+    }
+
+    private static isCharType(e: KeyboardEvent) {
+        if (KEYCODE_CHAR_MAP[e.keyCode]) return CharType.TEXT;
+        else if (KEYCODE_SPECIALCHAR_MAP[e.keyCode]) return CharType.SPECIAL;
+        return CharType.NONE;
     }
 
     private _getTextPath(font: opentype.Font, char: string, size: number) {
@@ -204,44 +216,48 @@ export class ActaParagraph {
     }
 
     private _editorInputChar(e: KeyboardEvent) {
-        const char: string | undefined = ActaParagraph.getKeycode2Char(e);
-        if (char === undefined || this._cursorPosition === null) {
-            console.log(e.keyCode);
-            return;
+        const char = ActaParagraph.getChar(e);
+        if ([CursorMode.EDIT, CursorMode.SELECTION, CursorMode.INPUT].indexOf(this._cursorMode) < 0) return;
+        if (this._cursor === null) { this._cursorMode = CursorMode.NONE; return; }
+        if (char === undefined) { this._cursorMode = CursorMode.EDIT; return; }
+
+        if (this._cursorMode === CursorMode.SELECTION) {
+            // 셀렉션일때 처리
+            this._cursorMode = CursorMode.EDIT;
         }
         const lineData = this._getLineDataByCursor();
-        let textItem, textNode, textValue;
-        if (lineData === undefined) return;
+        const textItem = this._getTextItemByCursor();
+        if (!lineData || !textItem) { this._cursorMode = CursorMode.EDIT; return; }
 
-        const beforeInputTextItemCount = lineData.items.length;
-        let fixVal = 0;
-        if (this._cursorPosition.position >= lineData.items.length) fixVal = 1;
+        const textNode = textItem.textNode;
+        let textValue = textNode.value[textItem.indexOfNode] as string;
+        if (ActaParagraph.inputMethod === InputMethod.KO && ActaParagraph.isCharType(e) === CharType.TEXT) {
+            if (this._cursorMode === CursorMode.INPUT) {
+                this._cursorMode = CursorMode.EDIT;
+                this._inputChar += char;
+                this._inputChar = Hangul.a(this._inputChar.split(''));
 
-        textItem = lineData.items[this._cursorPosition.position - fixVal];
-        if (!textItem) return;
-
-        textNode = textItem.textNode;
-        textValue = textNode.value[textItem.indexOfNode] as string;
-        textValue = `${textValue.substr(0, textItem.indexOfText + fixVal)}${char}${textValue.substr(textItem.indexOfText + fixVal)}`;
-
-        textNode.edit(textItem.indexOfNode, textValue);
-        this._redraw();
-
-        const afterInputLineData = this._getLineDataByCursor();
-        if (!afterInputLineData) {
-            this._cursorPosition = null;
-        } else {
-            if (this._cursorPosition.position < afterInputLineData.items.length || beforeInputTextItemCount < afterInputLineData.items.length) {
-                this._cursorPosition.position++;
-            } else if (this._getLineData(this._cursorPosition.column, this._cursorPosition.line + 1)) {
-                this._cursorPosition.line++;
-                this._cursorPosition.position = (beforeInputTextItemCount >= afterInputLineData.items.length) ? 1 : 0;
-            } else if (this._cursorPosition.column + 1 < this.columnCount) {
-                this._cursorPosition.column++;
-                this._cursorPosition.line = 0;
-                this._cursorPosition.position = 0;
+                textValue = `${textValue.substr(0, textItem.indexOfText - 1)}${this._inputChar}${textValue.substr(textItem.indexOfText)}`;
+                if (this._inputChar.length > 1) {
+                    this._cursor += this._inputChar.length - 1;
+                    this._inputChar = this._inputChar[this._inputChar.length - 1];
+                }
+            } else {
+                this._inputChar = char;
+                this._cursor++;
+                textValue = `${textValue.substr(0, textItem.indexOfText)}${this._inputChar}${textValue.substr(textItem.indexOfText)}`;
             }
+            this._inputChar = Hangul.d(this._inputChar).join('');
+            this._cursorMode = CursorMode.INPUT;
+        } else {
+            textValue = `${textValue.substr(0, textItem.indexOfText)}${char}${textValue.substr(textItem.indexOfText)}`;
+            this._inputChar = '';
+            this._cursorMode = CursorMode.EDIT;
+            this._cursor++;
         }
+        textNode.edit(textItem.indexOfNode, textValue);
+
+        this._redraw();
         this._redrawCursor();
 
         return false;
@@ -249,6 +265,11 @@ export class ActaParagraph {
 
     private _editorKeyboardControl(e: KeyboardEvent) {
         switch (e.keyCode as Keycode) {
+            case Keycode.SHIFT:
+            case Keycode.CONTROL:
+            case Keycode.ALT:
+                return;
+
             case Keycode.HANGUL:
                 ActaParagraph.toggleInputMethod();
                 return false;
@@ -258,64 +279,51 @@ export class ActaParagraph {
 
             case Keycode.BACKSPACE:
             case Keycode.TAB:
-            case Keycode.ENTER:
             case Keycode.END:
             case Keycode.HOME:
-            case Keycode.LEFT:
-            case Keycode.UP:
-            case Keycode.RIGHT:
-            case Keycode.DOWN:
             case Keycode.DELETE:
+                return;
+
+            case Keycode.LEFT:
+                if (this._cursor !== null) {
+                    this._cursor = Math.max(this._cursor - 1, 0);
+                    this._redrawCursor();
+                }
+                break;
+
+            case Keycode.RIGHT:
+                if (this._cursor !== null) {
+                    this._cursor = Math.min(this._cursor + 1, this._drawableTextData.length);
+                    this._redrawCursor();
+                }
+                break;
+
+            case Keycode.UP:
+            case Keycode.DOWN:
+                return;
+
             default:
                 return this._editorInputChar(e);
                 break;
         }
     }
 
-    private _setCursorPosition(column: number, line: number, position: number) {
-        this._cursorPosition = { column, line, position };
-    }
-
     private _getTextItemByCursor() {
-        if (this._cursorPosition === null) return;
-        const lineData = this._getLineDataByCursor();
-        return lineData ? lineData.items[this._cursorPosition.position] : undefined;
+        if (this._cursor === null) return;
+        return this._drawableTextData[this._cursor];
     }
 
     private _getLineDataByCursor() {
         if (this._cursor === null) return;
         const textItem = this._drawableTextData[this._cursor];
-        return textItem.line;
-    }
-
-    private _getTextItemsByLine(column: number, line: number) {
-        const lineData: IDrawableTextItem[] = [];
-        for (const textItem of this._drawableTextData) {
-            if (textItem.line === null) continue;
-            if (textItem.line.indexOfColumn !== column) continue;
-            if (textItem.line.indexOfLine !== line) continue;
-            lineData.push(textItem);
-        }
-        return lineData;
-    }
-
-    private _getTextData(column: number): IDrawableLineData[] {
-        const columnEl: ActaParagraphColumnElement | undefined = this._element.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col').item(column);
-        if (columnEl === undefined) return [];
-        return $(columnEl.svg).data('drawableTextData');
-    }
-
-    private _getLineData(column: number, line: number): IDrawableLineData | undefined {
-        const textData = this._getTextData(column);
-        return textData[line];
+        return textItem.line || undefined;
     }
 
     private _setCursor(textItem: IDrawableTextItem, x?: number) {
         const path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
-        if (textItem.line === null) return null;
+        let position = this._drawableTextData.indexOf(textItem);
 
-        const lineItem = textItem.line.items;
-        let position = lineItem.indexOf(textItem);
+        if (textItem.line === null) return null;
         if (x !== undefined && path.length > 0) {
             const pathX = parseFloat(path.attr('data-x') || '0');
             const pathWidth = parseFloat(path.attr('data-width') || '0');
@@ -324,25 +332,28 @@ export class ActaParagraph {
                 if (pathWidth / 2 < offsetX) position++;
             }
         }
-        this._cursor = this._drawableTextData.indexOf(textItem);
-        this._setCursorPosition(textItem.line.indexOfColumn, textItem.line.indexOfLine, position);
+        this._cursor = position;
 
-        return lineItem[position];
+        return this._drawableTextData[position];
     };
 
     private _redrawCursor() {
         $(this._element.svg).find('.cursor').remove();
-        if (this._cursorPosition === null) return;
+        if (this._cursor === null) return;
 
-        const lineItems = this._getTextItemsByLine(this._cursorPosition.column, this._cursorPosition.line);
-        if (this._cursorMode === CursorMode.SELECTION && lineItems[this._cursorPosition.position] !== this._selectionStartItem) {
+        const textItem = this._getTextItemByCursor();
+        const lineData = this._getLineDataByCursor();
+        if (!textItem || !lineData) return;
+
+        const lineItems = lineData.items;
+        if (this._cursorMode === CursorMode.SELECTION && textItem !== this._selectionStartItem) {
             let currentColumn: ActaParagraphColumnElement | undefined;
             let currentLine = -1, startx = 0, selection;
 
             if (this._selectionStartItem === null) return;
 
             let startpos = this._drawableTextData.indexOf(this._selectionStartItem);
-            let endpos = this._drawableTextData.indexOf(lineItems[Math.min(this._cursorPosition.position, lineItems.length - 1)]);
+            let endpos = this._cursor;
 
             if (startpos > endpos) {
                 [startpos, endpos] = [endpos, startpos];
@@ -350,12 +361,12 @@ export class ActaParagraph {
                 endpos--;
             }
             for (let i = startpos; i <= endpos; i++) {
-                const textItem = this._drawableTextData[Math.min(i, this._drawableTextData.length - 1)];
+                const selectTextItem = this._drawableTextData[Math.min(i, this._drawableTextData.length - 1)];
                 let path: SVGPathElement | null = null;
                 let columnIdx = -1;
 
                 $(this._element.svg).each((j, svg) => {
-                    path = svg.querySelector<SVGPathElement>(`path[data-id="${textItem.id}"]`);
+                    path = svg.querySelector<SVGPathElement>(`path[data-id="${selectTextItem.id}"]`);
                     if (!path) return;
 
                     columnIdx = j;
@@ -365,10 +376,10 @@ export class ActaParagraph {
 
                 const column = $(this._element).find('x-paragraph-col').get(columnIdx);
 
-                if (textItem.line === null) continue;
-                if (currentColumn !== column || currentLine !== textItem.line.indexOfLine || selection === undefined) {
+                if (selectTextItem.line === null) continue;
+                if (currentColumn !== column || currentLine !== selectTextItem.line.indexOfLine || selection === undefined) {
                     currentColumn = column as ActaParagraphColumnElement;
-                    currentLine = textItem.line.indexOfLine;
+                    currentLine = selectTextItem.line.indexOfLine;
                     startx = parseFloat($(path).attr('data-x') || '0');
                     selection = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                     $(selection).attr({
@@ -389,23 +400,16 @@ export class ActaParagraph {
                 }
             }
         } else {
-            const currentColumn: ActaParagraphColumnElement | undefined = $(this._element).find('x-paragraph-col').get(this._cursorPosition.column) as ActaParagraphColumnElement;
-            let x = 0;
-            let y = 0;
-            let height = 0;
+            const currentColumn = $(this._element).find('x-paragraph-col').get(lineData.indexOfColumn) as ActaParagraphColumnElement;
+            const path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
+            let x = parseFloat(path.attr('data-x') || '0');
+            let y = parseFloat(path.attr('data-y') || '0');
+            let height = parseFloat(path.attr('data-height') || '0');
 
-            if (this._cursorPosition.position === lineItems.length) {
-                const path = $(this._element.svg).find(`path[data-id="${lineItems[lineItems.length - 1].id}"]`);
-                x = parseFloat(path.attr('data-x') || '0') + parseFloat(path.attr('data-width') || '0');
-                y = parseFloat(path.attr('data-y') || '0');
-                height = parseFloat(path.attr('data-height') || '0');
-            } else {
-                if (lineItems.length > 0) {
-                    const path = $(this._element.svg).find(`path[data-id="${lineItems[this._cursorPosition.position].id}"]`);
-                    x = parseFloat(path.attr('data-x') || '0');
-                    y = parseFloat(path.attr('data-y') || '0');
-                    height = parseFloat(path.attr('data-height') || '0');
-                }
+            if (lineItems.length < 1) {
+                x = 0;
+                y = 0;
+                height = lineData.maxHeight;
             }
             const cursor = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             $(cursor).attr({
@@ -831,7 +835,6 @@ export class ActaParagraph {
         this._selectionStartItem = null;
         this._cursorMode = CursorMode.NONE;
         this._cursor = null;
-        this._cursorPosition = null;
         this._inputChar = '';
 
         this.columnCount = columnCount;
@@ -854,7 +857,6 @@ export class ActaParagraph {
             if (eventElement.length > 0) {
                 this._cursorMode = CursorMode.SELECTION;
                 this._cursor = null;
-                this._cursorPosition = null;
                 this._selectionStartItem = this._setCursor(eventElement[0], e.offsetX);
                 this._redrawCursor();
             }
