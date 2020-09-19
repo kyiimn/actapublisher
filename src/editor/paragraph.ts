@@ -13,59 +13,60 @@ import opentype from 'opentype.js';
 import $ from 'jquery';
 import { clone } from '../utils';
 
-const KEYCODE_CHAR_MAP: { [key: number]: string[] } = {
-    81: ['q','Q','ㅂ','ㅃ'],
-    87: ['w','W','ㅈ','ㅉ'],
-    69: ['e','E','ㄷ','ㄸ'],
-    82: ['r','R','ㄱ','ㄲ'],
-    84: ['t','T','ㅅ','ㅆ'],
-    89: ['y','Y','ㅛ','ㅛ'],
-    85: ['u','U','ㅕ','ㅕ'],
-    73: ['i','I','ㅑ','ㅑ'],
-    79: ['o','O','ㅐ','ㅒ'],
-    80: ['p','P','ㅔ','ㅖ'],
-    65: ['a','A','ㅁ','ㅁ'],
-    83: ['s','S','ㄴ','ㄴ'],
-    68: ['d','D','ㅇ','ㅇ'],
-    70: ['f','F','ㄹ','ㄹ'],
-    71: ['g','G','ㅎ','ㅎ'],
-    72: ['h','H','ㅗ','ㅗ'],
-    74: ['j','J','ㅓ','ㅓ'],
-    75: ['k','K','ㅏ','ㅏ'],
-    76: ['l','L','ㅣ','ㅣ'],
-    90: ['z','Z','ㅋ','ㅋ'],
-    88: ['x','X','ㅌ','ㅌ'],
-    67: ['c','C','ㅊ','ㅊ'],
-    86: ['v','V','ㅍ','ㅍ'],
-    66: ['b','B','ㅠ','ㅠ'],
-    78: ['n','N','ㅜ','ㅜ'],
-    77: ['m','M','ㅡ','ㅡ']
+const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
+    'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
+    'W': ['W','ㅉ'], 'w': ['w','ㅈ'],
+    'E': ['E','ㄸ'], 'e': ['e','ㄷ'],
+    'R': ['R','ㄲ'], 'r': ['r','ㄱ'],
+    'T': ['T','ㅆ'], 't': ['t','ㅅ'],
+    'Y': ['Y','ㅛ'], 'y': ['y','ㅛ'],
+    'U': ['U','ㅕ'], 'u': ['u','ㅕ'],
+    'I': ['I','ㅑ'], 'i': ['i','ㅑ'],
+    'O': ['O','ㅒ'], 'o': ['o','ㅐ'],
+    'P': ['P','ㅖ'], 'p': ['p','ㅔ'],
+    'A': ['A','ㅁ'], 'a': ['a','ㅁ'],
+    'S': ['S','ㄴ'], 's': ['s','ㄴ'],
+    'D': ['D','ㅇ'], 'd': ['d','ㅇ'],
+    'F': ['F','ㄹ'], 'f': ['f','ㄹ'],
+    'G': ['G','ㅎ'], 'g': ['g','ㅎ'],
+    'H': ['H','ㅗ'], 'h': ['h','ㅗ'],
+    'J': ['J','ㅓ'], 'j': ['j','ㅓ'],
+    'K': ['K','ㅏ'], 'k': ['k','ㅏ'],
+    'L': ['L','ㅣ'], 'l': ['l','ㅣ'],
+    'Z': ['Z','ㅋ'], 'z': ['z','ㅋ'],
+    'X': ['X','ㅌ'], 'x': ['x','ㅌ'],
+    'C': ['C','ㅊ'], 'c': ['c','ㅊ'],
+    'V': ['V','ㅍ'], 'v': ['v','ㅍ'],
+    'B': ['B','ㅠ'], 'b': ['b','ㅠ'],
+    'N': ['N','ㅜ'], 'n': ['n','ㅜ'],
+    'M': ['M','ㅡ'], 'm': ['m','ㅡ']
 };
 
-const KEYCODE_SPECIALCHAR_MAP: { [key: number ]: string[] } = {
-    13: ['\n', '\n'],
-    32: [' ', ' '],
-    48: ['0',')'],
-    49: ['1','!'],
-    50: ['2','@'],
-    51: ['3','#'],
-    52: ['4','$'],
-    53: ['5','%'],
-    54: ['6','^'],
-    55: ['7','&'],
-    56: ['8','*'],
-    57: ['9','('],
-    186: [';',':'],
-    187: ['=','+'],
-    188: [',','<'],
-    189: ['-','_'],
-    190: ['.','>'],
-    191: ['/','?'],
-    192: ['`','~'],
-    219: ['[','{'],
-    220: ['\\','|'],
-    221: [']','}'],
-    222: ['\'','"']
+const KEYCODE_SPECIALCHAR_MAP: { [key: string ]: string } = {
+    'Enter': '\n',
+    ' ': ' ',
+
+    '0': '0', ')': ')',
+    '1': '1', '!': '!',
+    '2': '2', '@': '@',
+    '3': '3', '#': '#',
+    '4': '4', '$': '$',
+    '5': '5', '%': '%',
+    '6': '6', '^': '^',
+    '7': '7', '&': '&',
+    '8': '8', '*': '*',
+    '9': '9', '(': '(',
+    ';': ';', ':': ':',
+    '=': '=', '+': '+',
+    ',': ',', '<': '<',
+    '-': '-', '_': '_',
+    '.': '.', '>': '>',
+    '/': '/', '?': '?',
+    '`': '`', '~': '~',
+    '[': '[', '{': '{',
+    '\\': '\\', '|': '|',
+    ']': ']', '}': '}',
+    '\'': '\'', '"': '"'
 };
 
 enum CharType {
@@ -118,6 +119,7 @@ interface IDrawableLineData {
     textAlign: TextAlign;
     indent: number;
     items: IDrawableTextItem[];
+    offsetY?: number;
 };
 
 enum CursorMode {
@@ -157,30 +159,15 @@ export class ActaParagraph {
     }
 
     private static getChar(e: KeyboardEvent) {
-        const isCapsLock = e.getModifierState('CapsLock');
-        const isShiftKey = e.shiftKey;
-        const keyCode = e.keyCode;
         let retChar: string | undefined;
-
-        retChar = undefined;
-        if (ActaParagraph.inputMethod === InputMethod.KO) {
-            if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 3 : 2];
-        } else {
-            if (isCapsLock) {
-                if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 0 : 1];
-            } else {
-                if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 1 : 0];
-            }
-        }
-        if (retChar === undefined) {
-            if (KEYCODE_SPECIALCHAR_MAP[keyCode]) retChar = KEYCODE_SPECIALCHAR_MAP[keyCode][isShiftKey ? 1 : 0];
-        }
+        if (KEYCODE_CHAR_MAP[e.key]) retChar = (ActaParagraph.inputMethod === InputMethod.KO) ? KEYCODE_CHAR_MAP[e.key][1] : KEYCODE_CHAR_MAP[e.key][0];
+        if (retChar === undefined && KEYCODE_SPECIALCHAR_MAP[e.key]) retChar = KEYCODE_SPECIALCHAR_MAP[e.key];
         return retChar;
     }
 
     private static isCharType(e: KeyboardEvent) {
-        if (KEYCODE_CHAR_MAP[e.keyCode]) return CharType.TEXT;
-        else if (KEYCODE_SPECIALCHAR_MAP[e.keyCode]) return CharType.SPECIAL;
+        if (KEYCODE_CHAR_MAP[e.key]) return CharType.TEXT;
+        else if (KEYCODE_SPECIALCHAR_MAP[e.key]) return CharType.SPECIAL;
         return CharType.NONE;
     }
 
@@ -294,7 +281,7 @@ export class ActaParagraph {
                 }
                 this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this._drawableTextItems.length);
                 this._redrawCursor();
-                break;
+                return false;
 
             case Keycode.UP:
             case Keycode.DOWN:
@@ -316,18 +303,44 @@ export class ActaParagraph {
                 break;
 
             default:
-                return this._editorInputChar(e);
-                break;
+                return (!e.ctrlKey) ? this._editorInputChar(e) : undefined;
         }
+    }
+
+    private _findVisableTextItem(textItem: IDrawableTextItem) {
+        const path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
+        if (path.length < 1) {
+            if (!textItem.line) return null;
+            let tmpIdx = textItem.line.items.indexOf(textItem);
+            if (tmpIdx < 0) return null;
+            else {
+                do {
+                    if (--tmpIdx < 1) break;
+                    const tmpItem = $(this._element.svg).find(`path[data-id="${textItem.line.items[tmpIdx].id}"]`);
+                    if (tmpItem.length < 1) continue;
+                } while (false);
+            }
+            textItem = textItem.line.items[tmpIdx];
+        }
+        return textItem || null;
     }
 
     private _computeNearestItem(curItem: IDrawableTextItem | null, targetItems: IDrawableTextItem[]) {
         if (!curItem) return null;
 
         const curPath = $(this._element.svg).find(`path[data-id="${curItem.id}"]`);
-        if (curPath.length < 1) return null;
+        let curOffsetX = 0;
 
-        const curOffsetX = parseFloat(curPath.attr('data-x') || '0');
+        if (curPath.length < 1) {
+            const tmpItem = this._findVisableTextItem(curItem);
+            if (tmpItem) {
+                const tmpPath = $(this._element.svg).find(`path[data-id="${tmpItem.id}"]`);
+                curOffsetX = parseFloat(tmpPath.attr('data-x') || '0');
+                curOffsetX += parseFloat(tmpPath.attr('data-width') || '0');
+            }
+        } else {
+            curOffsetX = parseFloat(curPath.attr('data-x') || '0');
+        }
         const distance: number[] = [];
         let prevOffsetX = 0;
 
@@ -457,14 +470,29 @@ export class ActaParagraph {
             }
         } else {
             const currentColumn = $(this._element).find('x-paragraph-col').get(lineData.indexOfColumn) as ActaParagraphColumnElement;
-            const path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
-            let x = parseFloat(path.attr('data-x') || '0');
-            let y = parseFloat(path.attr('data-y') || '0');
-            let height = parseFloat(path.attr('data-height') || '0');
+            let path = $(this._element.svg).find(`path[data-id="${textItem.id}"]`);
+            let x, y, height;
+            if (path.length < 1) {
+                const tmpItem = this._findVisableTextItem(textItem);
+                if (tmpItem) {
+                    path = $(this._element.svg).find(`path[data-id="${tmpItem.id}"]`);
+                    x = parseFloat(path.attr('data-x') || '0') + parseFloat(path.attr('data-width') || '0');
+                    y = parseFloat(path.attr('data-y') || '0');
+                    height = parseFloat(path.attr('data-height') || '0');
+                } else {
+                    x = lineData.indent;
+                    y = lineData.offsetY || 0;
+                    height = lineData.maxHeight;
+                }
+            } else {
+                x = parseFloat(path.attr('data-x') || '0');
+                y = parseFloat(path.attr('data-y') || '0');
+                height = parseFloat(path.attr('data-height') || '0');
+            }
 
             if (lineItems.length < 1) {
-                x = 0;
-                y = 0;
+                x = lineData.indent;
+                y = lineData.offsetY || 0;
                 height = lineData.maxHeight;
             }
             const cursor = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -807,6 +835,8 @@ export class ActaParagraph {
             for (const lineData of textData) {
                 let offsetX = lineData.indent;
                 let leading = 0;
+
+                lineData.offsetY = offsetY;
                 for (const textItem of lineData.items) {
                     if (textItem.line === null) textItem.line = lineData;
                     if ([DrawableTextItemType.NEWLINE, DrawableTextItemType.END_OF_NODE].indexOf(textItem.type) < 0) {
@@ -922,18 +952,10 @@ export class ActaParagraph {
 
             return false;
         });
-        $(this._element).on('focus', (e) => {
-            this._redrawCursor();
-            return false;
-        });
-        $(this._element).on('blur', (e) => {
-            $(this._element.svg).find('.cursor').remove();
-            this._selectionStartItem = null;
-            return false;
-        });
         $(this._element).on('mousemove', 'x-paragraph-col', (e) => {
+            const ev = e.originalEvent as MouseEvent;
             if (!this._editable) return false;
-            if (this._cursorMode !== CursorMode.SELECTION || e.which !== 1) return false;
+            if (this._cursorMode !== CursorMode.SELECTION || ev.buttons !== 1) return false;
             const eventElement = this._getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
             if (eventElement.length > 0 && this._selectionStartItem != null) {
                 this._setCursor(eventElement[0], e.offsetX);
@@ -943,12 +965,27 @@ export class ActaParagraph {
         });
         $(this._element).on('mouseup', 'x-paragraph-col', (e) => {
             if (!this._editable) return false;
+            if (this._cursorMode !== CursorMode.SELECTION) return false;
             const eventElement = this._getTextDataByPosition(e.currentTarget, e.offsetX, e.offsetY);
             if (eventElement.length > 0 && this._selectionStartItem != null) {
                 this._setCursor(eventElement[0], e.offsetX);
                 this._redrawCursor();
             }
-            this._cursorMode = CursorMode.EDIT;
+            if (this._cursor === null) {
+                this._cursorMode = CursorMode.NONE;
+                return false;
+            } else if (this._drawableTextItems[this._cursor] === this._selectionStartItem) {
+                this._cursorMode = CursorMode.EDIT;
+            }
+            return false;
+        });
+        $(this._element).on('focus', (e) => {
+            this._redrawCursor();
+            return false;
+        });
+        $(this._element).on('blur', (e) => {
+            $(this._element.svg).find('.cursor').remove();
+            this._selectionStartItem = null;
             return false;
         });
     }
