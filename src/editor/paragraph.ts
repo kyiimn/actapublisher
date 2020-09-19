@@ -12,34 +12,72 @@ import Hangul from 'hangul-js';
 import opentype from 'opentype.js';
 import $ from 'jquery';
 
-const KEYCODE_MAP: { [key: number]: string[] } = {
-    81: ['q','ㅂ','ㅃ'],
-    87: ['w','ㅈ','ㅉ'],
-    69: ['e','ㄷ','ㄸ'],
-    82: ['r','ㄱ','ㄲ'],
-    84: ['t','ㅅ','ㅆ'],
-    89: ['y','ㅛ','ㅛ'],
-    85: ['u','ㅕ','ㅕ'],
-    73: ['i','ㅑ','ㅑ'],
-    79: ['o','ㅐ','ㅒ'],
-    80: ['p','ㅔ','ㅖ'],
-    65: ['a','ㅁ','ㅁ'],
-    83: ['s','ㄴ','ㄴ'],
-    68: ['d','ㅇ','ㅇ'],
-    70: ['f','ㄹ','ㄹ'],
-    71: ['g','ㅎ','ㅎ'],
-    72: ['h','ㅗ','ㅗ'],
-    74: ['j','ㅓ','ㅓ'],
-    75: ['k','ㅏ','ㅏ'],
-    76: ['l','ㅣ','ㅣ'],
-    90: ['z','ㅋ','ㅋ'],
-    88: ['x','ㅌ','ㅌ'],
-    67: ['c','ㅊ','ㅊ'],
-    86: ['v','ㅍ','ㅍ'],
-    66: ['b','ㅠ','ㅠ'],
-    78: ['n','ㅜ','ㅜ'],
-    77: ['m','ㅡ','ㅡ']
+const KEYCODE_CHAR_MAP: { [key: number]: string[] } = {
+    81: ['q','Q','ㅂ','ㅃ'],
+    87: ['w','W','ㅈ','ㅉ'],
+    69: ['e','E','ㄷ','ㄸ'],
+    82: ['r','R','ㄱ','ㄲ'],
+    84: ['t','T','ㅅ','ㅆ'],
+    89: ['y','Y','ㅛ','ㅛ'],
+    85: ['u','U','ㅕ','ㅕ'],
+    73: ['i','I','ㅑ','ㅑ'],
+    79: ['o','O','ㅐ','ㅒ'],
+    80: ['p','P','ㅔ','ㅖ'],
+    65: ['a','A','ㅁ','ㅁ'],
+    83: ['s','S','ㄴ','ㄴ'],
+    68: ['d','D','ㅇ','ㅇ'],
+    70: ['f','F','ㄹ','ㄹ'],
+    71: ['g','G','ㅎ','ㅎ'],
+    72: ['h','H','ㅗ','ㅗ'],
+    74: ['j','J','ㅓ','ㅓ'],
+    75: ['k','K','ㅏ','ㅏ'],
+    76: ['l','L','ㅣ','ㅣ'],
+    90: ['z','Z','ㅋ','ㅋ'],
+    88: ['x','X','ㅌ','ㅌ'],
+    67: ['c','C','ㅊ','ㅊ'],
+    86: ['v','V','ㅍ','ㅍ'],
+    66: ['b','B','ㅠ','ㅠ'],
+    78: ['n','N','ㅜ','ㅜ'],
+    77: ['m','M','ㅡ','ㅡ']
 };
+
+const KEYCODE_SPECIALCHAR_MAP: { [key: number ]: string[] } = {
+    13: ['\n', '\n'],
+    32: [' ', ' '],
+    48: ['0',')'],
+    49: ['1','!'],
+    50: ['2','@'],
+    51: ['3','#'],
+    52: ['4','$'],
+    53: ['5','%'],
+    54: ['6','^'],
+    55: ['7','&'],
+    56: ['8','*'],
+    57: ['9','('],
+    186: [';',':'],
+    187: ['=','+'],
+    188: [',','<'],
+    189: ['-','_'],
+    190: ['.','>'],
+    191: ['/','?'],
+    192: ['`','~'],
+    219: ['[','{'],
+    220: ['\\','|'],
+    221: [']','}'],
+    222: ['\'','"']
+};
+const KEYCODE_BACKSPACE = 8;
+const KEYCODE_TAB = 9;
+const KEYCODE_ENTER = 13;
+const KEYCODE_HANGUL = 21;
+const KEYCODE_HANJA = 25;
+const KEYCODE_END = 35;
+const KEYCODE_HOME = 36;
+const KEYCODE_LEFT = 37;
+const KEYCODE_UP = 38;
+const KEYCODE_RIGHT = 39;
+const KEYCODE_DOWN = 40;
+const KEYCODE_DELETE = 46;
 
 interface IDrawableTextItem {
     id: string;
@@ -120,19 +158,16 @@ export class ActaParagraph {
 
         retChar = undefined;
         if (ActaParagraph.getInputMethod() === InputMethod.KO) {
-            if (KEYCODE_MAP[keyCode]) retChar = KEYCODE_MAP[keyCode][isShiftKey ? 2 : 1];
+            if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 2 : 1];
         } else {
             if (isCapsLock) {
-                if (KEYCODE_MAP[keyCode]) {
-                    retChar = KEYCODE_MAP[keyCode][0];
-                    if (!isShiftKey) retChar = retChar.toUpperCase();
-                }
+                if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 0 : 1];
             } else {
-                if (KEYCODE_MAP[keyCode]) {
-                    retChar = KEYCODE_MAP[keyCode][0];
-                    if (isShiftKey) retChar = retChar.toUpperCase();
-                }
+                if (KEYCODE_CHAR_MAP[keyCode]) retChar = KEYCODE_CHAR_MAP[keyCode][isShiftKey ? 1 : 0];
             }
+        }
+        if (retChar === undefined) {
+            if (KEYCODE_SPECIALCHAR_MAP[keyCode]) retChar = KEYCODE_SPECIALCHAR_MAP[keyCode][isShiftKey ? 1 : 0];
         }
         return retChar;
     }
@@ -162,26 +197,76 @@ export class ActaParagraph {
         this._element.innerHTML = '';
     }
 
-    private _input(e: KeyboardEvent) {
-        let char: string | undefined;
-
-        if (e.keyCode === 21) {
-            ActaParagraph.toggleInputMethod();
-            return false;
-        } else if (e.keyCode === 25) {
-            // 한자변환
-        } else {
-            char = ActaParagraph.getKeycode2Char(e);
+    private _editorInputChar(e: KeyboardEvent) {
+        const char: string | undefined = ActaParagraph.getKeycode2Char(e);
+        if (char === undefined || this._cursorPosition === null) {
+            console.log(e.keyCode);
+            return;
         }
-        if (char === undefined) return;
+        const lineData = this._getLineDataByCursor();
+        let textItem, textNode, textValue;
+        if (lineData === undefined) return;
 
-        const textItem = this._getTextItemByCursor();
+        const beforeInputTextItemCount = lineData.items.length;
+        let fixVal = 0;
+        if (this._cursorPosition.position >= lineData.items.length) fixVal = 1;
+
+        textItem = lineData.items[this._cursorPosition.position - fixVal];
         if (!textItem) return;
 
-        const textNode = textItem.textNode;
-        let textValue = textNode.value[textItem.indexOfNode] as string;
-        textValue = textValue.
-        this._cursorPosition.
+        textNode = textItem.textNode;
+        textValue = textNode.value[textItem.indexOfNode] as string;
+        textValue = `${textValue.substr(0, textItem.indexOfText + fixVal)}${char}${textValue.substr(textItem.indexOfText + fixVal)}`;
+
+        textNode.edit(textItem.indexOfNode, textValue);
+        this._redraw();
+
+        const afterInputLineData = this._getLineDataByCursor();
+        if (!afterInputLineData) {
+            this._cursorPosition = null;
+        } else {
+            if (this._cursorPosition.position < afterInputLineData.items.length || beforeInputTextItemCount < afterInputLineData.items.length) {
+                this._cursorPosition.position++;
+            } else if (this._getLineData(this._cursorPosition.column, this._cursorPosition.line + 1)) {
+                this._cursorPosition.line++;
+                this._cursorPosition.position = (beforeInputTextItemCount >= afterInputLineData.items.length) ? 1 : 0;
+            } else if (this._cursorPosition.column + 1 < this.columnCount) {
+                this._cursorPosition.column++;
+                this._cursorPosition.line = 0;
+                this._cursorPosition.position = 0;
+            }
+        }
+        this._redrawCursor();
+
+        return false;
+    }
+
+    private _editorKeyboardControl(e: KeyboardEvent) {
+
+        if (this._cursorPosition === null) return;
+
+        switch (e.keyCode) {
+            case KEYCODE_HANGUL:
+                ActaParagraph.toggleInputMethod();
+                return false;
+
+            case KEYCODE_HANJA:
+                return false;
+
+            case KEYCODE_BACKSPACE:
+            case KEYCODE_TAB:
+            case KEYCODE_ENTER:
+            case KEYCODE_END:
+            case KEYCODE_HOME:
+            case KEYCODE_LEFT:
+            case KEYCODE_UP:
+            case KEYCODE_RIGHT:
+            case KEYCODE_DOWN:
+            case KEYCODE_DELETE:
+            default:
+                return this._editorInputChar(e);
+                break;
+        }
     }
 
     private _setCursorPosition(column: number, line: number, position: number) {
@@ -190,8 +275,13 @@ export class ActaParagraph {
 
     private _getTextItemByCursor() {
         if (this._cursorPosition === null) return;
-        const lineData = this._getTextItemsByLine(this._cursorPosition.column, this._cursorPosition.line);
-        return lineData[this._cursorPosition.position];
+        const lineData = this._getLineDataByCursor();
+        return lineData ? lineData.items[this._cursorPosition.position] : undefined;
+    }
+
+    private _getLineDataByCursor() {
+        if (this._cursorPosition === null) return;
+        return this._getLineData(this._cursorPosition.column, this._cursorPosition.line);
     }
 
     private _getTextItemsByLine(column: number, line: number) {
@@ -380,7 +470,7 @@ export class ActaParagraph {
         let postList: IDrawableTextItem[] | undefined;
 
         const tmpNodeIDList: string[] = [];
-        for (const tmpTextItem of this._drawableTextData) tmpNodeIDList.push(tmpTextItem.id);
+        for (const tmpTextItem of this._drawableTextData) tmpNodeIDList.push(tmpTextItem.textNode.id);
 
         const s = tmpNodeIDList.indexOf(id);
         const e = tmpNodeIDList.lastIndexOf(id);
@@ -406,8 +496,6 @@ export class ActaParagraph {
             textStyle.color == null
         ) return false;
 
-        if (modifyOnly && !textNode.modified) return true;
-
         let preList: IDrawableTextItem[] | undefined;
         let postList: IDrawableTextItem[] | undefined;
         if (modifyOnly && textNode.modified) {
@@ -432,6 +520,8 @@ export class ActaParagraph {
                     });
                 }
             } else {
+                if (modifyOnly && !textNode.modified) continue;
+
                 const textvalue = textNode.value[indexOfNode].toString();
                 for (let indexOfText = 0; indexOfText < textvalue.length; indexOfText++) {
                     const char = textvalue[indexOfText];
@@ -472,7 +562,7 @@ export class ActaParagraph {
             }
         }
         if (modifyOnly && textNode.modified) {
-            this._drawableTextData.concat(postList || []);
+            this._drawableTextData = this._drawableTextData.concat(postList || []);
         }
         if (this._drawableTextNodeList.indexOf(textNode.id) < 0) {
             this._drawableTextNodeList.push(textNode.id);
@@ -602,6 +692,10 @@ export class ActaParagraph {
                     canvas = canvasList[++canvasPos];
                     if (!canvas) break;
 
+                    if (lineData != null) {
+                        lineData.indexOfColumn = canvasPos;
+                        lineData.indexOfLine = 0;
+                    }
                     $(canvas).data('drawableTextData').push(lineData)
                 }
             }
@@ -710,6 +804,11 @@ export class ActaParagraph {
         });
     }
 
+    private _redraw() {
+        this._computeDrawableTextSize();
+        this._drawText();
+    }
+
     constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
         this._element = document.createElement('x-paragraph') as ActaParagraphElement;
         this._columnCount = 1;
@@ -733,11 +832,10 @@ export class ActaParagraph {
         this._drawableTextNodeList = [];
 
         $(this._element).on('resize', e => {
-            this._computeDrawableTextSize();
-            this._drawText();
+            this._redraw();
             return false;
         });
-        $(this._element).on('keyup', (e) => e.originalEvent ? this._input(e.originalEvent) : {});
+        $(this._element).on('keydown', (e) => e.originalEvent ? this._editorKeyboardControl(e.originalEvent) : {});
 
         $(this._element).on('mousedown', 'x-paragraph-col', (e) => {
             if (!this._editable) return false;
@@ -792,7 +890,7 @@ export class ActaParagraph {
         }
     }
 
-    redraw() {
+    update() {
         this._generateDrawableTextData();
         this._computeDrawableTextSize();
         this._drawText();
@@ -800,7 +898,7 @@ export class ActaParagraph {
 
     set text(text: string) {
         this._textObject = ActaTextConverter.textobject(text);
-        this.redraw();
+        this.update();
     }
 
     set columnCount(count) {
