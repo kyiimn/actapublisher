@@ -317,6 +317,10 @@ export class ActaParagraph {
                 } else return false;
             } else {
                 if (e.keyCode === Keycode.BACKSPACE) {
+                    if (ActaParagraph.inputMethod === InputMethod.KO && this._cursorMode === CursorMode.INPUT) {
+                        this._redrawCursor();
+                        return false;
+                    }
                     if (this._cursor === 0) return false;
                     this._cursor--;
                 }
@@ -493,10 +497,6 @@ export class ActaParagraph {
         if (this._cursor === null) return;
 
         if (this._cursorMode === CursorMode.SELECTION && this._cursor !== this._selectionStartItem) {
-            const textItem = this._getTextItemByCursor();
-            const lineData = this._getLineDataByCursor();
-            if (!textItem || !lineData) return;
-
             let currentColumn: ActaParagraphColumnElement | undefined;
             let currentLine = -1, startx = 0, selection;
 
