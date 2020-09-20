@@ -69,7 +69,7 @@ export class ActaTextConverter {
                 currentnode.add(str); str = '';
             }
         }
-        if (str.length > 0) { currentnode.add(str); str = ''; }
+        if (currentnode.length < 0 || str.length > 0) { currentnode.add(str); str = ''; }
 
         return currentnode || node.first();
     }
