@@ -2,12 +2,12 @@ import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextStyle } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
 
-export class ActaTextNode {
+export class ActaTextStore {
     private _id: string;
     private _tagname: string;
     private _defaultTextStyleName: string | null;
     private _customTextStyle: ActaTextStyle;
-    private _value: (string | ActaTextNode)[];
+    private _value: (string | ActaTextStore)[];
     private _modified: boolean | number[];
 
     constructor(tagname: string = '') {

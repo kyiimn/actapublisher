@@ -1,10 +1,10 @@
-import { ActaTextNode } from './textnode';
+import { ActaTextStore } from './textstore';
 import { Stack } from '../utils';
 
 export class ActaTextConverter {
     static textobject(text: string) {
         const node = new Stack();
-        let currentnode = new ActaTextNode();
+        let currentnode = new ActaTextStore();
         let str = '';
 
         for (let i = 0; i < text.length; i++) {
@@ -32,7 +32,7 @@ export class ActaTextConverter {
                         const tagname = t[0].toLowerCase();
                         if (tagname === 'x-style') {
                             if (str.length > 0) { currentnode.add(str); str = ''; }
-                            const newnode = new ActaTextNode(tagname);
+                            const newnode = new ActaTextStore(tagname);
                             const textStyle = newnode.customTextStyle;
 
                             currentnode.add(newnode);
