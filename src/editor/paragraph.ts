@@ -115,6 +115,7 @@ export class ActaParagraph {
     private _cursor: number | null;
     private _editable: boolean;
     private _inputChar: string;
+    private _overflow: boolean;
 
     private static _inputMethod:InputMethod = InputMethod.EN;
 
@@ -162,7 +163,25 @@ export class ActaParagraph {
         this._element.innerHTML = '';
     }
 
-    private _editorInputChar(e: KeyboardEvent) {
+    private _updateInputMethodChar() {
+        if (!this._cursor) return;
+
+        const textItem = this._textItems[this._cursor - 1];
+        if (!textItem) return;
+
+        let hangulText = Hangul.a(this._inputChar.split(''));
+        let textValue = textItem.textStore.value[textItem.indexOfNode];
+        textValue = `${textValue.substr(0, textItem.indexOfText)}${hangulText}${textValue.substr(textItem.indexOfText + 1)}`;
+        textItem.textStore.edit(textItem.indexOfNode, textValue);
+
+        if (hangulText.length > 1) {
+            this._cursor += hangulText.length - 1;
+            hangulText = hangulText.substr(hangulText.length - 1);
+        }
+        this._inputChar = Hangul.d(hangulText).join('');
+    }
+
+    private _onCharKeyPress(e: KeyboardEvent) {
         const char = ActaParagraph.getChar(e);
         let needGenerateTextData = false;
 
@@ -200,32 +219,26 @@ export class ActaParagraph {
             if (!textNode) return false;
         }
 
-        let textValue = textNode.value[indexOfNode] as string;
+        let textValue: string = textNode.value[indexOfNode];
         if (ActaParagraph.inputMethod === InputMethod.KO && ActaParagraph.isCharType(e) === CharType.TEXT) {
             if (this._cursorMode === CursorMode.INPUT) {
                 this._cursorMode = CursorMode.EDIT;
                 this._inputChar += char;
-                this._inputChar = Hangul.a(this._inputChar.split(''));
-
-                textValue = `${textValue.substr(0, indexOfText - 1)}${this._inputChar}${textValue.substr(indexOfText)}`;
-                if (this._inputChar.length > 1) {
-                    this._cursor += this._inputChar.length - 1;
-                    this._inputChar = this._inputChar[this._inputChar.length - 1];
-                }
+                this._updateInputMethodChar();
             } else {
                 this._inputChar = char;
                 this._cursor++;
                 textValue = `${textValue.substr(0, indexOfText)}${this._inputChar}${textValue.substr(indexOfText)}`;
+                textNode.edit(indexOfNode, textValue);
             }
-            this._inputChar = Hangul.d(this._inputChar).join('');
-            this._cursorMode = CursorMode.INPUT;
+            if (this._inputChar !== '') this._cursorMode = CursorMode.INPUT;
         } else {
             textValue = `${textValue.substr(0, indexOfText)}${char}${textValue.substr(indexOfText)}`;
             this._inputChar = '';
             this._cursorMode = CursorMode.EDIT;
             this._cursor++;
+            textNode.edit(indexOfNode, textValue);
         }
-        textNode.edit(indexOfNode, textValue);
 
         if (needGenerateTextData) this._generateTextItems();
 
@@ -235,7 +248,7 @@ export class ActaParagraph {
         return false;
     }
 
-    private _editorKeyboardControl(e: KeyboardEvent) {
+    private _onKeyPress(e: KeyboardEvent) {
         if (this._cursor === null) return;
 
         // 컨트롤, 시프트, 알트키는 무시
@@ -285,7 +298,11 @@ export class ActaParagraph {
                 } else return false;
             } else {
                 if (e.keyCode === Keycode.BACKSPACE) {
-                    if (ActaParagraph.inputMethod === InputMethod.KO && this._cursorMode === CursorMode.INPUT) {
+                    if (ActaParagraph.inputMethod === InputMethod.KO && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
+                        this._inputChar = this._inputChar.substr(0, this._inputChar.length - 1);
+                        this._updateInputMethodChar();
+                        if (this._inputChar === '') this._cursorMode = CursorMode.EDIT;
+                        this._redraw();
                         this._redrawCursor();
                         return false;
                     }
@@ -299,11 +316,15 @@ export class ActaParagraph {
             return false;
         } else if (e.keyCode === Keycode.HANGUL) {
             ActaParagraph.toggleInputMethod();
+            this._cursorMode = CursorMode.EDIT;
+            this._redrawCursor();
             return false;
         } else if (e.keyCode === Keycode.HANJA) {
-            //
+            this._cursorMode = CursorMode.EDIT;
+            this._redrawCursor();
+            return false;
         }
-        return (!e.ctrlKey) ? this._editorInputChar(e) : undefined;
+        return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
     }
 
     private _applyDefinedTextStyle(textItems: ITextItem[], textStyleName: string) {
@@ -354,7 +375,7 @@ export class ActaParagraph {
     }
 
     private _findVisableTextItem(textItem: ITextItem | null) {
-        if (textItem === null) return null;
+        if (!textItem) return null;
 
         const path = this._getTextPath(textItem.id);
         if (path.length < 1) {
@@ -522,6 +543,29 @@ export class ActaParagraph {
                     $(selection).attr('width', endx - startx);
                 }
             }
+        } else if (ActaParagraph.inputMethod !== InputMethod.EN && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
+            const textItem = this._findVisableTextItem(this._textItems[this._cursor - 1]);
+            if (!textItem || !textItem.lineItem) return;
+
+            const column = this.columns[textItem.lineItem.indexOfColumn];
+            if (!column) return;
+
+            const path = this._getTextPath(textItem.id);
+            if (path.length < 1) return;
+
+            const selection = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            $(selection).attr({
+                'x': $(path).attr('data-x') || '0',
+                'y': $(path).attr('data-y') || '0',
+                'width': parseFloat($(path).attr('data-width') || '0'),
+                'height': parseFloat($(path).attr('data-height') || '0'),
+                'fill': '#5555ff',
+                'fill-opacity': 0.4,
+                'stroke': '#0000ff',
+                'data-start-id': textItem.id,
+                'data-end-id': textItem.id
+            }).addClass('cursor');
+            $(column.svg).append(selection);
         } else {
             let currentColumn: ActaParagraphColumnElement | undefined;
             let textItem: ITextItem | null;
@@ -593,18 +637,18 @@ export class ActaParagraph {
         }
     }
 
-    private _getTextItemByPosition(column: ActaParagraphColumnElement, x: number, y: number) {
+    private _getTextItemByMouseEvent(column: ActaParagraphColumnElement, x: number, y: number) {
         let textItem: ITextItem | undefined;
         let id: string | undefined;
 
         $(column.svg).find('path').each((i: number, path: SVGPathElement) => {
             const itemX1 = parseFloat($(path).attr('data-x') || '');
-            const itemX2 = parseFloat($(path).attr('data-x') || '') + parseFloat($(path).attr('data-width') || '');
+            const itemX2 = parseFloat($(path).attr('data-x') || '') + parseFloat($(path).attr('data-width') || '0');
             const itemY1 = parseFloat($(path).attr('data-y') || '');
-            const itemY2 = parseFloat($(path).attr('data-y') || '') + parseFloat($(path).attr('data-height') || '') + parseFloat($(path).attr('data-leading') || '');
+            const itemY2 = parseFloat($(path).attr('data-y') || '') + parseFloat($(path).attr('data-height') || '0') + parseFloat($(path).attr('data-leading') || '0');
 
             if (isNaN(itemX1) || isNaN(itemX2) || isNaN(itemY1) || isNaN(itemY2)) return;
-            if (itemX1 < x && itemX2 > x && itemY1 < y && itemY2 > y) {
+            if (itemX1 <= x && itemX2 >= x && itemY1 <= y && itemY2 >= y) {
                 id = $(path).attr('data-id') || '';
                 return false;
             }
@@ -822,6 +866,8 @@ export class ActaParagraph {
         let columnIdx = 0;
         let indent = true;
 
+        this._overflow = false;
+
         for (const column of this.columns) {
             $(column.svg).attr({
                 width: ($(column).innerWidth() || 0),
@@ -922,7 +968,10 @@ export class ActaParagraph {
             } else {
                 let column = this.columns[columnIdx];
                 let filledHeight = 0;
-                if (!column) break;
+                if (!column) {
+                    this._overflow = true;
+                    break;
+                }
 
                 const lineItems: ITextLineItem[] = column.textLineItems;
                 for (let j = 0; j < lineItems.length; j++) {
@@ -935,8 +984,10 @@ export class ActaParagraph {
                     column.textLineItems = lineItems;
 
                     column = this.columns[++columnIdx];
-                    if (!column) break;
-
+                    if (!column) {
+                        this._overflow = true;
+                        break;
+                    }
                     if (lineItem != null) {
                         lineItem.indexOfColumn = columnIdx;
                         lineItem.indexOfLine = 0;
@@ -1058,6 +1109,11 @@ export class ActaParagraph {
             $(column.svg).append(paths);
             $(column.svg).append(lines);
         }
+        if (this._overflow) {
+            this._element.classList.add('overflow');
+        } else {
+            this._element.classList.remove('overflow');
+        }
     }
 
     private _redraw() {
@@ -1077,6 +1133,7 @@ export class ActaParagraph {
         this._cursorMode = CursorMode.NONE;
         this._cursor = null;
         this._inputChar = '';
+        this._overflow = false;
 
         this.columnCount = columnCount;
         for (let i = 0; i < columnCount; i++) {
@@ -1091,10 +1148,10 @@ export class ActaParagraph {
             this._redraw();
             return false;
         });
-        $(this._element).on('keydown', (e) => e.originalEvent ? this._editorKeyboardControl(e.originalEvent) : {});
+        $(this._element).on('keydown', (e) => e.originalEvent ? this._onKeyPress(e.originalEvent) : {});
         $(this._element).on('mousedown', 'x-paragraph-col', (e) => {
             if (!this._editable) return false;
-            const eventElement = this._getTextItemByPosition(e.currentTarget, e.offsetX, e.offsetY);
+            const eventElement = this._getTextItemByMouseEvent(e.currentTarget, e.offsetX, e.offsetY);
             this._cursorMode = CursorMode.SELECTION;
             this._cursor = null;
             this._selectionStartItem = this._setCursor(eventElement, e.offsetX);
@@ -1108,7 +1165,7 @@ export class ActaParagraph {
             const ev = e.originalEvent as MouseEvent;
             if (!this._editable) return false;
             if (this._cursorMode !== CursorMode.SELECTION || ev.buttons !== 1) return false;
-            const eventElement = this._getTextItemByPosition(e.currentTarget, e.offsetX, e.offsetY);
+            const eventElement = this._getTextItemByMouseEvent(e.currentTarget, e.offsetX, e.offsetY);
             if (this._selectionStartItem != null) {
                 this._setCursor(eventElement, e.offsetX);
                 this._redrawCursor();
@@ -1117,8 +1174,7 @@ export class ActaParagraph {
         });
         $(this._element).on('mouseup', 'x-paragraph-col', (e) => {
             if (!this._editable) return false;
-            if (this._cursorMode !== CursorMode.SELECTION) return false;
-            const eventElement = this._getTextItemByPosition(e.currentTarget, e.offsetX, e.offsetY);
+            const eventElement = this._getTextItemByMouseEvent(e.currentTarget, e.offsetX, e.offsetY);
             if (this._selectionStartItem != null) {
                 this._setCursor(eventElement, e.offsetX);
                 this._redrawCursor();
