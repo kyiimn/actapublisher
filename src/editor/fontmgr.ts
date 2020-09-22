@@ -10,7 +10,7 @@ export class ActaFontManager {
 
     private _list: ActaFont[];
 
-    constructor() {
+    private constructor() {
         this._list = [];
     }
 

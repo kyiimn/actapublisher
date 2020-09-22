@@ -6,12 +6,10 @@ import { ActaFontManager } from './editor/fontmgr';
 import { ActaTextStyleManager } from './editor/textstylemgr';
 import { ActaTextStyle, TextAlign } from './editor/textstyle';
 
-import './editor/element';
-
 import $ from 'jquery';
 
+import './editor/element';
 import '../css/element.scss';
-import { ActaTextConverter } from './editor/textconverter';
 
 const main = async () => {
     const page = new ActaPage('25cm', '30cm');

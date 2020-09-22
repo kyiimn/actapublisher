@@ -12,7 +12,7 @@ export class ActaTextStyleManager {
     }
 
     private _list: IActaTextStyleList;
-    constructor() { this._list = {}; }
+    private constructor() { this._list = {}; }
 
     add(name: string, style: ActaTextStyle) { this._list[name] = style; }
     remove(name: string) { delete this._list[name]; }
