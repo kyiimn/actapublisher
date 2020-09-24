@@ -172,9 +172,9 @@ export class ActaParagraph {
         if (!textItem) return;
 
         let hangulText = Hangul.a(this._inputChar.split(''));
-        let textValue = textItem.textStore.value[textItem.indexOfNode];
+        let textValue = textItem.textNode.value[textItem.indexOfNode];
         textValue = `${textValue.substr(0, textItem.indexOfText)}${hangulText}${textValue.substr(textItem.indexOfText + 1)}`;
-        textItem.textStore.edit(textItem.indexOfNode, textValue);
+        textItem.textNode.edit(textItem.indexOfNode, textValue);
 
         if (hangulText.length > 1) {
             this._cursor += hangulText.length - 1;
@@ -204,7 +204,7 @@ export class ActaParagraph {
             if (this.lastTextItem !== null) {
                 indexOfNode = this.lastTextItem.indexOfNode;
                 indexOfText = this.lastTextItem.indexOfText + 1;
-                textNode = this.lastTextItem.textStore;
+                textNode = this.lastTextItem.textNode;
                 if (!textNode) return false;
             } else {
                 textNode = this._textStore;
@@ -217,7 +217,7 @@ export class ActaParagraph {
             if (!textItem) { this._cursorMode = CursorMode.EDIT; return; }
             indexOfNode = textItem.indexOfNode;
             indexOfText = textItem.indexOfText;
-            textNode = textItem.textStore;
+            textNode = textItem.textNode;
             if (!textNode) return false;
         }
 
@@ -259,7 +259,7 @@ export class ActaParagraph {
             if (this.lastTextItem !== null) {
                 indexOfNode = this.lastTextItem.indexOfNode;
                 indexOfText = this.lastTextItem.indexOfText + 1;
-                textNode = this.lastTextItem.textStore;
+                textNode = this.lastTextItem.textNode;
                 if (!textNode) return false;
             } else {
                 textNode = this._textStore;
@@ -272,7 +272,7 @@ export class ActaParagraph {
             if (!textItem) return false;
             indexOfNode = textItem.indexOfNode;
             indexOfText = textItem.indexOfText;
-            textNode = textItem.textStore;
+            textNode = textItem.textNode;
             if (!textNode) return false;
         }
         let textValue: string = textNode.value[indexOfNode];
@@ -338,7 +338,10 @@ export class ActaParagraph {
                     if (ActaParagraph.inputMethod === InputMethod.KO && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
                         this._inputChar = this._inputChar.substr(0, this._inputChar.length - 1);
                         this._updateInputMethodChar();
-                        if (this._inputChar === '') this._cursorMode = CursorMode.EDIT;
+                        if (this._inputChar === '') {
+                            this._cursor--;
+                            this._cursorMode = CursorMode.EDIT;
+                        }
                         this._redraw();
                         this._redrawCursor();
                         return false;
@@ -399,8 +402,16 @@ export class ActaParagraph {
         return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
     }
 
-    private _applyDefinedTextStyle(textItems: ITextItem[], textStyleName: string) {
+    private _applyDefinedTextStyle(textItems: ITextItem[], textStyleName: string | null) {
+        if (textItems.length < 1) return;
 
+        const startItem = textItems[0];
+        const endItem = textItems[textItems.length - 1];
+        const textNodes: ActaTextStore[] = [startItem.textNode];
+        for (const textItem of textItems) {
+            if (textItem.textNode.id === textNodes[textNodes.length - 1].id) continue;
+            textNodes.push(textItem.textNode);
+        }
     }
 
     private _applyTextStyle(textItems: ITextItem[], textStyle: ActaTextStyle) {
@@ -413,7 +424,7 @@ export class ActaParagraph {
         for (const textItem of textItems) {
             if (!textItem) continue;
 
-            const textNode = textItem.textStore;
+            const textNode = textItem.textNode;
             if (textItem.type === TextItemType.END_OF_NODE) continue;
             let textValue = textNode.value[textItem.indexOfNode];
             textValue = `${textValue.substr(0, textItem.indexOfText)}${textValue.substr(textItem.indexOfText + 1)}`;
@@ -804,14 +815,14 @@ export class ActaParagraph {
 
         if (indexOfNode === undefined) {
             const tmpNodeIDList: string[] = [];
-            for (const tmpTextItem of this._textItems) tmpNodeIDList.push(tmpTextItem.textStore.id);
+            for (const tmpTextItem of this._textItems) tmpNodeIDList.push(tmpTextItem.textNode.id);
 
             s = tmpNodeIDList.indexOf(id);
             e = tmpNodeIDList.lastIndexOf(id);
         } else {
             for (let i = 0; i < this._textItems.length; i++) {
                 const tmpTextItem =this._textItems[i];
-                if (tmpTextItem.textStore.id !== id || tmpTextItem.indexOfNode !== indexOfNode) continue;
+                if (tmpTextItem.textNode.id !== id || tmpTextItem.indexOfNode !== indexOfNode) continue;
                 if (s < 0) s = i;
                 e = i;
             }
@@ -870,7 +881,7 @@ export class ActaParagraph {
                         lineItem: null,
                         indexOfText: 0,
                         char: '',
-                        textStore: textNode, textStyle, indexOfNode
+                        textNode, textStyle, indexOfNode
                     });
                 }
             } else {
@@ -887,7 +898,7 @@ export class ActaParagraph {
                             width: 0,
                             height: ActaParagraph.getCharHeight(textStyle.font.font, textStyle.fontSize),
                             lineItem: null,
-                            textStore: textNode, textStyle, indexOfNode, indexOfText, char
+                            textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     } else if (char === ' ') {
                         this._textItems.push({
@@ -898,7 +909,7 @@ export class ActaParagraph {
                             width: textStyle.fontSize / 3,
                             height: ActaParagraph.getCharHeight(textStyle.font.font, textStyle.fontSize),
                             lineItem: null,
-                            textStore: textNode, textStyle, indexOfNode, indexOfText, char
+                            textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     } else {
                         const glyphData = ActaParagraph.getCharPath(textStyle.font.font, char, textStyle.fontSize);
@@ -912,7 +923,7 @@ export class ActaParagraph {
                             width: glyphData.width,
                             height: glyphData.height,
                             lineItem: null,
-                            textStore: textNode, textStyle, indexOfNode, indexOfText, char
+                            textNode, textStyle, indexOfNode, indexOfText, char
                         });
                     }
                 }
@@ -950,13 +961,13 @@ export class ActaParagraph {
         }
         for (const textItem of this._textItems) {
             if (textItem.type === TextItemType.END_OF_NODE) continue;
-            if (textItem.textStore.modified) {
+            if (textItem.textNode.modified) {
                 // 수정된 노드라면 업데이트
                 if (!this._updateTextItems()) this._generateTextItems();
                 return this._computeTextItemSize();
-            } else if (this._textNodeList.indexOf(textItem.textStore.id) < 0) {
+            } else if (this._textNodeList.indexOf(textItem.textNode.id) < 0) {
                 // 삭제된 노드라면... 노드 제거
-                const [preList, postList] = this._splitTextItemsByNodeID(textItem.textStore.id);
+                const [preList, postList] = this._splitTextItemsByNodeID(textItem.textNode.id);
                 if (preList === undefined || postList === undefined) {
                     this._generateTextItems();
                 } else {
@@ -1150,7 +1161,7 @@ export class ActaParagraph {
                             'data-id': textItem.id,
                             'data-column': textItem.lineItem.indexOfColumn,
                             'data-line': textItem.lineItem.indexOfLine,
-                            'data-textnode': textItem.textStore.id,
+                            'data-textnode': textItem.textNode.id,
                             'data-index-of-node': textItem.indexOfNode,
                             'data-index-of-text': textItem.indexOfText
                         };

@@ -7,7 +7,7 @@ export class ActaTextStore {
     private _tagname: string;
     private _defaultTextStyleName: string | null;
     private _customTextStyle: ActaTextStyle;
-    private _value: (string | ActaTextStore)[];
+    private _value: (string | ActaTextNode)[];
     private _modified: boolean | number[];
 
     constructor(tagname: string = '') {
@@ -19,7 +19,7 @@ export class ActaTextStore {
         this._modified = true;
     }
 
-    add(val: any) {
+    add(val: string | ActaTextNode) {
         this.modified = this._value.push(val);
     }
 
@@ -105,3 +105,6 @@ export class ActaTextStore {
     get value() { return this._value; }
     get length() { return this.value.length; }
 };
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaTextNode extends ActaTextStore {};

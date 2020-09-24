@@ -3,7 +3,7 @@ import { ActaTextStyle, TextAlign } from './textstyle';
 
 export interface ITextItem {
     id: string;
-    textStore: ActaTextStore,
+    textNode: ActaTextStore,
     textStyle: ActaTextStyle;
     indexOfNode: number;
     indexOfText: number;
