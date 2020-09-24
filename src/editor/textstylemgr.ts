@@ -11,6 +11,10 @@ export class ActaTextStyleManager {
         return ActaTextStyleManager._instance;
     }
 
+    static get in() {
+        return ActaTextStyleManager.getInstance();
+    }
+
     private _list: IActaTextStyleList;
     private constructor() { this._list = {}; }
 

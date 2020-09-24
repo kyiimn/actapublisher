@@ -8,6 +8,10 @@ export class ActaFontManager {
         return ActaFontManager._instance;
     }
 
+    static get in() {
+        return ActaFontManager.getInstance();
+    }
+
     private _list: ActaFont[];
 
     private constructor() {

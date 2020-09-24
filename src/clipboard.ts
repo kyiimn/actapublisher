@@ -6,41 +6,66 @@ export enum ClipboardDataType {
 
 export class ActaClipboard {
     private static _instance: ActaClipboard;
+
     static getInstance() {
         if (!ActaClipboard._instance) ActaClipboard._instance = new ActaClipboard();
         return ActaClipboard._instance;
     }
 
-    private _supportedSystem: boolean;
+    static get in() {
+        return ActaClipboard.getInstance();
+    }
 
+    private _enableSystemClipboard: boolean;
     private _data: any;
     private _dataType: ClipboardDataType;
-    private _dataPairText: string | undefined;
+    private _dataPairText: string;
 
     private constructor() {
-        this._supportedSystem = supportedFeatures().clipboard;
+        this._enableSystemClipboard = supportedFeatures().clipboard;
 
         this._data = undefined;
         this._dataType = ClipboardDataType.NONE;
-        this._dataPairText = undefined;
+        this._dataPairText = '';
     }
 
     write(data: any) {
-        this._data = data;
-        if (!this._data) {
+        if (!data) {
             this._dataType = ClipboardDataType.NONE;
-        } else if (typeof(this._data) === 'string') {
-            this._dataType = ClipboardDataType.TEXT;
+            this._dataPairText = '';
+            this._data = undefined;
+            if (this.enableSystemClipboard) navigator.clipboard.writeText('');
         } else {
-            this._dataType = ClipboardDataType.OBJECT;
+            this._data = data;
+            if (typeof(this._data) === 'string') {
+                this._dataType = ClipboardDataType.TEXT;
+            } else {
+                this._dataType = ClipboardDataType.OBJECT;
+            }
+            if (this._enableSystemClipboard) {
+                const text = data.toString();
+                this._dataPairText = text;
+                navigator.clipboard.writeText(text);
+            }
         }
-        if (this._supportedSystem) {
-            const text = 
-        }
-        this._data =
+        return data;
     }
 
     async read() {
-        const text = 
+        return new Promise((resolve, reject) => {
+            if (this.enableSystemClipboard) {
+                navigator.clipboard.readText().then(v => {
+                    if (this._dataPairText === v.toString()) {
+                        resolve(this._dataType !== ClipboardDataType.TEXT ? this._data : v);
+                    } else {
+                        resolve(v);
+                    }
+                });
+            } else {
+                resolve(this._data);
+            }
+        });
     }
+
+    get enableSystemClipboard() { return this._enableSystemClipboard; }
 };
