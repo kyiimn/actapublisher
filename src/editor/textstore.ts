@@ -14,7 +14,7 @@ export class ActaTextStore {
         this._id = uuidv4();
         this._tagname = tagname.toLowerCase();
         this._defaultTextStyleName = null;
-        this._customTextStyle = new ActaTextStyle(true);
+        this._customTextStyle = new ActaTextStyleInherit();
         this._value = [];
         this._modified = true;
     }
@@ -32,14 +32,32 @@ export class ActaTextStore {
         this.modified = true;
     }
 
-    edit(idx: number, val: any) {
-        if (this._value[idx] === val) return;
+    insert(idx: number, val: string | ActaTextNode) {
+        this._value.splice(idx, 0, val);
+        this.modified = true;
+    }
+
+    edit(idx: number, val: string | ActaTextNode) {
+        if (typeof(val) === 'string') {
+            if (typeof(this._value[idx]) === 'string') {
+                if (this._value[idx] === val) return;
+            } else {
+                this.modified = true;
+            }
+        } else {
+            if (this._value[idx] instanceof ActaTextNode) {
+                const oldNode = this._value[idx] as ActaTextNode;
+                if (oldNode.id === val.id) return;
+            } else {
+                this.modified = true;
+            }
+        }
         this._value[idx] = val;
         this.modified = idx;
     }
 
     appliedTextStyle(parentTextStyle: ActaTextStyle) {
-        const textStyle = new ActaTextStyle(true);
+        const textStyle = new ActaTextStyleInherit();
         let defaultTextStyle = ActaTextStyleManager.getInstance().get(this.defaultTextStyleName || '');
         if (!defaultTextStyle) defaultTextStyle = textStyle;
 
@@ -57,16 +75,6 @@ export class ActaTextStore {
         return textStyle;
     }
 
-    set defaultTextStyleName(styleName: string | null) {
-        this._defaultTextStyleName = styleName;
-        this.modified = true;
-    }
-
-    set customTextStyle(style: ActaTextStyle) {
-        this._customTextStyle = style;
-        this.modified = true;
-    }
-
     isModified(idx: number) {
         if (typeof(this._modified) === 'object') {
             if (typeof(this.value[idx]) !== 'string') return false;
@@ -75,6 +83,24 @@ export class ActaTextStore {
             return true;
         }
         return false;
+    }
+
+    toString() {
+        let str = '';
+        for (const val of this.value) {
+            str += val.toString();
+        }
+        return str;
+    }
+
+    set defaultTextStyleName(styleName: string | null) {
+        this._defaultTextStyleName = styleName;
+        this.modified = true;
+    }
+
+    set customTextStyle(style: ActaTextStyle) {
+        this._customTextStyle = style;
+        this.modified = true;
     }
 
     set modified(val: number[] | number | boolean) {
@@ -94,8 +120,10 @@ export class ActaTextStore {
             }
         }
     }
-    set value(values: any[]) { this._value = values; }
-
+    set value(values: any[]) {
+        this._value = values;
+        this.modified = true;
+    }
     get tagName() { return this._tagname; }
     get id() { return this._id; }
     get defaultTextStyleName() { return this._defaultTextStyleName; }

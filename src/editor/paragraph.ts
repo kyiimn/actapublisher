@@ -4,8 +4,8 @@ import { ActaParagraphMarginElement } from './element/paragraph-margin-el';
 
 import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextConverter } from './textconverter';
-import { ActaTextStore } from './textstore';
-import { ActaTextStyle, TextAlign } from './textstyle';
+import { ActaTextNode, ActaTextStore } from './textstore';
+import { ActaTextStyle, ActaTextStyleInherit, TextAlign } from './textstyle';
 
 import { ActaClipboard } from '../clipboard';
 
@@ -328,10 +328,10 @@ export class ActaParagraph {
             }
         } else if ([Keycode.BACKSPACE, Keycode.DELETE].indexOf(e.keyCode) > -1) {
             if (this._cursorMode === CursorMode.SELECTION) {
-                const selectionTextItems = this._getSelectionTextItems();
-                if (selectionTextItems.length > 0) {
-                    this._cursor = this._textItems.indexOf(selectionTextItems[0]);
-                    this._removeTextItems(selectionTextItems);
+                const selTextItems = this._getSelectionTextItems();
+                if (selTextItems.length > 0) {
+                    this._cursor = this._textItems.indexOf(selTextItems[0]);
+                    this._removeTextItems(selTextItems);
                 } else return false;
             } else {
                 if (e.keyCode === Keycode.BACKSPACE) {
@@ -398,6 +398,20 @@ export class ActaParagraph {
                 this._redrawCursor();
             });
             return false;
+        } else if (e.altKey && e.key === 'd') {
+            const selTextItems = this._getSelectionTextItems();
+            if (selTextItems.length > 0) {
+                const aa = new ActaTextStyleInherit();
+                this._applyTextStyle(selTextItems, aa);//'본문2');
+            }
+            return false;
+        } else if (e.altKey && e.key === 'c') {
+            const selTextItems = this._getSelectionTextItems();
+            if (selTextItems.length > 0) {
+                const aa = new ActaTextStyleInherit();
+                this._applyDefinedTextStyle(selTextItems, '본문2');
+            }
+            return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
     }
@@ -405,17 +419,117 @@ export class ActaParagraph {
     private _applyDefinedTextStyle(textItems: ITextItem[], textStyleName: string | null) {
         if (textItems.length < 1) return;
 
-        const startItem = textItems[0];
-        const endItem = textItems[textItems.length - 1];
-        const textNodes: ActaTextStore[] = [startItem.textNode];
-        for (const textItem of textItems) {
-            if (textItem.textNode.id === textNodes[textNodes.length - 1].id) continue;
-            textNodes.push(textItem.textNode);
+        if (textItems[0].textNode === textItems[textItems.length - 1].textNode &&
+            textItems[0].indexOfNode === 0 && textItems[0].indexOfText === 0 &&
+            textItems[textItems.length - 1].indexOfNode === (textItems[textItems.length - 1].textNode.length - 1) &&
+            textItems[textItems.length - 1].indexOfText === (textItems[textItems.length - 1].textNode.value[textItems[textItems.length - 1].indexOfNode].length)
+        ) {
+            // 노드 전체를 선택했을 경우...
+            const textNode = textItems[0].textNode;
+            const oldValue = textNode.value;
+            const newValue = [];
+            for (const value of oldValue) newValue.push(value.toString());
+            textNode.value = newValue;
+            textNode.customTextStyle = new ActaTextStyleInherit();
+        } else {
+            for (let i = 0; i < textItems.length; i++) {
+                const currItem = textItems[i];
+                const textNode = currItem.textNode;
+                let endItem = currItem, str = '';
+
+                for (let j = textItems.length - 1; j > i; j--) {
+                    if (textItems[j].textNode !== textNode) continue;
+                    endItem = textItems[j];
+                    i = j;
+                    break;
+                }
+                const oldValue = textNode.value;
+                const newValue = [];
+                for (let j = 0; j < oldValue.length; j++) {
+                    if (j < currItem.indexOfNode || j > endItem.indexOfNode) {
+                        newValue.push(oldValue[j]);
+                    } else if (j === currItem.indexOfNode) {
+                        newValue.push(oldValue[j].substr(0, currItem.indexOfText));
+                        if (currItem.indexOfNode === endItem.indexOfNode) {
+                            newValue.push(oldValue[j].substr(endItem.indexOfText + 1));
+                            str = oldValue[j].substr(currItem.indexOfText, endItem.indexOfText - currItem.indexOfText + 1);
+                        } else {
+                            str += oldValue[j].substr(currItem.indexOfText);
+                        }
+                    } else if (j === endItem.indexOfNode) {
+                        newValue.push(oldValue[j].substr(endItem.indexOfText + 1));
+                        str += oldValue[j].substr(0, endItem.indexOfText + 1);
+                    } else {
+                        if (oldValue[j] instanceof ActaTextNode && oldValue[j] !== textNode) {
+                            const nodeIdx = this._textNodeList.indexOf(oldValue[j]);
+                            if (nodeIdx > -1) this._textNodeList.splice(nodeIdx, 1);
+                        }
+                        str += oldValue[j].toString();
+                    }
+                }
+                if (str !== '') {
+                    const newNode = new ActaTextStore();
+                    const splitedStr = str.split('\n');
+                    for (let j = 0; j < splitedStr.length; j++) {
+                        newNode.add(splitedStr[i] + ((j !== splitedStr.length - 1) ? '\n' : ''));
+                    }
+                    newNode.defaultTextStyleName = textStyleName;
+                    newValue.splice(currItem.indexOfNode + 1, 0, newNode);
+                }
+                textNode.value = newValue;
+            }
         }
+        this._redraw();
+        this._redrawCursor();
     }
 
     private _applyTextStyle(textItems: ITextItem[], textStyle: ActaTextStyle) {
+        if (textItems.length < 1) return;
+        for (let i = 0; i < textItems.length; i++) {
+            const currItem = textItems[i];
+            const textNode = currItem.textNode;
+            let endItem = currItem, str = '';
 
+            for (let j = textItems.length - 1; j > i; j--) {
+                if (textItems[j].textNode !== textNode) continue;
+                endItem = textItems[j];
+                i = j;
+                break;
+            }
+            const oldValue = textNode.value;
+            const newValue = [];
+            for (let j = 0; j < oldValue.length; j++) {
+                if (j < currItem.indexOfNode || j > endItem.indexOfNode) {
+                    newValue.push(oldValue[j]);
+                } else if (j === currItem.indexOfNode) {
+                    newValue.push(oldValue[j].substr(0, currItem.indexOfText));
+                    if (currItem.indexOfNode === endItem.indexOfNode) {
+                        newValue.push(oldValue[j].substr(endItem.indexOfText + 1));
+                        str = oldValue[j].substr(currItem.indexOfText, endItem.indexOfText - currItem.indexOfText + 1);
+                    } else {
+                        str += oldValue[j].substr(currItem.indexOfText);
+                    }
+                } else if (j === endItem.indexOfNode) {
+                    newValue.push(oldValue[j].substr(endItem.indexOfText + 1));
+                    str += oldValue[j].substr(0, endItem.indexOfText + 1);
+                } else {
+                    if (oldValue[j] instanceof ActaTextNode && oldValue[j] !== textNode) {
+                        const nodeIdx = this._textNodeList.indexOf(oldValue[j]);
+                        if (nodeIdx > -1) this._textNodeList.splice(nodeIdx, 1);
+                    }
+                    str += oldValue[j].toString();
+                }
+            }
+            if (str !== '') {
+                const newNode = new ActaTextStore();
+                newNode.add(str);
+                //newNode.defaultTextStyleName = textStyleName;
+                newValue.splice(currItem.indexOfNode + 1, 0, newNode);
+            }
+            textNode.value = newValue;
+        }
+        this._redraw();
+        this._redrawCursor();
     }
 
     private _removeTextItems(textItems: ITextItem[]) {

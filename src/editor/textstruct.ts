@@ -1,9 +1,9 @@
-import { ActaTextStore } from './textstore';
+import { ActaTextStore, ActaTextNode } from './textstore';
 import { ActaTextStyle, TextAlign } from './textstyle';
 
 export interface ITextItem {
     id: string;
-    textNode: ActaTextStore,
+    textNode: ActaTextNode;
     textStyle: ActaTextStyle;
     indexOfNode: number;
     indexOfText: number;

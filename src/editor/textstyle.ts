@@ -58,3 +58,10 @@ export class ActaTextStyle {
     get indent() { return this._indent; }
     get color() { return this._color; }
 };
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaTextStyleInherit extends ActaTextStyle {
+    constructor() {
+        super(true);
+    }
+};
