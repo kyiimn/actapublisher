@@ -1,5 +1,5 @@
 import { ActaTextStyleManager } from './textstylemgr';
-import { ActaTextStyle } from './textstyle';
+import { ActaTextStyle, ActaTextStyleInherit } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ActaTextStore {
@@ -19,7 +19,7 @@ export class ActaTextStore {
         this._modified = true;
     }
 
-    add(val: string | ActaTextNode) {
+    push(val: string | ActaTextNode) {
         this.modified = this._value.push(val);
     }
 
@@ -32,12 +32,17 @@ export class ActaTextStore {
         this.modified = true;
     }
 
+    splice(start: number, deleteCount?: number, items?: any[]) {
+        const params: any[] = [start, deleteCount || 0];
+        this._value.splice.apply(this._value, params.concat(items || []));
+    }
+
     insert(idx: number, val: string | ActaTextNode) {
         this._value.splice(idx, 0, val);
         this.modified = true;
     }
 
-    edit(idx: number, val: string | ActaTextNode) {
+    replace(idx: number, val: string | ActaTextNode) {
         if (typeof(val) === 'string') {
             if (typeof(this._value[idx]) === 'string') {
                 if (this._value[idx] === val) return;

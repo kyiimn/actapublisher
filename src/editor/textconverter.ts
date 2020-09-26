@@ -1,10 +1,10 @@
-import { ActaTextStore } from './textstore';
+import { ActaTextNode } from './textstore';
 import { Stack } from '../utils';
 
 export class ActaTextConverter {
     static textobject(text: string) {
         const node = new Stack();
-        let currentnode = new ActaTextStore();
+        let currentnode = new ActaTextNode();
         let str = '';
 
         for (let i = 0; i < text.length; i++) {
@@ -18,7 +18,7 @@ export class ActaTextConverter {
                     if (tagstr[0] === '/') {
                         const tagname = tagstr.substr(1).toLowerCase();
                         let beforenode;
-                        if (str.length > 0) { currentnode.add(str); str = ''; }
+                        if (str.length > 0) { currentnode.push(str); str = ''; }
                         do {
                             beforenode = currentnode;
                             currentnode = node.pop();
@@ -31,11 +31,11 @@ export class ActaTextConverter {
                         const t = tagstr.split(' ');
                         const tagname = t[0].toLowerCase();
                         if (tagname === 'x-style') {
-                            if (str.length > 0) { currentnode.add(str); str = ''; }
-                            const newnode = new ActaTextStore(tagname);
+                            if (str.length > 0) { currentnode.push(str); str = ''; }
+                            const newnode = new ActaTextNode(tagname);
                             const textStyle = newnode.customTextStyle;
 
-                            currentnode.add(newnode);
+                            currentnode.push(newnode);
                             node.push(currentnode);
 
                             for (let j = 1; j < t.length; j++) {
@@ -66,10 +66,10 @@ export class ActaTextConverter {
             }
             str += char;
             if (str.length > 0 && char === '\n') {
-                currentnode.add(str); str = '';
+                currentnode.push(str); str = '';
             }
         }
-        if (currentnode.length < 0 || str.length > 0) { currentnode.add(str); str = ''; }
+        if (currentnode.length < 0 || str.length > 0) { currentnode.push(str); str = ''; }
 
         return currentnode || node.first();
     }
