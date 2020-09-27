@@ -32,11 +32,6 @@ export class ActaTextStore {
         this.modified = true;
     }
 
-    splice(start: number, deleteCount?: number, items?: any[]) {
-        const params: any[] = [start, deleteCount || 0];
-        this._value.splice.apply(this._value, params.concat(items || []));
-    }
-
     insert(idx: number, val: string | ActaTextNode) {
         this._value.splice(idx, 0, val);
         this.modified = true;

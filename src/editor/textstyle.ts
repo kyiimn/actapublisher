@@ -30,6 +30,20 @@ export class ActaTextStyle {
         this._color = inherit ? null : '#000000';
     }
 
+    merge(textStyle: ActaTextStyleInherit) {
+        if (textStyle.font !== null) this.font = textStyle.font;
+        if (textStyle.fontSize !== null) this.fontSize = textStyle.fontSize;
+        if (textStyle.xscale !== null) this.xscale = textStyle.xscale;
+        if (textStyle.letterSpacing !== null) this.letterSpacing = textStyle.letterSpacing;
+        if (textStyle.lineHeight !== null) this.lineHeight = textStyle.lineHeight;
+        if (textStyle.textAlign !== null) this.textAlign = textStyle.textAlign;
+        if (textStyle.underline !== null) this.underline = textStyle.underline;
+        if (textStyle.strikeline !== null) this.strikeline = textStyle.strikeline;
+        if (textStyle.font !== null) this.font = textStyle.font;
+        if (textStyle.indent !== null) this.indent = textStyle.indent;
+        if (textStyle.color !== null) this.color = textStyle.color;
+    }
+
     set fontName(fontName: string) {
         const fontmgr = ActaFontManager.getInstance();
         const font = fontmgr.get(fontName);

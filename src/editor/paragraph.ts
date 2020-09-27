@@ -469,7 +469,7 @@ export class ActaParagraph {
                     }
                 }
                 if (str !== '') {
-                    const newNode = new ActaTextStore();
+                    const newNode = new ActaTextNode();
                     const splitedStr = str.split('\n');
                     for (let j = 0; j < splitedStr.length; j++) {
                         newNode.push(splitedStr[j] + ((j !== splitedStr.length - 1) ? '\n' : ''));
@@ -484,60 +484,50 @@ export class ActaParagraph {
         this._redrawCursor();
     }
 
-    private _applyTextStyle(textItems: ITextItem[], textStyle: ActaTextStyle) {
+    private _applyTextStyle(textItems: ITextItem[], textStyle: ActaTextStyleInherit) {
         if (textItems.length < 1) return;
         for (let i = textItems.length; i > 0; i--) {
             const endItem = textItems[i - 1];
             const textNode = endItem.textNode;
-            let startItem = endItem;
-
-            for (let j = i; j > 0; j--) {
-                if (textItems[j].textNode !== textNode) {
-
-                }
-            }
-        }
-        for (let i = 0; i < textItems.length; i++) {
-            const currItem = textItems[i];
-            const textNode = currItem.textNode;
-            let endItem = currItem, str = '';
-
-            for (let j = textItems.length - 1; j > i; j--) {
-                if (textItems[j].textNode !== textNode) continue;
-                endItem = textItems[j];
-                i = j;
-                break;
-            }
             const oldValue = textNode.value;
             const newValue = [];
-            for (let j = 0; j < oldValue.length; j++) {
-                if (j < currItem.indexOfNode || j > endItem.indexOfNode) {
-                    newValue.push(oldValue[j]);
-                } else if (j === currItem.indexOfNode) {
-                    newValue.push(oldValue[j].substr(0, currItem.indexOfText));
-                    if (currItem.indexOfNode === endItem.indexOfNode) {
-                        newValue.push(oldValue[j].substr(endItem.indexOfText + 1));
-                        str = oldValue[j].substr(currItem.indexOfText, endItem.indexOfText - currItem.indexOfText + 1);
-                    } else {
-                        str += oldValue[j].substr(currItem.indexOfText);
-                    }
-                } else if (j === endItem.indexOfNode) {
-                    newValue.push(oldValue[j].substr(endItem.indexOfText + 1));
-                    str += oldValue[j].substr(0, endItem.indexOfText + 1);
-                } else {
-                    if (oldValue[j] instanceof ActaTextNode && oldValue[j] !== textNode) {
-                        const nodeIdx = this._textNodeList.indexOf(oldValue[j]);
-                        if (nodeIdx > -1) this._textNodeList.splice(nodeIdx, 1);
-                    }
-                    str += oldValue[j].toString();
+            let startItem = endItem;
+
+            for (let j = i - 1; j > 0; j--) {
+                if (textItems[j].textNode !== textNode) {
+                    i = j - 1;
+                    break;
                 }
+                startItem = textItems[j];
             }
-            if (str !== '') {
-                const newNode = new ActaTextStore();
-                newNode.push(str);
-                //newNode.defaultTextStyleName = textStyleName;
-                newValue.splice(currItem.indexOfNode + 1, 0, newNode);
+            for (let j = 0; j < startItem.indexOfNode; j++) newValue.push(oldValue[j]);
+
+            const startIndexOfNode = startItem.indexOfNode;
+            const endIndexOfNode = endItem.indexOfNode;
+            const preValue = oldValue[startIndexOfNode].substr(0, startItem.indexOfText);
+            const postValue = oldValue[endIndexOfNode].substr(endItem.indexOfText + 1);
+            let str = '';
+            if (preValue !== '') newValue.push(preValue);
+
+            const newNode = new ActaTextNode();
+            newNode.customTextStyle = textStyle;
+            if (startIndexOfNode === endIndexOfNode) {
+                str = oldValue[startIndexOfNode].substr(startItem.indexOfText, endItem.indexOfText - startItem.indexOfText + 1);
+            } else {
+                str = oldValue[startIndexOfNode].substr(startItem.indexOfText);
+                for (let j = startIndexOfNode + 1; j <= endIndexOfNode; j++) {
+                    str += oldValue[j];
+                }
+                str += oldValue[endIndexOfNode].substr(0, endItem.indexOfText + 1);
             }
+            const splitedStr = str.split('\n');
+            for (let j = 0; j < splitedStr.length; j++) {
+                newNode.push(splitedStr[j] + ((j !== splitedStr.length - 1) ? '\n' : ''));
+            }
+            newValue.push(newNode);
+            if (postValue !== '') newValue.push(postValue);
+            for (let j = endItem.indexOfNode + 1; j < oldValue.length; j++) newValue.push(oldValue[j]);
+
             textNode.value = newValue;
         }
         this._redraw();
