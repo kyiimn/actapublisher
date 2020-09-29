@@ -154,7 +154,7 @@ export class ActaParagraph {
         const charHeight = (font.tables.os2.usWinAscent + font.tables.os2.usWinDescent) / unitsPerSize;
         const yMin = font.tables.head.yMin / unitsPerSize;
         const path = glyph.getPath(0, charHeight, size);
-        const pathData = path.toPathData(8);
+        const pathData = path.toPathData(3);
         const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         el.setAttribute('d', pathData);
 
@@ -423,7 +423,7 @@ export class ActaParagraph {
         if (textItems[0].textNode === textItems[textItems.length - 1].textNode &&
             textItems[0].indexOfNode === 0 && textItems[0].indexOfText === 0 &&
             textItems[textItems.length - 1].indexOfNode === (textItems[textItems.length - 1].textNode.length - 1) &&
-            textItems[textItems.length - 1].indexOfText === (textItems[textItems.length - 1].textNode.value[textItems[textItems.length - 1].indexOfNode].length)
+            textItems[textItems.length - 1].indexOfText === (textItems[textItems.length - 1].textNode.value[textItems[textItems.length - 1].indexOfNode].length - 1)
         ) {
             // 노드 전체를 선택했을 경우...
             const textNode = textItems[0].textNode;
@@ -476,7 +476,7 @@ export class ActaParagraph {
                     }
                     newNode.defaultTextStyleName = textStyleName;
                     newValue.splice(currItem.indexOfNode + 1, 0, newNode);
-                }
+                }console.log(str);
                 textNode.value = newValue;
             }
         }
@@ -493,7 +493,7 @@ export class ActaParagraph {
             const newValue = [];
             let startItem = endItem;
 
-            for (let j = i - 1; j > 0; j--) {
+            for (let j = i - 1; j >= 0; j--) {
                 if (textItems[j].textNode !== textNode) {
                     i = j - 1;
                     break;
