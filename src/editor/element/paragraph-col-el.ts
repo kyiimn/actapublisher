@@ -1,14 +1,14 @@
-import { ITextLineItem } from '../textstruct';
+import { ActaTextRow } from '../textrow';
 
 export class ActaParagraphColumnElement extends HTMLElement {
     private _root: ShadowRoot;
     private _svg: SVGElement | null;
-    private _textLineItems: ITextLineItem[];
+    private _textRows: ActaTextRow[];
 
     constructor() {
         super();
         this._root = this.attachShadow({ mode: 'open' });
-        this._textLineItems = [];
+        this._textRows = [];
         this._svg = null;
     }
     static get observedAttributes() {
@@ -57,8 +57,8 @@ export class ActaParagraphColumnElement extends HTMLElement {
         this._svg.innerHTML = '';
     }
 
-    set textLineItems(items: ITextLineItem[]) { this._textLineItems = items; }
-    get textLineItems() { return this._textLineItems; }
+    set textRows(items: ActaTextRow[]) { this._textRows = items; }
+    get textRows() { return this._textRows; }
 
     get svg() { return this._svg === null ? this.initSVG() : this._svg; }
 };

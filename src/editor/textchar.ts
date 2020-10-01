@@ -4,19 +4,19 @@ import { ActaTextRow } from './textrow';
 
 import { v4 as uuidv4 } from 'uuid';
 
-export enum TextItemType {
+export enum TextCharType {
     NEWLINE, SPACE, PATH, END_OF_NODE
 };
 
 export class ActaTextChar {
     private _id: string;
- 
+
     private _char: string;
     private _textStyle: ActaTextStyle;
-    private _type: TextItemType;
+    private _type: TextCharType;
 
     private _modified: boolean;
- 
+
     private _textNode: ActaTextNode;
     private _textRow?: ActaTextRow;
     private _indexOfNode: number;
@@ -55,9 +55,9 @@ export class ActaTextChar {
             this._textStyle.color == null
         ) return;
 
-        if (this._type === TextItemType.SPACE) {
+        if (this._type === TextCharType.SPACE) {
             this._width = (this._textStyle.fontSize !== null) ? this._textStyle.fontSize / 3 : 0;
-        } else if (this._type === TextItemType.PATH) {
+        } else if (this._type === TextCharType.PATH) {
             const font = this._textStyle.font.font, size = this._textStyle.fontSize;
             const glyph = font.charToGlyph(this._char);
             const unitsPerSize = font.unitsPerEm / size;
@@ -96,10 +96,10 @@ export class ActaTextChar {
         this._calcWidth = 0;
 
         switch (char) {
-            case '\n': this._type = TextItemType.NEWLINE; break;
-            case ' ': this._type = TextItemType.SPACE; break;
-            case '': this._type = TextItemType.END_OF_NODE; break;
-            default: this._type = TextItemType.PATH; break;
+            case '\n': this._type = TextCharType.NEWLINE; break;
+            case ' ': this._type = TextCharType.SPACE; break;
+            case '': this._type = TextCharType.END_OF_NODE; break;
+            default: this._type = TextCharType.PATH; break;
         }
         this._updateTextStyle();
     }
@@ -133,23 +133,59 @@ export class ActaTextChar {
 
         this._SVGPath.setAttribute('data-id', this.id);
         this._SVGPath.setAttribute('data-textnode', this._textNode.id);
-        this._SVGPath.setAttribute('data-column', this._textRow.indexOfColumn.toString());
-        this._SVGPath.setAttribute('data-index-of-line', this._textRow.indexOfLine.toString());
-        this._SVGPath.setAttribute('data-index-of-node', this._indexOfNode.toString());
-        this._SVGPath.setAttribute('data-index-of-text', this._indexOfText.toString());
-        this._SVGPath.setAttributeNode({
+        this._SVGPath.setAttribute('data-index-of-node', this.indexOfNode.toString());
+        this._SVGPath.setAttribute('data-index-of-text', this.indexOfText.toString());
+        this._SVGPath.setAttribute('data-width', this.calcWidth.toString());
+        this._SVGPath.setAttribute('data-height', this._textRow.maxHeight.toString());
+        this._SVGPath.setAttribute('data-leading', this._textRow.maxLeading.toString());
+
+        this._SVGPath.setAttribute('data-x', x.toString());
+        this._SVGPath.setAttribute('data-y', y.toString());
+
+        if (this.indexOfColumn !== null) this._SVGPath.setAttribute('data-index-of-column', this.indexOfColumn.toString());
+        if (this.indexOfLine !== null) this._SVGPath.setAttribute('data-index-of-line', this.indexOfLine.toString());
+
+        this._modified = false;
     }
 
-    set calcWidth(w: number) { this._calcWidth = w; }
+    set calcWidth(w: number) {
+        this._modified = true;
+        this._calcWidth = w;
+    }
     set textStyle(textStyle: ActaTextStyle) {
+        this._modified = true;
         this._textStyle = textStyle;
         this._updateTextStyle();
     }
+    set textRow(textRow: ActaTextRow | null) {
+        this._modified = true;
+        this._textRow = textRow || undefined;
+    }
 
+    get id() { return this._id; }
+    get char() { return this._char; }
+    get type() { return this._type; }
+    get indexOfColumn() { return (this._textRow) ? this._textRow.indexOfColumn : -1; }
+    get indexOfLine() { return (this._textRow) ? this._textRow.indexOfLine : -1; }
+    get indexOfNode() { return this._indexOfNode; }
+    get indexOfText() { return this._indexOfText; }
     get drawOffsetX() { return this._drawOffsetX; }
     get drawOffsetY() { return this._drawOffsetY; }
     get width() { return this._width; }
     get height() { return this._height; }
     get calcWidth() { return this._calcWidth; }
+    get textNode() { return this._textNode; }
     get textStyle() { return this._textStyle; }
+    get textRow() { return this._textRow || null; }
+    get rowLineHeight() { return this._rowLineHeight; }
+    get modified() { return this._modified; }
+
+    get x() { return this._posX || 0; }
+    get y() { return this._posY || 0; }
+
+    get visable() {
+        return (this._SVGPath.parentElement !== null && this._type !== TextCharType.END_OF_NODE) ? true : false
+    }
+
+    get el() { return this._SVGPath; }
 };
