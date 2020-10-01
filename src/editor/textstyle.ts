@@ -5,7 +5,11 @@ export enum TextAlign {
     JUSTIFY = 0, LEFT, RIGHT, CENTER
 }
 
-export class ActaTextStyle {
+type CallbackAttributeChange = (
+    (attributeName: string) => void
+);
+
+class _ActaTextStylePrivate {
     private _font: ActaFont | null;
     private _fontSize: number | null;
     private _color: string | null;
@@ -17,49 +21,124 @@ export class ActaTextStyle {
     private _strikeline: boolean | null;
     private _indent: number | null;
 
-    constructor(inherit: boolean = false) {
+    private _callbackList: CallbackAttributeChange[];
+
+    constructor() {
         this._font = null;
-        this._fontSize = inherit ? null : 10;
-        this._xscale = inherit ? null : 1;
-        this._letterSpacing = inherit ? null : 0;
-        this._lineHeight = inherit ? null : 1.2;
-        this._textAlign = inherit ? null : TextAlign.JUSTIFY;
-        this._underline = inherit ? null : false;
-        this._strikeline = inherit ? null : false;
-        this._indent = inherit ? null : 0;
-        this._color = inherit ? null : '#000000';
+        this._fontSize = null;
+        this._xscale = null;
+        this._letterSpacing = null;
+        this._lineHeight = null;
+        this._textAlign = null;
+        this._underline = null;
+        this._strikeline = null;
+        this._indent = null;
+        this._color = null;
+
+        this._callbackList = [];
     }
 
-    merge(textStyle: ActaTextStyleInherit) {
-        if (textStyle.font !== null) this.font = textStyle.font;
-        if (textStyle.fontSize !== null) this.fontSize = textStyle.fontSize;
-        if (textStyle.xscale !== null) this.xscale = textStyle.xscale;
-        if (textStyle.letterSpacing !== null) this.letterSpacing = textStyle.letterSpacing;
-        if (textStyle.lineHeight !== null) this.lineHeight = textStyle.lineHeight;
-        if (textStyle.textAlign !== null) this.textAlign = textStyle.textAlign;
-        if (textStyle.underline !== null) this.underline = textStyle.underline;
-        if (textStyle.strikeline !== null) this.strikeline = textStyle.strikeline;
-        if (textStyle.font !== null) this.font = textStyle.font;
-        if (textStyle.indent !== null) this.indent = textStyle.indent;
-        if (textStyle.color !== null) this.color = textStyle.color;
+    protected merge(textStyle: _ActaTextStylePrivate) {
+        let changed = false;
+
+        if (textStyle.font !== null) { this.font = textStyle.font; changed = true; }
+        if (textStyle.fontSize !== null) { this.fontSize = textStyle.fontSize; changed = true; }
+        if (textStyle.xscale !== null) { this.xscale = textStyle.xscale; changed = true; }
+        if (textStyle.letterSpacing !== null) { this.letterSpacing = textStyle.letterSpacing; changed = true; }
+        if (textStyle.lineHeight !== null) { this.lineHeight = textStyle.lineHeight; changed = true; }
+        if (textStyle.textAlign !== null) { this.textAlign = textStyle.textAlign; changed = true; }
+        if (textStyle.underline !== null) { this.underline = textStyle.underline; changed = true; }
+        if (textStyle.strikeline !== null) { this.strikeline = textStyle.strikeline; changed = true; }
+        if (textStyle.font !== null) { this.font = textStyle.font; changed = true; }
+        if (textStyle.indent !== null) { this.indent = textStyle.indent; changed = true; }
+        if (textStyle.color !== null) { this.color = textStyle.color; changed = true; }
+
+        if (changed) this.triggerChangeEvent('');
+    }
+
+    protected triggerChangeEvent(name: string) {
+        for (const callback of this._callbackList) {
+            if (callback) callback(name);
+        }
+    }
+
+    removeChange(callback: CallbackAttributeChange) {
+        const idx = this._callbackList.indexOf(callback);
+        if (idx < 0) return;
+        this._callbackList = this._callbackList.splice(idx, 1);
+    }
+
+    set onChange(callback: CallbackAttributeChange) {
+        if (this._callbackList.indexOf(callback) < 0) this._callbackList.push(callback);
     }
 
     set fontName(fontName: string) {
         const fontmgr = ActaFontManager.getInstance();
         const font = fontmgr.get(fontName);
         if (!font) return;
-        this._font = font;
+        this.font = font;
     }
-    set font(font: ActaFont | null) { this._font = font; }
-    set fontSize(size: number | null) { this._fontSize = size; }
-    set xscale(scale: number | null) { this._xscale = scale; }
-    set letterSpacing(linespacing: number | null) { this._letterSpacing = linespacing; }
-    set lineHeight(lineheight: number | null) { this._lineHeight = lineheight; }
-    set textAlign(align: TextAlign | null) { this._textAlign = align; }
-    set underline(underline: boolean | null) { this._underline = underline; }
-    set strikeline(strikeline: boolean | null) { this._strikeline = strikeline; }
-    set indent(indent: number | null) { this._indent = indent; }
-    set color(color: string | null) { this._color = color; }
+    set font(font: ActaFont | null) {
+        if (this._font !== font) {
+            this._font = font;
+            this.triggerChangeEvent('font');
+        }
+    }
+
+    set fontSize(size: number | null) {
+        if (this._fontSize !== size) {
+            this._fontSize = size;
+            this.triggerChangeEvent('fontSize');
+        }
+    }
+    set xscale(scale: number | null) {
+        if (this._xscale !== scale) {
+            this._xscale = scale;
+            this.triggerChangeEvent('xscale');
+        }
+    }
+    set letterSpacing(linespacing: number | null) {
+        if (this._letterSpacing !== linespacing) {
+            this._letterSpacing = linespacing;
+            this.triggerChangeEvent('letterSpacing');
+        }
+    }
+    set lineHeight(lineheight: number | null) {
+        if (this._lineHeight !== lineheight) {
+            this._lineHeight = lineheight;
+            this.triggerChangeEvent('lineHeight');
+        }
+    }
+    set textAlign(align: TextAlign | null) {
+        if (this._textAlign !== align) {
+            this._textAlign = align;
+            this.triggerChangeEvent('textAlign');
+        }
+    }
+    set underline(underline: boolean | null) {
+        if (this._underline !== underline) {
+            this._underline = underline;
+            this.triggerChangeEvent('underline');
+        }
+    }
+    set strikeline(strikeline: boolean | null) {
+        if (this._strikeline !== strikeline) {
+            this._strikeline = strikeline;
+            this.triggerChangeEvent('strikeline');
+        }
+    }
+    set indent(indent: number | null) {
+        if (this._indent !== indent) {
+            this._indent = indent;
+            this.triggerChangeEvent('indent');
+        }
+    }
+    set color(color: string | null) {
+        if (this._color !== color) {
+            this._color = color;
+            this.triggerChangeEvent('color');
+        }
+    }
 
     get font() { return this._font; }
     get fontSize() { return this._fontSize; }
@@ -71,11 +150,54 @@ export class ActaTextStyle {
     get strikeline() { return this._strikeline; }
     get indent() { return this._indent; }
     get color() { return this._color; }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaTextStyle extends _ActaTextStylePrivate {
+    constructor() {
+        super();
+
+        this.fontSize = 10;
+        this.xscale = 1;
+        this.letterSpacing = 0;
+        this.lineHeight = 1.2;
+        this.textAlign = TextAlign.JUSTIFY;
+        this.underline = false;
+        this.strikeline = false;
+        this.indent = 0;
+        this.color = '#000000';
+    }
+
+    merge(textStyle: ActaTextStyle | ActaTextStyleInherit) {
+        super.merge(textStyle);
+    }
+
+    set font(font: ActaFont | null) { this.font = font; }
+    set fontSize(size: number) { this.fontSize = size; }
+    set xscale(scale: number) { this.xscale = scale; }
+    set letterSpacing(linespacing: number) { this.letterSpacing = linespacing; }
+    set lineHeight(lineheight: number) { this.lineHeight = lineheight; }
+    set textAlign(align: TextAlign) { this.textAlign = align; }
+    set underline(underline: boolean) { this.underline = underline; }
+    set strikeline(strikeline: boolean) { this.strikeline = strikeline; }
+    set indent(indent: number) { this.indent = indent; }
+    set color(color: string) { this.color = color; }
+
+    get font() { return this.font; }
+    get fontSize() { return this.fontSize; }
+    get xscale() { return this.xscale; }
+    get letterSpacing() { return this.letterSpacing; }
+    get lineHeight() { return this.lineHeight; }
+    get textAlign() { return this.textAlign; }
+    get underline() { return this.underline; }
+    get strikeline() { return this.strikeline; }
+    get indent() { return this.indent; }
+    get color() { return this.color; }
 };
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaTextStyleInherit extends ActaTextStyle {
-    constructor() {
-        super(true);
+export class ActaTextStyleInherit extends _ActaTextStylePrivate {
+    merge(textStyle: ActaTextStyle | ActaTextStyleInherit) {
+        super.merge(textStyle);
     }
 };

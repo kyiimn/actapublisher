@@ -6,9 +6,10 @@ export class ActaTextStore {
     private _id: string;
     private _tagname: string;
     private _defaultTextStyleName: string | null;
-    private _customTextStyle: ActaTextStyle;
+    private _customTextStyle: ActaTextStyleInherit;
     private _value: (string | ActaTextNode)[];
     private _modified: boolean | number[];
+    private _parentNode: ActaTextNode | null;
 
     constructor(tagname: string = '') {
         this._id = uuidv4();
@@ -17,9 +18,11 @@ export class ActaTextStore {
         this._customTextStyle = new ActaTextStyleInherit();
         this._value = [];
         this._modified = true;
+        this._parentNode = null;
     }
 
     push(val: string | ActaTextNode) {
+        if (val instanceof ActaTextNode) val.parentNode = this;
         this.modified = this._value.push(val);
     }
 
@@ -33,6 +36,7 @@ export class ActaTextStore {
     }
 
     insert(idx: number, val: string | ActaTextNode) {
+        if (val instanceof ActaTextNode) val.parentNode = this;
         this._value.splice(idx, 0, val);
         this.modified = true;
     }
@@ -51,28 +55,10 @@ export class ActaTextStore {
             } else {
                 this.modified = true;
             }
+            val.parentNode = this;
         }
         this._value[idx] = val;
         this.modified = idx;
-    }
-
-    appliedTextStyle(parentTextStyle: ActaTextStyle) {
-        const textStyle = new ActaTextStyleInherit();
-        let defaultTextStyle = ActaTextStyleManager.getInstance().get(this.defaultTextStyleName || '');
-        if (!defaultTextStyle) defaultTextStyle = textStyle;
-
-        textStyle.font = this.customTextStyle.font || defaultTextStyle.font || parentTextStyle.font;
-        textStyle.fontSize = this.customTextStyle.fontSize || defaultTextStyle.fontSize || parentTextStyle.fontSize;
-        textStyle.xscale = this.customTextStyle.xscale || defaultTextStyle.xscale || parentTextStyle.xscale;
-        textStyle.letterSpacing = this.customTextStyle.letterSpacing || defaultTextStyle.letterSpacing || parentTextStyle.letterSpacing;
-        textStyle.lineHeight = this.customTextStyle.lineHeight || defaultTextStyle.lineHeight || parentTextStyle.lineHeight;
-        textStyle.textAlign = this.customTextStyle.textAlign || defaultTextStyle.textAlign || parentTextStyle.textAlign;
-        textStyle.underline = this.customTextStyle.underline || defaultTextStyle.underline || parentTextStyle.underline;
-        textStyle.strikeline = this.customTextStyle.strikeline || defaultTextStyle.strikeline || parentTextStyle.strikeline;
-        textStyle.indent = this.customTextStyle.indent || defaultTextStyle.indent || parentTextStyle.indent;
-        textStyle.color = this.customTextStyle.color || defaultTextStyle.color || parentTextStyle.color;
-
-        return textStyle;
     }
 
     isModified(idx: number) {
@@ -98,7 +84,7 @@ export class ActaTextStore {
         this.modified = true;
     }
 
-    set customTextStyle(style: ActaTextStyle) {
+    set customTextStyle(style: ActaTextStyleInherit) {
         this._customTextStyle = style;
         this.modified = true;
     }
@@ -120,7 +106,13 @@ export class ActaTextStore {
             }
         }
     }
+    set parentNode(node: ActaTextNode | null) { this._parentNode = node; }
+    get parentNode() { return this._parentNode; }
+
     set value(values: any[]) {
+        for (const val of values) {
+            if (val instanceof ActaTextNode || val instanceof ActaTextStore) val.parentNode = this;
+        }
         this._value = values;
         this.modified = true;
     }
@@ -132,6 +124,17 @@ export class ActaTextStore {
     get partModified() { return typeof(this._modified) === 'object' ? true : false; }
     get value() { return this._value; }
     get length() { return this.value.length; }
+
+    get textStyle() {
+        const returnTextStyle = new ActaTextStyle();
+        const defaultTextStyle = ActaTextStyleManager.getInstance().get(this.defaultTextStyleName || '');
+
+        if (this.parentNode) returnTextStyle.merge(this.parentNode.textStyle);
+        if (defaultTextStyle) returnTextStyle.merge(defaultTextStyle);
+        returnTextStyle.merge(this.customTextStyle);
+
+        return returnTextStyle;
+    }
 };
 
 // tslint:disable-next-line: max-classes-per-file

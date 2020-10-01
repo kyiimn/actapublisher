@@ -891,10 +891,7 @@ export class ActaParagraph {
         this._textChars = [];
         this._textNodeList = [];
         if (this._textStore == null) return false;
-        return this._convertTextStoreToTextItem(
-            this._textStore,
-            ActaTextStyleManager.getInstance().get(this._defaultTextStyleName || '') || new ActaTextStyle()
-        );
+        return this._convertTextStoreToTextItem(this._textStore);
     }
 
     private _updateTextData() {
@@ -903,11 +900,7 @@ export class ActaParagraph {
             this._textNodeList = [];
             return false;
         }
-        return this._convertTextStoreToTextItem(
-            this._textStore,
-            ActaTextStyleManager.getInstance().get(this._defaultTextStyleName || '') || new ActaTextStyle(),
-            true
-        );
+        return this._convertTextStoreToTextItem(this._textStore, true);
     }
 
     private _splitTextItemsByNodeID(id: string, indexOfNode?: number) {
@@ -936,20 +929,7 @@ export class ActaParagraph {
         return [preList, postList];
     }
 
-    private _convertTextStoreToTextItem(textNode: ActaTextStore, parentTextStyle: ActaTextStyle, modifyOnly: boolean = false): boolean {
-        const textStyle = textNode.appliedTextStyle(parentTextStyle);
-        if (textStyle.font == null ||
-            textStyle.fontSize == null ||
-            textStyle.xscale == null ||
-            textStyle.letterSpacing == null ||
-            textStyle.lineHeight == null ||
-            textStyle.textAlign == null ||
-            textStyle.underline == null ||
-            textStyle.strikeline == null ||
-            textStyle.indent == null ||
-            textStyle.color == null
-        ) return false;
-
+    private _convertTextStoreToTextItem(textNode: ActaTextStore, modifyOnly: boolean = false): boolean {
         let preList: ActaTextChar[] | undefined;
         let postList: ActaTextChar[] | undefined;
         if (modifyOnly && textNode.modified && !textNode.partModified) {
@@ -966,16 +946,16 @@ export class ActaParagraph {
                     [preList, postList] = this._splitTextItemsByNodeID(textNode.id, indexOfNode);
                     if (preList === undefined || postList === undefined) {
                         textNode.modified = true;
-                        return this._convertTextStoreToTextItem(textNode, parentTextStyle, true);
+                        return this._convertTextStoreToTextItem(textNode, true);
                     }
                     this._textChars = preList;
                 }
             }
             if (textNode.value[indexOfNode] instanceof ActaTextStore) {
-                if (!this._convertTextStoreToTextItem(textNode.value[indexOfNode], textStyle, childModifyOnly)) return false;
+                if (!this._convertTextStoreToTextItem(textNode.value[indexOfNode], childModifyOnly)) return false;
                 if (indexOfNode >= textNode.length - 1) {
                     // 노드 업데이트를 위해 노드 마지막부분을 마킹
-                    this._textChars.push(new ActaTextChar('', textStyle, textNode, indexOfNode));
+                    this._textChars.push(new ActaTextChar('', textNode, indexOfNode));
                 }
             } else {
                 if (modifyOnly && !textNode.isModified(indexOfNode)) continue;
@@ -983,7 +963,7 @@ export class ActaParagraph {
                 const textvalue = textNode.value[indexOfNode].toString();
                 for (let indexOfText = 0; indexOfText < textvalue.length; indexOfText++) {
                     const char = textvalue[indexOfText];
-                    this._textChars.push(new ActaTextChar(char, textStyle, textNode, indexOfNode, indexOfText));
+                    this._textChars.push(new ActaTextChar(char, textNode, indexOfNode, indexOfText));
                 }
             }
             if (modifyOnly && textNode.modified && textNode.partModified && textNode.isModified(indexOfNode) && postList !== undefined) {
@@ -1233,7 +1213,6 @@ export class ActaParagraph {
                 offsetY += textRow.maxHeight;
                 offsetY += textRow.maxLeading;
             }
-            $(column.svg).append(paths);
             $(column.svg).append(lines);
         }
         if (this._overflow) {
