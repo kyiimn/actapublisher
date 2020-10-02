@@ -1,4 +1,4 @@
-import { ActaTextNode } from "./textstore";
+import { ActaTextNode } from "./textnode";
 import { ActaTextStyle } from "./textstyle";
 import { ActaTextRow } from './textrow';
 
@@ -20,40 +20,20 @@ export class ActaTextChar {
     private _textNode: ActaTextNode;
     private _textRow?: ActaTextRow;
     private _indexOfNode: number;
-    private _indexOfText: number;
 
     private _SVGPath: SVGPathElement;
     private _calcWidth: number;
     private _drawOffsetX: number;
     private _drawOffsetY: number;
     private _width: number;
-    private _height: number;
 
     private _posX?: number;
     private _posY?: number;
 
     private _stylingElements: SVGLineElement[];
 
-    private _computeHeight() {
-        const textStyle = this.textNode.textStyle;
-        if (textStyle.font === null || textStyle.fontSize === null) return 0;
-
-        const font = textStyle.font.font, size = textStyle.fontSize;
-        const unitsPerSize = font.unitsPerEm / size;
-
-        this._height = (font.tables.os2.usWinAscent + font.tables.os2.usWinDescent) / unitsPerSize;
-    }
-
     private _createSVGPath() {
         const textStyle = this.textNode.textStyle;
-
-        if (textStyle.font == null || textStyle.fontSize == null ||
-            textStyle.xscale == null || textStyle.letterSpacing == null ||
-            textStyle.lineHeight == null || textStyle.textAlign == null ||
-            textStyle.underline == null || textStyle.strikeline == null ||
-            textStyle.indent == null || textStyle.color == null
-        ) return;
-
         if (this._type === TextCharType.SPACE) {
             this._width = (textStyle.fontSize !== null) ? textStyle.fontSize / 3 : 0;
         } else if (this._type === TextCharType.PATH) {
@@ -61,22 +41,20 @@ export class ActaTextChar {
             const glyph = font.charToGlyph(this._char);
             const unitsPerSize = font.unitsPerEm / size;
             const yMin = font.tables.head.yMin / unitsPerSize;
-            const path = glyph.getPath(0, this.height, size);
+            const height = this.height;
+            const path = glyph.getPath(0, height, size);
             const pathData = path.toPathData(3);
 
             this._SVGPath.setAttribute('d', pathData);
             this._SVGPath.setAttribute('data-char', this._char);
 
             this._drawOffsetX = 0;
-            this._drawOffsetY = this.height + yMin;
+            this._drawOffsetY = height + yMin;
             this._width = glyph.advanceWidth / unitsPerSize;
         }
     }
 
-    constructor(
-        char: string, textNode: ActaTextNode,
-        indexOfNode: number = 0, indexOfText: number = 0
-    ) {
+    constructor(char: string, textNode: ActaTextNode, indexOfNode: number = 0) {
         this._id = uuidv4();
         this._modified = true;
 
@@ -84,7 +62,6 @@ export class ActaTextChar {
 
         this._textNode = textNode;
         this._indexOfNode = indexOfNode;
-        this._indexOfText = indexOfText;
 
         this._SVGPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         this._stylingElements = [];
@@ -92,7 +69,6 @@ export class ActaTextChar {
         this._drawOffsetX = 0;
         this._drawOffsetY = 0;
         this._width = 0;
-        this._height = 0;
         this._calcWidth = 0;
 
         switch (char) {
@@ -101,9 +77,12 @@ export class ActaTextChar {
             case '': this._type = TextCharType.END_OF_NODE; break;
             default: this._type = TextCharType.PATH; break;
         }
-        this._computeHeight();
         this._createSVGPath();
         this._calcWidth = this.width;
+    }
+
+    changeTextStyle() {
+        this.update();
     }
 
     update(x?: number, y?: number) {
@@ -135,7 +114,6 @@ export class ActaTextChar {
         this._SVGPath.setAttribute('data-id', this.id);
         this._SVGPath.setAttribute('data-textnode', this._textNode.id);
         this._SVGPath.setAttribute('data-index-of-node', this.indexOfNode.toString());
-        this._SVGPath.setAttribute('data-index-of-text', this.indexOfText.toString());
         this._SVGPath.setAttribute('data-width', this.calcWidth.toString());
         this._SVGPath.setAttribute('data-height', this.textRow.maxHeight.toString());
         this._SVGPath.setAttribute('data-leading', this.textRow.maxLeading.toString());
@@ -184,14 +162,24 @@ export class ActaTextChar {
         this._modified = false;
     }
 
+    remove() {
+        if (!this._SVGPath.parentElement) return;
+        this._SVGPath.parentElement.removeChild(this._SVGPath);
+    }
+
+    toString() { return this._char; }
+
     set calcWidth(w: number) {
         this._modified = true;
         this._calcWidth = w;
     }
+
     set textRow(textRow: ActaTextRow | null) {
         this._modified = true;
         this._textRow = textRow || undefined;
     }
+
+    set indexOfNode(indexOfNode) { this._indexOfNode = indexOfNode; }
 
     get id() { return this._id; }
     get char() { return this._char; }
@@ -199,11 +187,10 @@ export class ActaTextChar {
     get indexOfColumn() { return (this._textRow) ? this._textRow.indexOfColumn : -1; }
     get indexOfLine() { return (this._textRow) ? this._textRow.indexOfLine : -1; }
     get indexOfNode() { return this._indexOfNode; }
-    get indexOfText() { return this._indexOfText; }
     get drawOffsetX() { return this._drawOffsetX; }
     get drawOffsetY() { return this._drawOffsetY; }
     get width() { return this._width; }
-    get height() { return this._height; }
+    get height() { return this.textStyle.textHeight; }
     get calcWidth() { return this._calcWidth; }
     get textNode() { return this._textNode; }
     get textRow() { return this._textRow || null; }

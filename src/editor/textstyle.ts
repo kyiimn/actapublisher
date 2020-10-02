@@ -5,11 +5,11 @@ export enum TextAlign {
     JUSTIFY = 0, LEFT, RIGHT, CENTER
 }
 
-type CallbackAttributeChange = (
+type callbackTextStyleChange = (
     (attributeName: string) => void
 );
 
-class _ActaTextStylePrivate {
+class ActaTextStylePrivate {
     private _font: ActaFont | null;
     private _fontSize: number | null;
     private _color: string | null;
@@ -21,7 +21,7 @@ class _ActaTextStylePrivate {
     private _strikeline: boolean | null;
     private _indent: number | null;
 
-    private _callbackList: CallbackAttributeChange[];
+    private _callbackTextStyleChangeList: callbackTextStyleChange[];
 
     constructor() {
         this._font = null;
@@ -35,10 +35,10 @@ class _ActaTextStylePrivate {
         this._indent = null;
         this._color = null;
 
-        this._callbackList = [];
+        this._callbackTextStyleChangeList = [];
     }
 
-    protected merge(textStyle: _ActaTextStylePrivate) {
+    protected merge(textStyle: ActaTextStylePrivate) {
         let changed = false;
 
         if (textStyle.font !== null) { this.font = textStyle.font; changed = true; }
@@ -57,19 +57,19 @@ class _ActaTextStylePrivate {
     }
 
     protected triggerChangeEvent(name: string) {
-        for (const callback of this._callbackList) {
+        for (const callback of this._callbackTextStyleChangeList) {
             if (callback) callback(name);
         }
     }
 
-    removeChange(callback: CallbackAttributeChange) {
-        const idx = this._callbackList.indexOf(callback);
+    removeChange(callback: callbackTextStyleChange) {
+        const idx = this._callbackTextStyleChangeList.indexOf(callback);
         if (idx < 0) return;
-        this._callbackList = this._callbackList.splice(idx, 1);
+        this._callbackTextStyleChangeList = this._callbackTextStyleChangeList.splice(idx, 1);
     }
 
-    set onChange(callback: CallbackAttributeChange) {
-        if (this._callbackList.indexOf(callback) < 0) this._callbackList.push(callback);
+    set onChange(callback: callbackTextStyleChange) {
+        if (this._callbackTextStyleChangeList.indexOf(callback) < 0) this._callbackTextStyleChangeList.push(callback);
     }
 
     set fontName(fontName: string) {
@@ -140,6 +140,15 @@ class _ActaTextStylePrivate {
         }
     }
 
+    get textHeight() {
+        if (this.font === null || this.fontSize === null) return 0;
+
+        const font = this.font.font, size = this.fontSize;
+        const unitsPerSize = font.unitsPerEm / size;
+
+        return (font.tables.os2.usWinAscent + font.tables.os2.usWinDescent) / unitsPerSize;
+    }
+
     get font() { return this._font; }
     get fontSize() { return this._fontSize; }
     get xscale() { return this._xscale; }
@@ -153,10 +162,11 @@ class _ActaTextStylePrivate {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaTextStyle extends _ActaTextStylePrivate {
-    constructor() {
+export class ActaTextStyle extends ActaTextStylePrivate {
+    constructor(styleName: string) {
         super();
 
+        this.fontName = styleName;
         this.fontSize = 10;
         this.xscale = 1;
         this.letterSpacing = 0;
@@ -172,7 +182,7 @@ export class ActaTextStyle extends _ActaTextStylePrivate {
         super.merge(textStyle);
     }
 
-    set font(font: ActaFont | null) { this.font = font; }
+    set font(font: ActaFont) { this.font = font; }
     set fontSize(size: number) { this.fontSize = size; }
     set xscale(scale: number) { this.xscale = scale; }
     set letterSpacing(linespacing: number) { this.letterSpacing = linespacing; }
@@ -196,7 +206,7 @@ export class ActaTextStyle extends _ActaTextStylePrivate {
 };
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaTextStyleInherit extends _ActaTextStylePrivate {
+export class ActaTextStyleInherit extends ActaTextStylePrivate {
     merge(textStyle: ActaTextStyle | ActaTextStyleInherit) {
         super.merge(textStyle);
     }

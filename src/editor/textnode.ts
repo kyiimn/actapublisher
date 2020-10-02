@@ -1,13 +1,14 @@
+import { ActaTextChar } from './textchar';
 import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextStyle, ActaTextStyleInherit } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
 
-export class ActaTextStore {
+export class ActaTextNode {
     private _id: string;
     private _tagname: string;
     private _defaultTextStyleName: string | null;
     private _customTextStyle: ActaTextStyleInherit;
-    private _value: (string | ActaTextNode)[];
+    private _value: (ActaTextChar | ActaTextNode)[];
     private _modified: boolean | number[];
     private _parentNode: ActaTextNode | null;
 
@@ -19,35 +20,71 @@ export class ActaTextStore {
         this._value = [];
         this._modified = true;
         this._parentNode = null;
+
+        this._customTextStyle.onChange = attr => this.changeTextStyle(attr);
+    }
+
+    private _reorder() {
+        for (const val of this._value) {
+            if (val instanceof ActaTextNode) continue;
+            val.indexOfNode = this._value.indexOf(val);
+        }
+    }
+
+    changeTextStyle(attr?: string) {
+        for (const val of this._value) {
+            val.changeTextStyle(attr);
+        }
     }
 
     push(val: string | ActaTextNode) {
-        if (val instanceof ActaTextNode) val.parentNode = this;
-        this.modified = this._value.push(val);
+        const arrVal: (ActaTextChar | ActaTextNode)[] = [];
+        if (val instanceof ActaTextNode) {
+            val.parentNode = this;
+            arrVal.push(val);
+        } else {
+            for (let i = 0; i < val.length; i++) {
+                arrVal.push(new ActaTextChar(val[i], this, this._value.length + i));
+            }
+        }
+        for (const oval of arrVal) this.modified = this._value.push(oval);
     }
 
     remove(idx?: number) {
         if (idx !== undefined) {
+            const rVal = this._value[idx];
+            if (rVal) rVal.remove();
             this._value.splice(idx, 1);
         } else {
+            for (const rVal of this._value) rVal.remove();
             this._value = [];
         }
+        this._reorder();
         this.modified = true;
     }
 
     insert(idx: number, val: string | ActaTextNode) {
-        if (val instanceof ActaTextNode) val.parentNode = this;
-        this._value.splice(idx, 0, val);
+        const arrVal: (ActaTextChar | ActaTextNode)[] = [];
+        if (val instanceof ActaTextNode) {
+            val.parentNode = this;
+            arrVal.push(val);
+        } else {
+            for (let i = 0; i < val.length; i++) {
+                arrVal.push(new ActaTextChar(val[i], this, idx + i));
+            }
+        }
+        for (let i = 0; i < arrVal.length; i++) {
+            this._value.splice(idx + i, 0, arrVal[i]);
+        }
+        this._reorder();
         this.modified = true;
     }
 
     replace(idx: number, val: string | ActaTextNode) {
         if (typeof(val) === 'string') {
-            if (typeof(this._value[idx]) === 'string') {
-                if (this._value[idx] === val) return;
-            } else {
-                this.modified = true;
-            }
+            this.remove(idx);
+            this.insert(idx, val);
+            this.modified = true;
         } else {
             if (this._value[idx] instanceof ActaTextNode) {
                 const oldNode = this._value[idx] as ActaTextNode;
@@ -56,14 +93,15 @@ export class ActaTextStore {
                 this.modified = true;
             }
             val.parentNode = this;
+            this._value[idx].remove();
+            this._value[idx] = val;
         }
-        this._value[idx] = val;
         this.modified = idx;
     }
 
     isModified(idx: number) {
         if (typeof(this._modified) === 'object') {
-            if (typeof(this.value[idx]) !== 'string') return false;
+            if (this.value[idx] instanceof ActaTextNode) return false;
             return this._modified.indexOf(idx) < 0 ? false : true;
         } if (this._modified === true) {
             return true;
@@ -80,13 +118,19 @@ export class ActaTextStore {
     }
 
     set defaultTextStyleName(styleName: string | null) {
-        this._defaultTextStyleName = styleName;
-        this.modified = true;
+        if (this._defaultTextStyleName !== styleName) {
+            this._defaultTextStyleName = styleName;
+            this.modified = true;
+            this.changeTextStyle();
+        }
     }
 
     set customTextStyle(style: ActaTextStyleInherit) {
-        this._customTextStyle = style;
-        this.modified = true;
+        if (this._customTextStyle !== style) {
+            this._customTextStyle = style;
+            this.modified = true;
+            this.changeTextStyle();
+        }
     }
 
     set modified(val: number[] | number | boolean) {
@@ -109,9 +153,9 @@ export class ActaTextStore {
     set parentNode(node: ActaTextNode | null) { this._parentNode = node; }
     get parentNode() { return this._parentNode; }
 
-    set value(values: any[]) {
+    set value(values: (ActaTextChar | ActaTextNode)[]) {
         for (const val of values) {
-            if (val instanceof ActaTextNode || val instanceof ActaTextStore) val.parentNode = this;
+            if (val instanceof ActaTextNode) val.parentNode = this;
         }
         this._value = values;
         this.modified = true;
@@ -126,8 +170,8 @@ export class ActaTextStore {
     get length() { return this.value.length; }
 
     get textStyle() {
-        const returnTextStyle = new ActaTextStyle();
         const defaultTextStyle = ActaTextStyleManager.getInstance().get(this.defaultTextStyleName || '');
+        const returnTextStyle = new ActaTextStyle(defaultTextStyle.fontName);
 
         if (this.parentNode) returnTextStyle.merge(this.parentNode.textStyle);
         if (defaultTextStyle) returnTextStyle.merge(defaultTextStyle);
@@ -138,4 +182,4 @@ export class ActaTextStore {
 };
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaTextNode extends ActaTextStore {};
+export class ActaTextStore extends ActaTextNode {};

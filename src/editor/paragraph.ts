@@ -4,7 +4,7 @@ import { ActaParagraphMarginElement } from './element/paragraph-margin-el';
 
 import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextConverter } from './textconverter';
-import { ActaTextNode, ActaTextStore } from './textstore';
+import { ActaTextNode, ActaTextStore } from './textnode';
 import { ActaTextStyle, ActaTextStyleInherit, TextAlign } from './textstyle';
 
 import { ActaClipboard } from '../clipboard';
@@ -15,7 +15,6 @@ import { ActaTextChar, TextCharType } from './textchar';
 import Hangul from 'hangul-js';
 import opentype from 'opentype.js';
 import $ from 'jquery';
-import { v4 as uuidv4 } from 'uuid';
 import { clone } from '../utils';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {

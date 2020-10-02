@@ -1,4 +1,4 @@
-import { ActaTextNode } from './textstore';
+import { ActaTextNode } from './textnode';
 import { Stack } from '../utils';
 
 export class ActaTextConverter {
