@@ -29,20 +29,17 @@ const main = async () => {
     await ActaFontManager.getInstance().add('fonts/jahgl.ttf');
 
     let s;
-    s = new ActaTextStyle();
-    s.fontName = '중앙신문명조';
+    s = new ActaTextStyle('중앙신문명조');
     s.fontSize = 12;
     ActaTextStyleManager.getInstance().add('본문1', s);
 
-    s = new ActaTextStyle();
-    s.fontName = '중앙세고딕';
+    s = new ActaTextStyle('중앙세고딕');
     s.fontSize = 12;
     s.letterSpacing = 1;
     s.color = '#ff0000';
     ActaTextStyleManager.getInstance().add('본문2', s);
 
-    s = new ActaTextStyle();
-    s.fontName = '중앙신문명조';
+    s = new ActaTextStyle('중앙신문명조');
     s.fontSize = 12;
     s.indent = 8;
     ActaTextStyleManager.getInstance().add('본문3', s);

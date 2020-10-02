@@ -24,13 +24,6 @@ export class ActaTextNode {
         this._customTextStyle.onChange = attr => this.changeTextStyle(attr);
     }
 
-    private _reorder() {
-        for (const val of this._value) {
-            if (val instanceof ActaTextNode) continue;
-            val.indexOfNode = this._value.indexOf(val);
-        }
-    }
-
     changeTextStyle(attr?: string) {
         for (const val of this._value) {
             val.changeTextStyle(attr);
@@ -59,7 +52,6 @@ export class ActaTextNode {
             for (const rVal of this._value) rVal.remove();
             this._value = [];
         }
-        this._reorder();
         this.modified = true;
     }
 
@@ -76,7 +68,6 @@ export class ActaTextNode {
         for (let i = 0; i < arrVal.length; i++) {
             this._value.splice(idx + i, 0, arrVal[i]);
         }
-        this._reorder();
         this.modified = true;
     }
 
@@ -115,6 +106,18 @@ export class ActaTextNode {
             str += val.toString();
         }
         return str;
+    }
+
+    toArray() {
+        let returnArray: ActaTextChar[] = [];
+        for (const val of this._value) {
+            if (val instanceof ActaTextChar) {
+                returnArray.push(val);
+            } else {
+                returnArray = returnArray.concat(val.toArray());
+            }
+        }
+        return returnArray;
     }
 
     set defaultTextStyleName(styleName: string | null) {

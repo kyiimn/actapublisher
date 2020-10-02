@@ -76,7 +76,10 @@ class ActaTextStylePrivate {
         const fontmgr = ActaFontManager.getInstance();
         const font = fontmgr.get(fontName);
         if (!font) return;
-        this.font = font;
+        if (this._font !== font) {
+            this._font = font;
+            this.triggerChangeEvent('font');
+        }
     }
     set font(font: ActaFont | null) {
         if (this._font !== font) {
@@ -150,6 +153,7 @@ class ActaTextStylePrivate {
     }
 
     get font() { return this._font; }
+    get fontName() { return this._font ? this._font.fullname : ''; }
     get fontSize() { return this._fontSize; }
     get xscale() { return this._xscale; }
     get letterSpacing() { return this._letterSpacing; }
@@ -182,27 +186,29 @@ export class ActaTextStyle extends ActaTextStylePrivate {
         super.merge(textStyle);
     }
 
-    set font(font: ActaFont) { this.font = font; }
-    set fontSize(size: number) { this.fontSize = size; }
-    set xscale(scale: number) { this.xscale = scale; }
-    set letterSpacing(linespacing: number) { this.letterSpacing = linespacing; }
-    set lineHeight(lineheight: number) { this.lineHeight = lineheight; }
-    set textAlign(align: TextAlign) { this.textAlign = align; }
-    set underline(underline: boolean) { this.underline = underline; }
-    set strikeline(strikeline: boolean) { this.strikeline = strikeline; }
-    set indent(indent: number) { this.indent = indent; }
-    set color(color: string) { this.color = color; }
+    set font(font: ActaFont) { super.font = font; }
+    set fontName(fontName: string) { super.fontName = fontName; }
+    set fontSize(size: number) { super.fontSize = size; }
+    set xscale(scale: number) { super.xscale = scale; }
+    set letterSpacing(linespacing: number) { super.letterSpacing = linespacing; }
+    set lineHeight(lineheight: number) { super.lineHeight = lineheight; }
+    set textAlign(align: TextAlign) { super.textAlign = align; }
+    set underline(underline: boolean) { super.underline = underline; }
+    set strikeline(strikeline: boolean) { super.strikeline = strikeline; }
+    set indent(indent: number) { super.indent = indent; }
+    set color(color: string) { super.color = color; }
 
-    get font() { return this.font; }
-    get fontSize() { return this.fontSize; }
-    get xscale() { return this.xscale; }
-    get letterSpacing() { return this.letterSpacing; }
-    get lineHeight() { return this.lineHeight; }
-    get textAlign() { return this.textAlign; }
-    get underline() { return this.underline; }
-    get strikeline() { return this.strikeline; }
-    get indent() { return this.indent; }
-    get color() { return this.color; }
+    get font() { return super.font as ActaFont; }
+    get fontName() { return super.fontName; }
+    get fontSize() { return super.fontSize as number; }
+    get xscale() { return super.xscale as number; }
+    get letterSpacing() { return super.letterSpacing as number; }
+    get lineHeight() { return super.lineHeight as number; }
+    get textAlign() { return super.textAlign as TextAlign; }
+    get underline() { return super.underline as boolean; }
+    get strikeline() { return super.strikeline as boolean; }
+    get indent() { return super.indent as number; }
+    get color() { return super.color as string; }
 };
 
 // tslint:disable-next-line: max-classes-per-file

@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ActaParagraphColumnElement } from "./element/paragraph-col-el";
 
 export enum TextCharType {
-    NEWLINE, SPACE, PATH, END_OF_NODE
+    NEWLINE, SPACE, PATH
 };
 
 export class ActaTextChar {
@@ -74,7 +74,6 @@ export class ActaTextChar {
         switch (char) {
             case '\n': this._type = TextCharType.NEWLINE; break;
             case ' ': this._type = TextCharType.SPACE; break;
-            case '': this._type = TextCharType.END_OF_NODE; break;
             default: this._type = TextCharType.PATH; break;
         }
         this._createSVGPath();
@@ -82,7 +81,8 @@ export class ActaTextChar {
     }
 
     changeTextStyle() {
-        this.update();
+        this._createSVGPath();
+        this._calcWidth = this.width;
     }
 
     update(x?: number, y?: number) {
@@ -170,23 +170,27 @@ export class ActaTextChar {
     toString() { return this._char; }
 
     set calcWidth(w: number) {
-        this._modified = true;
+        if (this._calcWidth === w) return;
         this._calcWidth = w;
+        this._modified = true;
+        this.update();
     }
 
     set textRow(textRow: ActaTextRow | null) {
-        this._modified = true;
+        if (this._textRow === textRow) return;
         this._textRow = textRow || undefined;
+        this._modified = true;
+
+        if (!this._textRow && this._SVGPath.parentElement) {
+            this._SVGPath.parentElement.removeChild(this._SVGPath);
+        }
     }
-
-    set indexOfNode(indexOfNode) { this._indexOfNode = indexOfNode; }
-
     get id() { return this._id; }
     get char() { return this._char; }
     get type() { return this._type; }
     get indexOfColumn() { return (this._textRow) ? this._textRow.indexOfColumn : -1; }
     get indexOfLine() { return (this._textRow) ? this._textRow.indexOfLine : -1; }
-    get indexOfNode() { return this._indexOfNode; }
+    get indexOfNode() { return this._textNode.value.indexOf(this); }
     get drawOffsetX() { return this._drawOffsetX; }
     get drawOffsetY() { return this._drawOffsetY; }
     get width() { return this._width; }
@@ -201,7 +205,7 @@ export class ActaTextChar {
     get y() { return this._posY || 0; }
 
     get visable() {
-        return (this._textRow !== null && this._type !== TextCharType.END_OF_NODE) ? true : false
+        return (this._textRow !== null) ? true : false
     }
     get el() { return this._SVGPath; }
 };

@@ -2,10 +2,12 @@ import { ActaTextNode } from './textnode';
 import { Stack } from '../utils';
 
 export class ActaTextConverter {
-    static textobject(text: string) {
+    static textobject(textStyleName: string, text: string) {
         const node = new Stack();
         let currentnode = new ActaTextNode();
         let str = '';
+
+        currentnode.defaultTextStyleName = textStyleName;
 
         for (let i = 0; i < text.length; i++) {
             let char = text[i];

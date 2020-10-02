@@ -77,23 +77,7 @@ enum CharType {
 };
 
 enum Keycode {
-    BACKSPACE = 8,
-    TAB = 9,
-    ENTER = 13,
-    SHIFT = 16,
-    CONTROL = 17,
-    ALT = 18,
-    HANGUL = 21,
-    HANJA = 25,
-    SPACE = 32,
-    END = 35,
-    HOME = 36,
-    LEFT = 37,
-    UP = 38,
-    RIGHT = 39,
-    DOWN = 40,
-    INSERT = 45,
-    DELETE = 46
+    BACKSPACE = 8, TAB = 9, ENTER = 13, SHIFT = 16, CONTROL = 17, ALT = 18, HANGUL = 21, HANJA = 25, SPACE = 32, END = 35, HOME = 36, LEFT = 37, UP = 38, RIGHT = 39, DOWN = 40, INSERT = 45, DELETE = 46
 };
 
 enum CursorMode {
@@ -110,7 +94,6 @@ export class ActaParagraph {
     private _innerMargin: string | number;
     private _textStore: ActaTextStore | null;
     private _defaultTextStyleName: string | null;
-    private _textChars: ActaTextChar[];
     private _textNodeList: string[];
     private _selectionStartChar: number | null;
     private _cursorMode: CursorMode;
@@ -165,16 +148,18 @@ export class ActaParagraph {
         this._element.innerHTML = '';
     }
 
+    private get textChars() {
+        return this._textStore ? this._textStore.toArray() : [];
+    }
+
     private _updateInputMethodChar() {
         if (!this._cursor) return;
 
-        const textChar = this._textChars[this._cursor - 1];
+        const textChar = this.textChars[this._cursor - 1];
         if (!textChar) return;
 
         let hangulText = Hangul.a(this._inputChar.split(''));
-        let textValue = textChar.textNode.value[textChar.indexOfNode];
-        textValue = `${textValue.substr(0, textChar.indexOfText)}${hangulText}${textValue.substr(textChar.indexOfText + 1)}`;
-        textChar.textNode.replace(textChar.indexOfNode, textValue);
+        textChar.textNode.replace(textChar.indexOfNode, hangulText);
 
         if (hangulText.length > 1) {
             this._cursor += hangulText.length - 1;
@@ -185,7 +170,6 @@ export class ActaParagraph {
 
     private _onCharKeyPress(e: KeyboardEvent) {
         const char = ActaParagraph.getChar(e);
-        let needGenerateTextData = false;
 
         if ([CursorMode.EDIT, CursorMode.SELECTION, CursorMode.INPUT].indexOf(this._cursorMode) < 0) return;
         if (this._cursor === null) { this._cursorMode = CursorMode.NONE; return; }
@@ -193,35 +177,26 @@ export class ActaParagraph {
 
         if (this._cursorMode === CursorMode.SELECTION) {
             const selectionTextItems = this._getSelectionTextItems();
-            this._cursor = this._textChars.indexOf(selectionTextItems[0]);
+            this._cursor = this.textChars.indexOf(selectionTextItems[0]);
             this._removeTextItems(selectionTextItems);
             this._cursorMode = CursorMode.EDIT;
         }
         let textNode: ActaTextStore | null = null;
-        let indexOfNode: number = 0;
-        let indexOfText: number = 0;
-        if (this._cursor > this._textChars.length - 1) {
+        let insertPos: number = 0;
+        if (this._cursor > this.textChars.length - 1) {
             if (this.lastTextChar !== null) {
-                indexOfNode = this.lastTextChar.indexOfNode;
-                indexOfText = this.lastTextChar.indexOfText + 1;
                 textNode = this.lastTextChar.textNode;
-                if (!textNode) return false;
             } else {
                 textNode = this._textStore;
-                if (!textNode) return false;
-                if (textNode.length < 1) textNode.push('');
-                needGenerateTextData = true;
             }
+            if (!textNode) return;
+            insertPos = textNode.length;
         } else {
             const textItem = this._getCursorTextItem();
             if (!textItem) { this._cursorMode = CursorMode.EDIT; return; }
-            indexOfNode = textItem.indexOfNode;
-            indexOfText = textItem.indexOfText;
+            insertPos = textItem.indexOfNode;
             textNode = textItem.textNode;
-            if (!textNode) return false;
         }
-
-        let textValue: string = textNode.value[indexOfNode];
         if (ActaParagraph.inputMethod === InputMethod.KO && ActaParagraph.isCharType(e) === CharType.TEXT) {
             if (this._cursorMode === CursorMode.INPUT) {
                 this._cursorMode = CursorMode.EDIT;
@@ -230,19 +205,15 @@ export class ActaParagraph {
             } else {
                 this._inputChar = char;
                 this._cursor++;
-                textValue = `${textValue.substr(0, indexOfText)}${this._inputChar}${textValue.substr(indexOfText)}`;
-                textNode.replace(indexOfNode, textValue);
+                textNode.insert(insertPos, this._inputChar);
             }
             if (this._inputChar !== '') this._cursorMode = CursorMode.INPUT;
         } else {
-            textValue = `${textValue.substr(0, indexOfText)}${char}${textValue.substr(indexOfText)}`;
+            textNode.insert(insertPos, char);
             this._inputChar = '';
             this._cursorMode = CursorMode.EDIT;
             this._cursor++;
-            textNode.replace(indexOfNode, textValue);
         }
-        if (needGenerateTextData) this._resetTextData();
-
         this._update();
         this._redrawCursor();
 
@@ -250,12 +221,12 @@ export class ActaParagraph {
     }
 
     private _insertText(text: string) {
-        let textNode: ActaTextStore | null = null;
+        /*let textNode: ActaTextStore | null = null;
         let indexOfNode: number = 0;
         let indexOfText: number = 0;
 
         if (this._cursor === null) return false;
-        if (this._cursor > this._textChars.length - 1) {
+        if (this._cursor > this.textChars.length - 1) {
             if (this.lastTextChar !== null) {
                 indexOfNode = this.lastTextChar.indexOfNode;
                 indexOfText = this.lastTextChar.indexOfText + 1;
@@ -282,7 +253,7 @@ export class ActaParagraph {
 
         textNode.replace(indexOfNode, textValue);
 
-        return true;
+        return true;*/
     }
 
     private _onKeyPress(e: KeyboardEvent) {
@@ -301,11 +272,11 @@ export class ActaParagraph {
                 this._cursorMode = CursorMode.EDIT;
             }
             if ([Keycode.HOME, Keycode.END].indexOf(e.keyCode) > -1) {
-                if (this._cursor > this._textChars.length - 1) this._cursor--;
+                if (this._cursor > this.textChars.length - 1) this._cursor--;
                 const lineItem = this._getCursorLineItem();
                 if (lineItem && lineItem.items.length > 0) {
-                    this._cursor = this._textChars.indexOf((e.keyCode === Keycode.HOME) ? lineItem.items[0] : lineItem.items[lineItem.items.length - 1]);
-                    if (this._cursor === this._textChars.length - 1 && this._textChars[this._cursor].type !== TextCharType.NEWLINE) this._cursor++;
+                    this._cursor = this.textChars.indexOf((e.keyCode === Keycode.HOME) ? lineItem.items[0] : lineItem.items[lineItem.items.length - 1]);
+                    if (this._cursor === this.textChars.length - 1 && this.textChars[this._cursor].type !== TextCharType.NEWLINE) this._cursor++;
                     this._redrawCursor();
                 }
                 return false;
@@ -314,7 +285,7 @@ export class ActaParagraph {
                 if (nearLineItem !== null) {
                     const nearestItem = this._getNearestLineTextItem(this._getCursorTextItem(), nearLineItem.items);
                     if (nearestItem) {
-                        this._cursor = this._textChars.indexOf(nearestItem);
+                        this._cursor = this.textChars.indexOf(nearestItem);
                         this._redrawCursor();
                         return false;
                     }
@@ -322,7 +293,7 @@ export class ActaParagraph {
                 this._cursorMode = CursorMode.EDIT;
                 return false;
             } else if ([Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
-                this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this._textChars.length);
+                this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this.textChars.length);
                 this._redrawCursor();
                 return false;
             }
@@ -330,7 +301,7 @@ export class ActaParagraph {
             if (this._cursorMode === CursorMode.SELECTION) {
                 const selTextItems = this._getSelectionTextItems();
                 if (selTextItems.length > 0) {
-                    this._cursor = this._textChars.indexOf(selTextItems[0]);
+                    this._cursor = this.textChars.indexOf(selTextItems[0]);
                     this._removeTextItems(selTextItems);
                 } else return false;
             } else {
@@ -349,7 +320,7 @@ export class ActaParagraph {
                     if (this._cursor === 0) return false;
                     this._cursor--;
                 }
-                this._removeTextItems([this._textChars[this._cursor]]);
+                this._removeTextItems([this.textChars[this._cursor]]);
             }
             this._cursorMode = CursorMode.EDIT;
             this._redrawCursor();
@@ -374,7 +345,7 @@ export class ActaParagraph {
             const selTextItems = this._getSelectionTextItems();
             let selText = '';
             if (selTextItems.length < 1) return false;
-            this._cursor = this._textChars.indexOf(selTextItems[0]);
+            this._cursor = this.textChars.indexOf(selTextItems[0]);
             for (const textItem of selTextItems) selText += textItem.char || '';
             this._removeTextItems(selTextItems);
             this._update();
@@ -384,7 +355,7 @@ export class ActaParagraph {
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'v') || (e.shiftKey && e.keyCode === Keycode.INSERT)) {
             const selTextItems = this._getSelectionTextItems();
             if (selTextItems.length > 0) {
-                this._cursor = this._textChars.indexOf(selTextItems[0]);
+                this._cursor = this.textChars.indexOf(selTextItems[0]);
                 this._removeTextItems(selTextItems);
             } else return false;
             this._update();
@@ -418,7 +389,7 @@ export class ActaParagraph {
     }
 
     private _applyDefinedTextStyle(textChars: ActaTextChar[], textStyleName: string | null) {
-        if (textChars.length < 1) return;
+        /*if (textChars.length < 1) return;
 
         if (textChars[0].textNode === textChars[textChars.length - 1].textNode &&
             textChars[0].indexOfNode === 0 && textChars[0].indexOfText === 0 &&
@@ -481,11 +452,11 @@ export class ActaParagraph {
             }
         }
         this._update();
-        this._redrawCursor();
+        this._redrawCursor();*/
     }
 
     private _applyTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
-        if (textChars.length < 1) return;
+        /*if (textChars.length < 1) return;
         for (let i = textChars.length; i > 0; i--) {
             const endChar = textChars[i - 1];
             const textNode = endChar.textNode;
@@ -531,11 +502,11 @@ export class ActaParagraph {
             textNode.value = newValue;
         }
         this._update();
-        this._redrawCursor();
+        this._redrawCursor();*/
     }
 
     private _removeTextItems(textChars: ActaTextChar[]) {
-        let removedCnt = 0;
+        /*let removedCnt = 0;
         textChars.reverse();
         for (const textChar of textChars) {
             if (!textChar) continue;
@@ -547,7 +518,7 @@ export class ActaParagraph {
             textNode.replace(textChar.indexOfNode, textValue);
             removedCnt++;
         }
-        if (removedCnt > 0) this._update();
+        if (removedCnt > 0) this._update();*/
     }
 
     private _getColumnSVG(idx?: number) {
@@ -617,12 +588,12 @@ export class ActaParagraph {
 
     private _getCursorTextItem() {
         if (this._cursor === null) return null;
-        return this._textChars[this._cursor];
+        return this.textChars[this._cursor];
     }
 
     private _getCursorLineItem() {
         if (this._cursor === null) return null;
-        const textChar = this._textChars[this._cursor];
+        const textChar = this.textChars[this._cursor];
         return (textChar) ? (textChar.textRow || null) : null;
     }
 
@@ -631,10 +602,10 @@ export class ActaParagraph {
         if (!currTextRow) return null;
 
         const firstTextCharOfLine = currTextRow.items[0];
-        const firstTextCharIdx = this._textChars.indexOf(firstTextCharOfLine);
+        const firstTextCharIdx = this.textChars.indexOf(firstTextCharOfLine);
         if (firstTextCharIdx === 0)  return null;
 
-        return this._textChars[firstTextCharIdx - 1].textRow;
+        return this.textChars[firstTextCharIdx - 1].textRow;
     }
 
     private _getCursorNextLineItem() {
@@ -642,16 +613,16 @@ export class ActaParagraph {
         if (!currTextRow) return null;
 
         const lastTextCharOfLine = currTextRow.items[currTextRow.items.length - 1];
-        const lastTextCharIdx = this._textChars.indexOf(lastTextCharOfLine);
-        if (lastTextCharIdx === this._textChars.length - 1)  return null;
+        const lastTextCharIdx = this.textChars.indexOf(lastTextCharOfLine);
+        if (lastTextCharIdx === this.textChars.length - 1)  return null;
 
-        return this._textChars[lastTextCharIdx + 1].textRow;
+        return this.textChars[lastTextCharIdx + 1].textRow;
     }
 
     private _setCursor(textChar: ActaTextChar | undefined, x?: number) {
         let position = 0;
         if (textChar) {
-            position = this._textChars.indexOf(textChar);
+            position = this.textChars.indexOf(textChar);
             if (textChar.textRow === null) return null;
             if (x !== undefined && textChar.visable) {
                 const pathX = textChar.x;
@@ -662,7 +633,7 @@ export class ActaParagraph {
                 }
             }
         } else {
-            position = this._textChars.length;
+            position = this.textChars.length;
         }
         this._cursor = position;
 
@@ -680,7 +651,7 @@ export class ActaParagraph {
                 endpos--;
 
                 for (let i = startpos; i <= endpos; i++) {
-                    textChars.push(this._textChars[Math.min(i, this._textChars.length - 1)]);
+                    textChars.push(this.textChars[Math.min(i, this.textChars.length - 1)]);
                 }
             }
         }
@@ -688,7 +659,7 @@ export class ActaParagraph {
     }
 
     private get lastTextChar() {
-        return this._textChars.length > 0 ? this._textChars[this._textChars.length - 1] : null;
+        return this.textChars.length > 0 ? this.textChars[this.textChars.length - 1] : null;
     }
 
     private _redrawCursor() {
@@ -732,7 +703,7 @@ export class ActaParagraph {
                 }
             }
         } else if (ActaParagraph.inputMethod !== InputMethod.EN && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
-            const textChar = this._getNearestVisableTextItem(this._textChars[this._cursor - 1]);
+            const textChar = this._getNearestVisableTextItem(this.textChars[this._cursor - 1]);
             if (!textChar || !textChar.textRow) return;
 
             const column = this.columns[textChar.indexOfColumn];
@@ -760,12 +731,12 @@ export class ActaParagraph {
             let textRow: ActaTextRow | null;
             let x, y, height;
 
-            if (this._cursor > this._textChars.length - 1) {
+            if (this._cursor > this.textChars.length - 1) {
                 let lastCharIsNewline = false;
-                if (this._textChars.length > 0) {
+                if (this.textChars.length > 0) {
                     if (this.lastTextChar && this.lastTextChar.type === TextCharType.NEWLINE) lastCharIsNewline = true;
                 }
-                if (lastCharIsNewline || this._textChars.length < 1) {
+                if (lastCharIsNewline || this.textChars.length < 1) {
                     let indexOfColumn = 0;
                     if (lastCharIsNewline) {
                         textChar = this._getNearestVisableTextItem(this.lastTextChar);
@@ -852,7 +823,7 @@ export class ActaParagraph {
                 }
             }
         }
-        for (const findTextChar of this._textChars) {
+        for (const findTextChar of this.textChars) {
             if (findTextChar.id !== id) continue;
             textItem = findTextChar;
         }
@@ -879,107 +850,11 @@ export class ActaParagraph {
             if (isNaN(itemX1) || isNaN(itemX2) || isNaN(itemY1) || isNaN(itemY2) || id === undefined) return;
             if (itemX1 < x2 && itemX2 > x && itemY1 < y2 && itemY2 > y) idList.push(id);
         });
-        for (const textChar of this._textChars) {
+        for (const textChar of this.textChars) {
             if (idList.indexOf(textChar.id) < 0) continue;
             textChars.push(textChar);
         }
         return textChars;
-    }
-
-    private _resetTextData() {
-        this._textChars = [];
-        this._textNodeList = [];
-        if (this._textStore == null) return false;
-        return this._convertTextStoreToTextItem(this._textStore);
-    }
-
-    private _updateTextData() {
-        if (this._textStore == null) {
-            this._textChars = [];
-            this._textNodeList = [];
-            return false;
-        }
-        return this._convertTextStoreToTextItem(this._textStore, true);
-    }
-
-    private _splitTextItemsByNodeID(id: string, indexOfNode?: number) {
-        let preList: ActaTextChar[] | undefined;
-        let postList: ActaTextChar[] | undefined;
-        let s = -1, e = -1;
-
-        if (indexOfNode === undefined) {
-            const tmpNodeIDList: string[] = [];
-            for (const tmpTextChar of this._textChars) tmpNodeIDList.push(tmpTextChar.textNode.id);
-
-            s = tmpNodeIDList.indexOf(id);
-            e = tmpNodeIDList.lastIndexOf(id);
-        } else {
-            for (let i = 0; i < this._textChars.length; i++) {
-                const tmpTextItem =this._textChars[i];
-                if (tmpTextItem.textNode.id !== id || tmpTextItem.indexOfNode !== indexOfNode) continue;
-                if (s < 0) s = i;
-                e = i;
-            }
-        }
-        if (s > -1) {
-            preList = this._textChars.slice(undefined, s);
-            postList = this._textChars.slice(e + 1);
-        }
-        return [preList, postList];
-    }
-
-    private _convertTextStoreToTextItem(textNode: ActaTextStore, modifyOnly: boolean = false): boolean {
-        let preList: ActaTextChar[] | undefined;
-        let postList: ActaTextChar[] | undefined;
-        if (modifyOnly && textNode.modified && !textNode.partModified) {
-            [preList, postList] = this._splitTextItemsByNodeID(textNode.id);
-            if (preList === undefined || postList === undefined) return false;
-            this._textChars = preList;
-        }
-        for (let indexOfNode = 0; indexOfNode < textNode.length; indexOfNode++) {
-            let childModifyOnly = modifyOnly;
-            if (modifyOnly && textNode.modified) {
-                if (!textNode.partModified) {
-                    childModifyOnly = false;
-                } else if (textNode.isModified(indexOfNode)) {
-                    [preList, postList] = this._splitTextItemsByNodeID(textNode.id, indexOfNode);
-                    if (preList === undefined || postList === undefined) {
-                        textNode.modified = true;
-                        return this._convertTextStoreToTextItem(textNode, true);
-                    }
-                    this._textChars = preList;
-                }
-            }
-            if (textNode.value[indexOfNode] instanceof ActaTextStore) {
-                if (!this._convertTextStoreToTextItem(textNode.value[indexOfNode], childModifyOnly)) return false;
-                if (indexOfNode >= textNode.length - 1) {
-                    // 노드 업데이트를 위해 노드 마지막부분을 마킹
-                    this._textChars.push(new ActaTextChar('', textNode, indexOfNode));
-                }
-            } else {
-                if (modifyOnly && !textNode.isModified(indexOfNode)) continue;
-
-                const textvalue = textNode.value[indexOfNode].toString();
-                for (let indexOfText = 0; indexOfText < textvalue.length; indexOfText++) {
-                    const char = textvalue[indexOfText];
-                    this._textChars.push(new ActaTextChar(char, textNode, indexOfNode, indexOfText));
-                }
-            }
-            if (modifyOnly && textNode.modified && textNode.partModified && textNode.isModified(indexOfNode) && postList !== undefined) {
-                this._textChars = this._textChars.concat(postList);
-                preList = undefined;
-                postList = undefined;
-            }
-        }
-        if (modifyOnly && textNode.modified && !textNode.partModified && postList !== undefined) {
-            this._textChars = this._textChars.concat(postList);
-        }
-        if (this._textNodeList.indexOf(textNode.id) < 0) {
-            this._textNodeList.push(textNode.id);
-        }
-        textNode.modified = false;
-
-        return true;
     }
 
     private _positioningTextItems(): void {
@@ -996,23 +871,7 @@ export class ActaParagraph {
             });
             column.textRows = [];
         }
-        for (const textChar of this._textChars) {
-            if (textChar.type === TextCharType.END_OF_NODE) continue;
-            if (textChar.textNode.modified) {
-                // 수정된 노드라면 업데이트
-                if (!this._updateTextData()) this._resetTextData();
-                return this._positioningTextItems();
-            } else if (this._textNodeList.indexOf(textChar.textNode.id) < 0) {
-                // 삭제된 노드라면... 노드 제거
-                const [preList, postList] = this._splitTextItemsByNodeID(textChar.textNode.id);
-                if (preList === undefined || postList === undefined) {
-                    this._resetTextData();
-                } else {
-                    this._textChars = [];
-                    this._textChars.concat(preList).concat(postList);
-                }
-                return this._positioningTextItems();
-            }
+        for (const textChar of this.textChars) {
             textChar.calcWidth = textChar.width * (textChar.textStyle.xscale || 1);
             if (textChar.calcWidth > 0) textChar.calcWidth += textChar.textStyle.letterSpacing || 0;
             while (1) {
@@ -1109,7 +968,7 @@ export class ActaParagraph {
         if (this.lastTextChar !== null) {
             if (this.lastTextChar.type === TextCharType.NEWLINE) lastCharIsNewline = true;
         }
-        if (this._textChars.length < 1 || lastCharIsNewline) {
+        if (this.textChars.length < 1 || lastCharIsNewline) {
             let column: ActaParagraphColumnElement | undefined;
             let textStyle: ActaTextStyle | undefined;
             let indexOfColumn = 0;
@@ -1133,7 +992,7 @@ export class ActaParagraph {
 
     private get textItemMap() {
         const map: { [id: string] : ActaTextChar } = {};
-        for (const textChar of this._textChars) {
+        for (const textChar of this.textChars) {
             map[textChar.id] = textChar;
         }
         return map;
@@ -1166,46 +1025,8 @@ export class ActaParagraph {
                 textRow.offsetY = offsetY;
                 for (const textChar of textRow.items) {
                     if (textChar.textRow === null) textChar.textRow = textRow;
-                    if ([TextCharType.NEWLINE, TextCharType.END_OF_NODE].indexOf(textChar.type) < 0) {
-                        let transform = 'translate(';
-                        transform += `${(textChar.drawOffsetX || 0) + ((textChar.textStyle.letterSpacing || 0) / 2) + offsetX}px`;
-                        transform += ', ';
-                        transform += `${(textChar.drawOffsetY || 0) + offsetY - textRow.maxHeight + ((textRow.maxHeight - (textChar.height || 0)) * 2)}px`;
-                        transform += ')';
-                        transform += ` scaleX(${textChar.textStyle.xscale})`;
-                        const attrStyle = {
-                            'data-id': textChar.id,
-                            'data-column': textChar.indexOfColumn,
-                            'data-line': textChar.indexOfLine,
-                            'data-textnode': textChar.textNode.id,
-                            'data-index-of-node': textChar.indexOfNode,
-                            'data-index-of-text': textChar.indexOfText,
-                            'x1': (textChar.drawOffsetX || 0) + ((textChar.textStyle.letterSpacing || 0) / 2) + offsetX,
-                            'x2': (textChar.drawOffsetX || 0) + ((textChar.textStyle.letterSpacing || 0) / 2) + offsetX + textChar.calcWidth,
-                            'stroke': textChar.textStyle.color,
-                            'stroke-width': 1,
-                            'stroke-linecap': 'butt'
-                        };
+                    if ([TextCharType.NEWLINE].indexOf(textChar.type) < 0) {
                         textChar.update(offsetX, offsetY);
-
-                        if (textChar.textStyle !== undefined) {
-                            if (textChar.textStyle.strikeline) {
-                                const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                                $(strikeline).attr(Object.assign(attrStyle, {
-                                    'y1': (textChar.drawOffsetY || 0) + offsetY - (textRow.maxHeight / 3),
-                                    'y2': (textChar.drawOffsetY || 0) + offsetY - (textRow.maxHeight / 3),
-                                }));
-                                lines.push(strikeline);
-                            }
-                            if (textChar.textStyle.underline) {
-                                const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                                $(underline).attr(Object.assign(attrStyle, {
-                                    'y1': (textChar.drawOffsetY || 0) + offsetY,
-                                    'y2': (textChar.drawOffsetY || 0) + offsetY,
-                                }));
-                                lines.push(underline);
-                            }
-                        }
                     }
                     offsetX += textChar.calcWidth;
                 }
@@ -1240,14 +1061,13 @@ export class ActaParagraph {
         this._inputChar = '';
         this._overflow = false;
 
+        this._textNodeList = [];
+
         this.columnCount = columnCount;
         for (let i = 0; i < columnCount; i++) {
             if (columnWidths[i]) this.columnWidth(i, columnWidths[i]);
         }
         this.innerMargin = innerMargin;
-
-        this._textChars = [];
-        this._textNodeList = [];
 
         $(this._element).on('resize', e => {
             this._update();
@@ -1315,13 +1135,12 @@ export class ActaParagraph {
     }
 
     reset() {
-        this._resetTextData();
         this._positioningTextItems();
         this._drawTextItems();
     }
 
     set text(text: string) {
-        this._textStore = ActaTextConverter.textobject(text);
+        this._textStore = ActaTextConverter.textobject(this.defaultTextStyleName, text);
         this._cursor = null;
         this.reset();
     }
