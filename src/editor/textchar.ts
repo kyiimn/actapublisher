@@ -3,7 +3,6 @@ import { ActaTextStyle } from "./textstyle";
 import { ActaTextRow } from './textrow';
 
 import { v4 as uuidv4 } from 'uuid';
-import { ActaParagraphColumnElement } from "./element/paragraph-col-el";
 
 export enum TextCharType {
     NEWLINE, SPACE, PATH
@@ -19,7 +18,6 @@ export class ActaTextChar {
 
     private _textNode: ActaTextNode;
     private _textRow?: ActaTextRow;
-    private _indexOfNode: number;
 
     private _SVGPath: SVGPathElement;
     private _calcWidth: number;
@@ -30,12 +28,16 @@ export class ActaTextChar {
     private _posX?: number;
     private _posY?: number;
 
-    private _stylingElements: SVGLineElement[];
+    private _textDecorations: SVGLineElement[];
 
     private _createSVGPath() {
         const textStyle = this.textNode.textStyle;
         if (this._type === TextCharType.SPACE) {
-            this._width = (textStyle.fontSize !== null) ? textStyle.fontSize / 3 : 0;
+            const width = (textStyle.fontSize !== null) ? textStyle.fontSize / 3 : 0;
+            if (this._width !== width) {
+                this._width = width;
+                this.modified = true;
+            }
         } else if (this._type === TextCharType.PATH) {
             const font = textStyle.font.font, size = textStyle.fontSize;
             const glyph = font.charToGlyph(this._char);
@@ -48,23 +50,32 @@ export class ActaTextChar {
             this._SVGPath.setAttribute('d', pathData);
             this._SVGPath.setAttribute('data-char', this._char);
 
-            this._drawOffsetX = 0;
-            this._drawOffsetY = height + yMin;
-            this._width = glyph.advanceWidth / unitsPerSize;
+            if (this._drawOffsetX !== 0) {
+                this._drawOffsetX = 0;
+                this.modified = true;
+            }
+            if (this._drawOffsetY !== height + yMin) {
+                this._drawOffsetY = height + yMin;
+                this.modified = true;
+            }
+            if (this._width !== glyph.advanceWidth / unitsPerSize ) {
+                this._width = glyph.advanceWidth / unitsPerSize;
+                this.modified = true;
+            }
         }
+        this.calcWidth = this.width;
     }
 
-    constructor(char: string, textNode: ActaTextNode, indexOfNode: number = 0) {
+    constructor(char: string, textNode: ActaTextNode) {
         this._id = uuidv4();
         this._modified = true;
 
         this._char = char;
 
         this._textNode = textNode;
-        this._indexOfNode = indexOfNode;
 
         this._SVGPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        this._stylingElements = [];
+        this._textDecorations = [];
 
         this._drawOffsetX = 0;
         this._drawOffsetY = 0;
@@ -77,32 +88,29 @@ export class ActaTextChar {
             default: this._type = TextCharType.PATH; break;
         }
         this._createSVGPath();
-        this._calcWidth = this.width;
     }
 
     changeTextStyle() {
         this._createSVGPath();
-        this._calcWidth = this.width;
     }
 
     update(x?: number, y?: number) {
         const textStyle = this.textNode.textStyle;
 
         if (!this.textRow) return;
-        if (x === undefined) {
-            if (this._posX === undefined) return;
-            x = this._posX;
-        } else {
+        if (x !== undefined && y !== undefined) {
+            if (this._posX !== x || this._posY !== y) this.modified = true;
             this._posX = x;
-        }
-        if (y === undefined) {
-            if (this._posY === undefined) return;
-            y = this._posY;
-        } else {
             this._posY = y;
+        } else {
+            if (this._posX === undefined || this._posY === undefined) return;
+            x = this._posX;
+            y = this._posY;
         }
-        for (const stylingElement of this._stylingElements) if (stylingElement) stylingElement.remove();
-        this._stylingElements = [];
+        if (!this.modified) return;
+
+        for (const textDecoration of this._textDecorations) if (textDecoration) textDecoration.remove();
+        this._textDecorations = [];
 
         let transform = 'translate(';
         transform += `${(this.drawOffsetX || 0) + ((textStyle.letterSpacing || 0) / 2) + x}px`;
@@ -127,7 +135,9 @@ export class ActaTextChar {
         this._SVGPath.style.transform = transform;
         this._SVGPath.style.fill = textStyle.color || '#000000';
 
-        this.textRow.column.svg.appendChild(this._SVGPath);
+        if (!this._SVGPath.parentElement || this._SVGPath.parentElement as any as SVGElement !== this.textRow.column.svg) {
+            this.textRow.column.svg.appendChild(this._SVGPath);
+        }
 
         if (textStyle.strikeline) {
             const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -141,7 +151,7 @@ export class ActaTextChar {
             strikeline.style.strokeLinecap = 'butt';
             strikeline.style.strokeWidth = '1';
 
-            this._stylingElements.push(strikeline);
+            this._textDecorations.push(strikeline);
             this.textRow.column.svg.appendChild(strikeline);
         }
         if (textStyle.underline) {
@@ -156,56 +166,52 @@ export class ActaTextChar {
             underline.style.strokeLinecap = 'butt';
             underline.style.strokeWidth = '1';
 
-            this._stylingElements.push(underline);
+            this._textDecorations.push(underline);
             this.textRow.column.svg.appendChild(underline);
         }
-        this._modified = false;
+        this.modified = false;
     }
 
     remove() {
-        if (!this._SVGPath.parentElement) return;
-        this._SVGPath.parentElement.removeChild(this._SVGPath);
+        if (this._SVGPath.parentElement) this._SVGPath.parentElement.removeChild(this._SVGPath);
+        if (this.indexOfNode > -1) this.textNode.remove(this);
     }
 
     toString() { return this._char; }
 
-    set calcWidth(w: number) {
-        if (this._calcWidth === w) return;
-        this._calcWidth = w;
-        this._modified = true;
-        this.update();
-    }
+    private set modified(modify) { this._modified = modify; }
+    private get modified() { return this._modified; }
+
+    private get drawOffsetX() { return this._drawOffsetX; }
+    private get drawOffsetY() { return this._drawOffsetY; }
 
     set textRow(textRow: ActaTextRow | null) {
         if (this._textRow === textRow) return;
         this._textRow = textRow || undefined;
-        this._modified = true;
+        this.modified = true;
 
         if (!this._textRow && this._SVGPath.parentElement) {
             this._SVGPath.parentElement.removeChild(this._SVGPath);
         }
     }
+    set calcWidth(width: number) { this._calcWidth = width; }
+
     get id() { return this._id; }
     get char() { return this._char; }
     get type() { return this._type; }
     get indexOfColumn() { return (this._textRow) ? this._textRow.indexOfColumn : -1; }
     get indexOfLine() { return (this._textRow) ? this._textRow.indexOfLine : -1; }
     get indexOfNode() { return this._textNode.value.indexOf(this); }
-    get drawOffsetX() { return this._drawOffsetX; }
-    get drawOffsetY() { return this._drawOffsetY; }
     get width() { return this._width; }
     get height() { return this.textStyle.textHeight; }
     get calcWidth() { return this._calcWidth; }
     get textNode() { return this._textNode; }
     get textRow() { return this._textRow || null; }
     get textStyle() { return this.textNode.textStyle; }
-    get modified() { return this._modified; }
+    get visable() { return (this._textRow !== null) ? true : false; }
 
     get x() { return this._posX || 0; }
     get y() { return this._posY || 0; }
 
-    get visable() {
-        return (this._textRow !== null) ? true : false
-    }
     get el() { return this._SVGPath; }
 };

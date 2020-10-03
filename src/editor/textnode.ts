@@ -21,7 +21,7 @@ export class ActaTextNode {
         this._modified = true;
         this._parentNode = null;
 
-        this._customTextStyle.onChange = attr => this.changeTextStyle(attr);
+        this._customTextStyle.onChanged = attr => this.changeTextStyle(attr);
     }
 
     changeTextStyle(attr?: string) {
@@ -36,22 +36,26 @@ export class ActaTextNode {
             val.parentNode = this;
             arrVal.push(val);
         } else {
-            for (let i = 0; i < val.length; i++) {
-                arrVal.push(new ActaTextChar(val[i], this, this._value.length + i));
+            for (const s of val) {
+                arrVal.push(new ActaTextChar(s, this));
             }
         }
         for (const oval of arrVal) this.modified = this._value.push(oval);
     }
 
-    remove(idx?: number) {
+    remove(idx?: number | ActaTextChar) {
+        let rVals: (ActaTextChar | ActaTextNode)[];
         if (idx !== undefined) {
-            const rVal = this._value[idx];
-            if (rVal) rVal.remove();
+            if (idx instanceof ActaTextChar) idx = idx.indexOfNode;
+
+            rVals = [this._value[idx]];
             this._value.splice(idx, 1);
         } else {
-            for (const rVal of this._value) rVal.remove();
+            rVals = this._value;
             this._value = [];
         }
+        for (const rVal of rVals) rVal.remove();
+
         this.modified = true;
     }
 
@@ -61,8 +65,8 @@ export class ActaTextNode {
             val.parentNode = this;
             arrVal.push(val);
         } else {
-            for (let i = 0; i < val.length; i++) {
-                arrVal.push(new ActaTextChar(val[i], this, idx + i));
+            for (const s of val) {
+                arrVal.push(new ActaTextChar(s, this));
             }
         }
         for (let i = 0; i < arrVal.length; i++) {

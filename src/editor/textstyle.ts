@@ -5,9 +5,7 @@ export enum TextAlign {
     JUSTIFY = 0, LEFT, RIGHT, CENTER
 }
 
-type callbackTextStyleChange = (
-    (attributeName: string) => void
-);
+type callbackTextStyleChanged = ((attributeName: string) => void);
 
 class ActaTextStylePrivate {
     private _font: ActaFont | null;
@@ -21,7 +19,7 @@ class ActaTextStylePrivate {
     private _strikeline: boolean | null;
     private _indent: number | null;
 
-    private _callbackTextStyleChangeList: callbackTextStyleChange[];
+    private _callbackChangedEventList: callbackTextStyleChanged[];
 
     constructor() {
         this._font = null;
@@ -35,7 +33,7 @@ class ActaTextStylePrivate {
         this._indent = null;
         this._color = null;
 
-        this._callbackTextStyleChangeList = [];
+        this._callbackChangedEventList = [];
     }
 
     protected merge(textStyle: ActaTextStylePrivate) {
@@ -53,23 +51,27 @@ class ActaTextStylePrivate {
         if (textStyle.indent !== null) { this.indent = textStyle.indent; changed = true; }
         if (textStyle.color !== null) { this.color = textStyle.color; changed = true; }
 
-        if (changed) this.triggerChangeEvent('');
+        if (changed) this.triggerChangedEvent('');
     }
 
-    protected triggerChangeEvent(name: string) {
-        for (const callback of this._callbackTextStyleChangeList) {
+    protected triggerChangedEvent(name: string) {
+        for (const callback of this._callbackChangedEventList) {
             if (callback) callback(name);
         }
     }
 
-    removeChange(callback: callbackTextStyleChange) {
-        const idx = this._callbackTextStyleChangeList.indexOf(callback);
-        if (idx < 0) return;
-        this._callbackTextStyleChangeList = this._callbackTextStyleChangeList.splice(idx, 1);
+    offChanged(callback?: callbackTextStyleChanged) {
+        if (callback === undefined) {
+            this._callbackChangedEventList = [];
+        } else {
+            const idx = this._callbackChangedEventList.indexOf(callback);
+            if (idx < 0) return;
+            this._callbackChangedEventList = this._callbackChangedEventList.splice(idx, 1);
+        }
     }
 
-    set onChange(callback: callbackTextStyleChange) {
-        if (this._callbackTextStyleChangeList.indexOf(callback) < 0) this._callbackTextStyleChangeList.push(callback);
+    set onChanged(callback: callbackTextStyleChanged) {
+        if (this._callbackChangedEventList.indexOf(callback) < 0) this._callbackChangedEventList.push(callback);
     }
 
     set fontName(fontName: string) {
@@ -78,68 +80,68 @@ class ActaTextStylePrivate {
         if (!font) return;
         if (this._font !== font) {
             this._font = font;
-            this.triggerChangeEvent('font');
+            this.triggerChangedEvent('font');
         }
     }
     set font(font: ActaFont | null) {
         if (this._font !== font) {
             this._font = font;
-            this.triggerChangeEvent('font');
+            this.triggerChangedEvent('font');
         }
     }
 
     set fontSize(size: number | null) {
         if (this._fontSize !== size) {
             this._fontSize = size;
-            this.triggerChangeEvent('fontSize');
+            this.triggerChangedEvent('fontSize');
         }
     }
     set xscale(scale: number | null) {
         if (this._xscale !== scale) {
             this._xscale = scale;
-            this.triggerChangeEvent('xscale');
+            this.triggerChangedEvent('xscale');
         }
     }
     set letterSpacing(linespacing: number | null) {
         if (this._letterSpacing !== linespacing) {
             this._letterSpacing = linespacing;
-            this.triggerChangeEvent('letterSpacing');
+            this.triggerChangedEvent('letterSpacing');
         }
     }
     set lineHeight(lineheight: number | null) {
         if (this._lineHeight !== lineheight) {
             this._lineHeight = lineheight;
-            this.triggerChangeEvent('lineHeight');
+            this.triggerChangedEvent('lineHeight');
         }
     }
     set textAlign(align: TextAlign | null) {
         if (this._textAlign !== align) {
             this._textAlign = align;
-            this.triggerChangeEvent('textAlign');
+            this.triggerChangedEvent('textAlign');
         }
     }
     set underline(underline: boolean | null) {
         if (this._underline !== underline) {
             this._underline = underline;
-            this.triggerChangeEvent('underline');
+            this.triggerChangedEvent('underline');
         }
     }
     set strikeline(strikeline: boolean | null) {
         if (this._strikeline !== strikeline) {
             this._strikeline = strikeline;
-            this.triggerChangeEvent('strikeline');
+            this.triggerChangedEvent('strikeline');
         }
     }
     set indent(indent: number | null) {
         if (this._indent !== indent) {
             this._indent = indent;
-            this.triggerChangeEvent('indent');
+            this.triggerChangedEvent('indent');
         }
     }
     set color(color: string | null) {
         if (this._color !== color) {
             this._color = color;
-            this.triggerChangeEvent('color');
+            this.triggerChangedEvent('color');
         }
     }
 
