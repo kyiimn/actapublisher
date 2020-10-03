@@ -1,10 +1,10 @@
-import { ActaTextNode } from './textnode';
+import { ActaTextStore, ActaTextNode } from './textnode';
 import { Stack } from '../utils';
 
 export class ActaTextConverter {
     static textobject(textStyleName: string, text: string) {
         const node = new Stack();
-        let currentnode = new ActaTextNode();
+        let currentnode = new ActaTextStore();
         let str = '';
 
         currentnode.defaultTextStyleName = textStyleName;
