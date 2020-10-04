@@ -47,7 +47,6 @@ class ActaTextStylePrivate {
         if (textStyle.textAlign !== null) { this.textAlign = textStyle.textAlign; changed = true; }
         if (textStyle.underline !== null) { this.underline = textStyle.underline; changed = true; }
         if (textStyle.strikeline !== null) { this.strikeline = textStyle.strikeline; changed = true; }
-        if (textStyle.font !== null) { this.font = textStyle.font; changed = true; }
         if (textStyle.indent !== null) { this.indent = textStyle.indent; changed = true; }
         if (textStyle.color !== null) { this.color = textStyle.color; changed = true; }
 

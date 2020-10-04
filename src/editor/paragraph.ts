@@ -1108,6 +1108,7 @@ export class ActaParagraph {
     }
 
     set text(text: string) {
+        if (this._textStore) this._textStore.remove();
         this._textStore = ActaTextConverter.textobject(this.defaultTextStyleName, text);
         this._cursor = null;
         this.reset();

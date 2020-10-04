@@ -1,4 +1,5 @@
 import { ActaTextStore, ActaTextNode } from './textnode';
+import { TextAlign } from './textstyle';
 import { Stack } from '../utils';
 
 export class ActaTextConverter {
@@ -42,10 +43,28 @@ export class ActaTextConverter {
 
                             for (let j = 1; j < t.length; j++) {
                                 const tt = t[j].split('=');
-                                const val = (tt[1][0] === '"') ? tt[1].substr(1, Math.max(tt[1].length - 2, 0)) : tt[1];
+                                let val = (tt[1][0] === '"' || tt[1][0] === '\'') ? tt[1].substr(1, Math.max(tt[1].length - 2, 0)) : tt[1];
                                 if (val === '') continue;
-                                switch (tt[0]) {
+                                val = val.toLowerCase();
+                                switch (tt[0].toLowerCase()) {
                                     case 'name': newnode.defaultTextStyleName = val; break;
+                                    case 'color': textStyle.color = val; break;
+                                    case 'underline': textStyle.underline = val === 'yes' ? true : false; break;
+                                    case 'strikeline': textStyle.strikeline = val === 'yes' ? true : false; break;
+                                    case 'xscale': textStyle.xscale = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'letter-spacing': textStyle.letterSpacing = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'line-height': textStyle.lineHeight = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'indent': textStyle.indent = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'font-size': textStyle.fontSize = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'font-name': textStyle.fontName = val; break;
+                                    case 'text-align':
+                                        textStyle.textAlign =
+                                            (val === 'center' ? TextAlign.CENTER :
+                                            (val === 'left' ? TextAlign.LEFT :
+                                            (val === 'right' ? TextAlign.RIGHT :
+                                            (val === 'justify' ? TextAlign.JUSTIFY : null
+                                        ))));
+                                        break;
                                     default: break;
                                 }
                             }

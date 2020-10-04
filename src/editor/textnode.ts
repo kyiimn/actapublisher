@@ -12,7 +12,7 @@ export class ActaTextNode {
     private _modified: boolean | number[];
     private _parentNode: ActaTextNode | null;
 
-    constructor(tagname: string = '') {
+    constructor(tagname: string = 'x-style') {
         this._id = uuidv4();
         this._tagname = tagname.toLowerCase();
         this._defaultTextStyleName = null;
