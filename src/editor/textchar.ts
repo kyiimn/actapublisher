@@ -28,6 +28,9 @@ export class ActaTextChar {
     private _posX?: number;
     private _posY?: number;
 
+    private _oldMaxHeight?: number;
+    private _oldLetterSpacing?: number;
+
     private _textDecorations: SVGLineElement[];
 
     private _createSVGPath() {
@@ -92,6 +95,7 @@ export class ActaTextChar {
 
     changeTextStyle() {
         this._createSVGPath();
+        this._oldLetterSpacing = undefined;
     }
 
     update(x?: number, y?: number) {
@@ -106,6 +110,14 @@ export class ActaTextChar {
             if (this._posX === undefined || this._posY === undefined) return;
             x = this._posX;
             y = this._posY;
+        }
+        if (this._oldMaxHeight !== this.textRow.maxHeight) {
+            this._oldMaxHeight = this.textRow.maxHeight;
+            this.modified = true;
+        }
+        if (this._oldLetterSpacing !== textStyle.letterSpacing) {
+            this._oldLetterSpacing = textStyle.letterSpacing;
+            this.modified = true;
         }
         if (!this.modified) return;
 
@@ -200,6 +212,7 @@ export class ActaTextChar {
             if (this._SVGPath.parentElement) {
                 this._posX = undefined;
                 this._posY = undefined;
+                this._oldMaxHeight = undefined;
                 this._SVGPath.parentElement.removeChild(this._SVGPath);
             }
             this.modified = true;
