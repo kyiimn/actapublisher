@@ -330,7 +330,7 @@ export class ActaParagraph {
             if (selTextChars.length > 0) {
                 this._cursor = this.textChars.indexOf(selTextChars[0]);
                 this._removeTextChars(selTextChars);
-            } else return false;
+            };
             this._update();
             this._redrawCursor();
 

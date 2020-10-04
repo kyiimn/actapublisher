@@ -179,21 +179,30 @@ export class ActaTextChar {
 
     toString() { return this._char; }
 
-    private set modified(modify) { this._modified = modify; }
-    private get modified() { return this._modified; }
-
     private get drawOffsetX() { return this._drawOffsetX; }
     private get drawOffsetY() { return this._drawOffsetY; }
 
+    private set modified(modify) {
+        this._modified = modify;
+    }
+
+    private get modified() {
+        return this._modified;
+    }
+
     set textRow(textRow: ActaTextRow | null) {
         if (this._textRow === textRow) return;
-        this._textRow = textRow || undefined;
-        this.modified = true;
-
-        if (!this._textRow && this._SVGPath.parentElement) {
-            this._posX = undefined;
-            this._posY = undefined;
-            this._SVGPath.parentElement.removeChild(this._SVGPath);
+        if (textRow) {
+            if (this._textRow && this._textRow.column !== textRow.column) this.modified = true;
+            this._textRow = textRow;
+        } else {
+            this._textRow = undefined;
+            if (this._SVGPath.parentElement) {
+                this._posX = undefined;
+                this._posY = undefined;
+                this._SVGPath.parentElement.removeChild(this._SVGPath);
+            }
+            this.modified = true;
         }
     }
     set calcWidth(width: number) { this._calcWidth = width; }
