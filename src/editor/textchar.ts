@@ -191,6 +191,8 @@ export class ActaTextChar {
         this.modified = true;
 
         if (!this._textRow && this._SVGPath.parentElement) {
+            this._posX = undefined;
+            this._posY = undefined;
             this._SVGPath.parentElement.removeChild(this._SVGPath);
         }
     }
@@ -210,8 +212,8 @@ export class ActaTextChar {
     get textStyle() { return this.textNode.textStyle; }
     get visable() { return (this._textRow !== null) ? true : false; }
 
-    get x() { return this._posX || 0; }
-    get y() { return this._posY || 0; }
+    get x() { return this._posX !== undefined ? this._posX : -1; }
+    get y() { return this._posY !== undefined ? this._posY : -1; }
 
     get el() { return this._SVGPath; }
 };

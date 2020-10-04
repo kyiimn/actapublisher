@@ -9,7 +9,6 @@ export class ActaTextNode {
     private _defaultTextStyleName: string | null;
     private _customTextStyle: ActaTextStyleInherit;
     private _value: (ActaTextChar | ActaTextNode)[];
-    private _modified: boolean | number[];
     private _parentNode: ActaTextNode | null;
 
     constructor(tagname: string = 'x-style') {
@@ -18,7 +17,6 @@ export class ActaTextNode {
         this._defaultTextStyleName = null;
         this._customTextStyle = new ActaTextStyleInherit();
         this._value = [];
-        this._modified = true;
         this._parentNode = null;
 
         this._customTextStyle.onChanged = attr => this.changeTextStyle(attr);
@@ -40,7 +38,9 @@ export class ActaTextNode {
                 arrVal.push(new ActaTextChar(s, this));
             }
         }
-        for (const oval of arrVal) this.modified = this._value.push(oval);
+        for (const oval of arrVal) {
+            this._value.push(oval);
+        }
     }
 
     remove(idx?: number | ActaTextChar) {
@@ -54,13 +54,16 @@ export class ActaTextNode {
             rVals = this._value;
             this._value = [];
         }
-        for (const rVal of rVals) rVal.remove();
-
-        this.modified = true;
+        for (const rVal of rVals) {
+            rVal.remove();
+        }
     }
 
-    insert(idx: number, val: string | ActaTextNode) {
+    insert(idx: ActaTextChar | number, val: string | ActaTextNode) {
         const arrVal: (ActaTextChar | ActaTextNode)[] = [];
+        if (idx instanceof ActaTextChar) idx = this._value.indexOf(idx);
+        if (idx < 0) return;
+
         if (val instanceof ActaTextNode) {
             val.parentNode = this;
             arrVal.push(val);
@@ -72,36 +75,37 @@ export class ActaTextNode {
         for (let i = 0; i < arrVal.length; i++) {
             this._value.splice(idx + i, 0, arrVal[i]);
         }
-        this.modified = true;
     }
 
-    replace(idx: number, val: string | ActaTextNode) {
-        if (typeof(val) === 'string') {
+    replace(idx: (ActaTextChar | ActaTextNode)[] | number, val: string | ActaTextNode) {
+        if (typeof(idx) === 'object') {
+            let firstIdx = -1;
+            for (const target of idx) {
+                if (this._value.indexOf(target) > firstIdx && firstIdx !== -1) continue;
+                firstIdx = this._value.indexOf(target);
+            }
+            if (firstIdx < 0) return;
+
+            for (const target of idx) {
+                if (target instanceof ActaTextNode) {
+                    if (target.parentNode === this) target.remove();
+                } else {
+                    if (target.textNode === this) target.remove();
+                }
+            }
+            this.insert(firstIdx, val);
+        } else if (typeof(val) === 'string') {
             this.remove(idx);
             this.insert(idx, val);
-            this.modified = true;
         } else {
             if (this._value[idx] instanceof ActaTextNode) {
                 const oldNode = this._value[idx] as ActaTextNode;
                 if (oldNode.id === val.id) return;
-            } else {
-                this.modified = true;
             }
             val.parentNode = this;
             this._value[idx].remove();
             this._value[idx] = val;
         }
-        this.modified = idx;
-    }
-
-    isModified(idx: number) {
-        if (typeof(this._modified) === 'object') {
-            if (this.value[idx] instanceof ActaTextNode) return false;
-            return this._modified.indexOf(idx) < 0 ? false : true;
-        } if (this._modified === true) {
-            return true;
-        }
-        return false;
     }
 
     toString() {
@@ -127,7 +131,6 @@ export class ActaTextNode {
     set defaultTextStyleName(styleName: string | null) {
         if (this._defaultTextStyleName !== styleName) {
             this._defaultTextStyleName = styleName;
-            this.modified = true;
             this.changeTextStyle();
         }
     }
@@ -135,28 +138,11 @@ export class ActaTextNode {
     set customTextStyle(style: ActaTextStyleInherit) {
         if (this._customTextStyle !== style) {
             this._customTextStyle = style;
-            this.modified = true;
+            this._customTextStyle.onChanged = attr => this.changeTextStyle(attr);
             this.changeTextStyle();
         }
     }
 
-    set modified(val: number[] | number | boolean) {
-        if (typeof(val) === 'boolean') {
-            this._modified = val;
-        } else if (typeof(val) === 'object') {
-            if (this._modified === false) {
-                this._modified = val;
-            } else if (typeof(this._modified) === 'object') {
-                this._modified = this._modified.concat(val);
-            }
-        } else {
-            if (this._modified === false) {
-                this._modified = [val];
-            } else if (typeof(this._modified) === 'object') {
-                this._modified.push(val);
-            }
-        }
-    }
     set parentNode(node: ActaTextNode | null) { this._parentNode = node; }
     get parentNode() { return this._parentNode; }
 
@@ -165,20 +151,17 @@ export class ActaTextNode {
             if (val instanceof ActaTextNode) val.parentNode = this;
         }
         this._value = values;
-        this.modified = true;
     }
     get tagName() { return this._tagname; }
     get id() { return this._id; }
     get defaultTextStyleName() { return this._defaultTextStyleName; }
     get customTextStyle() { return this._customTextStyle; }
-    get modified() { return this._modified === false ? false : true; }
-    get partModified() { return typeof(this._modified) === 'object' ? true : false; }
     get value() { return this._value; }
     get length() { return this.value.length; }
 
     get textStyle() {
         const defaultTextStyle = ActaTextStyleManager.getInstance().get(this.defaultTextStyleName || '');
-        const returnTextStyle = new ActaTextStyle(defaultTextStyle.fontName);
+        const returnTextStyle = new ActaTextStyle((defaultTextStyle ? defaultTextStyle.fontName : '') || '');
 
         if (this.parentNode) returnTextStyle.merge(this.parentNode.textStyle);
         if (defaultTextStyle) returnTextStyle.merge(defaultTextStyle);
