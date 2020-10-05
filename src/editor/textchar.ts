@@ -5,7 +5,7 @@ import { ActaTextRow } from './textrow';
 import { v4 as uuidv4 } from 'uuid';
 
 export enum TextCharType {
-    NEWLINE, SPACE, PATH
+    NEWLINE, SPACE, CHAR
 };
 
 export class ActaTextChar {
@@ -41,7 +41,7 @@ export class ActaTextChar {
                 this._width = width;
                 this.modified = true;
             }
-        } else if (this._type === TextCharType.PATH) {
+        } else if (this._type === TextCharType.CHAR) {
             const font = textStyle.font.font, size = textStyle.fontSize;
             const glyph = font.charToGlyph(this._char);
             const unitsPerSize = font.unitsPerEm / size;
@@ -88,7 +88,7 @@ export class ActaTextChar {
         switch (char) {
             case '\n': this._type = TextCharType.NEWLINE; break;
             case ' ': this._type = TextCharType.SPACE; break;
-            default: this._type = TextCharType.PATH; break;
+            default: this._type = TextCharType.CHAR; break;
         }
         this._createSVGPath();
     }

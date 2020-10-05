@@ -170,6 +170,3 @@ export class ActaTextNode {
         return returnTextStyle;
     }
 };
-
-// tslint:disable-next-line: max-classes-per-file
-export class ActaTextStore extends ActaTextNode {};

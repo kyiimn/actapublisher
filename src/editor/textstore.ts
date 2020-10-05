@@ -1,9 +1,9 @@
-import { ActaTextStore, ActaTextNode } from './textnode';
+import { ActaTextNode } from './textnode';
 import { TextAlign } from './textstyle';
 import { Stack } from '../utils';
 
-export class ActaTextConverter {
-    static textobject(textStyleName: string, text: string) {
+export class ActaTextStore extends ActaTextNode {
+    static import(textStyleName: string, text: string) {
         const node = new Stack();
         let currentnode = new ActaTextStore();
         let str = '';
