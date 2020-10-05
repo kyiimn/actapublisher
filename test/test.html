@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<canvas width="1607" height="904"></canvas>
+<canvas width="1607" height="904"></canvas>
+<script>
+var canvas = document.getElementsByTagName('canvas')[0];
+var ctx = canvas.getContext('2d');
+
+var canvas1 = document.getElementsByTagName('canvas')[1];
+var ctx1 = canvas1.getContext('2d');
+
+var img1 = new Image();
+img1.src="bigsur.jpg";
+img1.onload = e1 => {
+    ctx.drawImage(e1.target, 0, 0);
+
+    var img2 = new Image;
+    img2.src = "bigsur.svg";
+    img2.onload = e2 => {
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(e2.target, 0, 0);
+        ctx.globalCompositeOperation = 'none';
+
+        ctx1.drawImage(canvas, 0, 0);
+    };
+};
+</script>
+</body>
+</html>
