@@ -1,3 +1,5 @@
+import { ActaElementInstance } from './element/instance';
+
 import { ActaParagraphElement } from './element/paragraph-el';
 import { ActaParagraphColumnElement } from './element/paragraph-col-el';
 import { ActaParagraphMarginElement } from './element/paragraph-margin-el';
@@ -86,13 +88,12 @@ enum InputMethod {
     EN, KO
 };
 
-export class ActaParagraph {
+export class ActaParagraph extends ActaElementInstance {
     private _element: ActaParagraphElement;
     private _columnCount: number;
     private _innerMargin: string | number;
     private _textStore: ActaTextStore | null;
     private _defaultTextStyleName: string | null;
-    private _textNodeList: string[];
     private _selectionStartChar: number | null;
     private _cursorMode: CursorMode;
     private _cursor: number | null;
@@ -160,7 +161,7 @@ export class ActaParagraph {
             this._removeTextChars(selectionTextChars);
             this._cursorMode = CursorMode.EDIT;
         }
-        let textNode: ActaTextStore | null = null;
+        let textNode: ActaTextNode | null = null;
         let insertPos: number = 0;
         if (this._cursor > this.textChars.length - 1) {
             if (this.lastTextChar !== null) {
@@ -317,6 +318,8 @@ export class ActaParagraph {
             let selText = '';
             if (selTextChars.length < 1) return false;
             this._cursor = this.textChars.indexOf(selTextChars[0]);
+            this._cursorMode = CursorMode.EDIT;
+
             for (const textChar of selTextChars) selText += textChar.char || '';
             this._removeTextChars(selTextChars);
             this._update();
@@ -349,6 +352,21 @@ export class ActaParagraph {
             this._selectionStartChar = 0;
             this._cursorMode = CursorMode.SELECTION;
             this._redrawCursor();
+            return false;
+        } else if (e.altKey && e.key === 'd') {
+            const selTextItems = this._getSelectionTextChars();
+            if (selTextItems.length > 0) {
+                const aa = new ActaTextStyleInherit();
+                aa.fontSize = 15;
+                this._applyTextStyle(selTextItems, aa);//'본문2');
+            }
+            return false;
+        } else if (e.altKey && e.key === 'c') {
+            const selTextItems = this._getSelectionTextChars();
+            if (selTextItems.length > 0) {
+                const aa = new ActaTextStyleInherit();
+                this._applyDefinedTextStyle(selTextItems, '본문2');
+            }
             return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
@@ -535,7 +553,11 @@ export class ActaParagraph {
     }
 
     private _redrawCursor() {
-        $(this._element.svg).find('.cursor').remove();
+        for (const svg of this._element.svg) {
+            for (const cursor of svg.querySelectorAll('.cursor')) {
+                cursor.remove();
+            }
+        }
         if (this._cursor === null) return;
 
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this._cursor !== this._selectionStartChar) {
@@ -727,10 +749,8 @@ export class ActaParagraph {
         this._overflow = false;
 
         for (const column of this.columns) {
-            $(column.svg).attr({
-                width: ($(column).innerWidth() || 0),
-                height: ($(column).innerHeight() || 0)
-            });
+            column.svg.setAttribute('width', ($(column).innerWidth() || 0).toString());
+            column.svg.setAttribute('height', ($(column).innerHeight() || 0).toString());
             column.textRows = [];
         }
         for (const textChar of this.textChars) {
@@ -750,12 +770,12 @@ export class ActaParagraph {
                 } else {
                     let itemcnt = 0;
                     let filledWidth = textRow.indent;
-                    $.each(textRow.items, (j, item: ActaTextChar) => {
+                    for (const item of textRow.items) {
                         if (item.calcWidth > 0) {
                             filledWidth += item.calcWidth;
                             itemcnt++;
                         }
-                    });
+                    }
                     if (filledWidth + textChar.calcWidth > textRow.limitWidth) {
                         itemcnt = textRow.items.length;
                         if (itemcnt > 0) {
@@ -889,7 +909,11 @@ export class ActaParagraph {
     }
 
     constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
+        super();
+
         this._element = document.createElement('x-paragraph') as ActaParagraphElement;
+        this._element.instance = this;
+
         this._columnCount = 1;
         this._innerMargin = 0;
         this._textStore = null;
@@ -901,8 +925,6 @@ export class ActaParagraph {
         this._cursor = null;
         this._inputChar = '';
         this._overflow = false;
-
-        this._textNodeList = [];
 
         this.columnCount = columnCount;
         for (let i = 0; i < columnCount; i++) {
@@ -980,7 +1002,9 @@ export class ActaParagraph {
             if (this._cursor === null) {
                 this._cursorMode = CursorMode.NONE;
                 return false;
-            } else if (this._cursor === this._selectionStartChar || !this._selectionStartChar) {
+            } else if (this._cursor !== this._selectionStartChar && this._selectionStartChar) {
+                this._cursorMode = CursorMode.SELECTION;
+            } else {
                 this._cursorMode = CursorMode.EDIT;
             }
             return false;
@@ -1047,7 +1071,7 @@ export class ActaParagraph {
 
     get columnCount() { return this._columnCount; }
     get innerMargin() { return this._innerMargin; }
-    get text() { return ''; }
+    get text() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
     get editable() { return this._editable; }
 

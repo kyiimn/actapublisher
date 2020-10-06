@@ -1,4 +1,8 @@
+import { ActaElementInstance } from "./instance";
+
 export class ActaGuideElement extends HTMLElement {
+    private _instance?: ActaElementInstance;
+
     constructor() {
         super();
     }
@@ -34,4 +38,7 @@ export class ActaGuideElement extends HTMLElement {
         this.style.height = `calc(100% - (${top} + ${bottom}) + 2px)`;
         this.style.width = `calc(100% - (${left} + ${right}) + 2px)`;
     }
+
+    set instance(instance: ActaElementInstance) { if (!this._instance && instance) this._instance = instance; }
+    get innstance() { return this._instance; }
 };

@@ -137,9 +137,7 @@ export class ActaTextNode {
 
     set customTextStyle(style: ActaTextStyleInherit) {
         if (this._customTextStyle !== style) {
-            this._customTextStyle = style;
-            this._customTextStyle.onChanged = attr => this.changeTextStyle(attr);
-            this.changeTextStyle();
+            this._customTextStyle.copy(style);
         }
     }
 
@@ -168,5 +166,21 @@ export class ActaTextNode {
         returnTextStyle.merge(this.customTextStyle);
 
         return returnTextStyle;
+    }
+
+    get markupText() {
+        let returnValue = '';
+        for (const item of this.value) {
+            returnValue += item.markupText;
+        }
+        const styleText = this.customTextStyle.toString();
+        if (this.defaultTextStyleName || styleText !== '') {
+            let tag = `<${this.tagName}`;
+            if (this.defaultTextStyleName) tag += ` name="${this.defaultTextStyleName}"`;
+            if (styleText !== '') tag += ` ${styleText}`;
+            tag += '>';
+            returnValue = `${tag}${returnValue}</${this.tagName}>`;
+        }
+        return returnValue;
     }
 };

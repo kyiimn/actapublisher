@@ -1,4 +1,8 @@
+import { ActaElementInstance } from "./instance";
+
 export class ActaGalleyElement extends HTMLElement {
+    private _instance?: ActaElementInstance;
+
     constructor() { super(); }
     connectedCallback() {
         this.changePosition();
@@ -62,6 +66,9 @@ export class ActaGalleyElement extends HTMLElement {
             el.changeSize();
         }
     }
+
+    set instance(instance: ActaElementInstance) { if (!this._instance && instance) this._instance = instance; }
+    get innstance() { return this._instance; }
 };
 
 // tslint:disable-next-line: max-classes-per-file

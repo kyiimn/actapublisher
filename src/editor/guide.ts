@@ -1,14 +1,18 @@
+import { ActaElementInstance } from './element/instance';
 import { ActaGuideElement } from './element/guide-el';
 import { ActaGuideColumnElement, ActaGuideMarginElement } from './element/guide-col-el';
-import $ from 'jquery';
 
-export class ActaGuide {
-    private _element: HTMLElement;
+export class ActaGuide extends ActaElementInstance {
+    private _element: ActaGuideElement;
     private _columnCount: number;
     private _innerMargin: string | number;
 
     constructor(columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
+        super();
+
         this._element = document.createElement('x-guide') as ActaGuideElement;
+        this._element.instance = this;
+
         this._columnCount = 1;
         this._innerMargin = 0;
 
@@ -21,9 +25,9 @@ export class ActaGuide {
 
     columnWidth(idx: number, val: string | number) {
         if (arguments.length > 1) { // set
-            $(this._element).find('x-guide-col').get(idx).setAttribute('width', (val || 0).toString());
+            this._element.querySelectorAll('x-guide-col')[idx].setAttribute('width', (val || 0).toString());
         } else { // get
-            return $(this._element).find('x-guide-col').get(idx).getAttribute('width') || false;
+            return this._element.querySelectorAll('x-guide-col')[idx].getAttribute('width') || false;
         }
     }
 
@@ -43,7 +47,9 @@ export class ActaGuide {
 
     set innerMargin(innerMargin: string | number) {
         this._innerMargin = innerMargin;
-        $(this._element).find('x-guide-margin').attr('width', innerMargin);
+        for (const margin of this._element.querySelectorAll('x-guide-margin')) {
+            margin.setAttribute('width', innerMargin.toString());
+        }
     }
 
     get columnCount() { return this._columnCount; }

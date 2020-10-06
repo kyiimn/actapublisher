@@ -1,7 +1,8 @@
+import { ActaElementInstance } from './element/instance';
 import { ActaPageElement } from './element/page-el';
 
-export class ActaPage {
-    private _element: HTMLElement;
+export class ActaPage extends ActaElementInstance {
+    private _element: ActaPageElement;
     private _width: string | number;
     private _height: string | number;
     private _paddingTop: string | number;
@@ -10,7 +11,11 @@ export class ActaPage {
     private _paddingRight: string | number;
 
     constructor(width: string | number, height: string | number) {
+        super();
+
         this._element = document.createElement('x-page') as ActaPageElement;
+        this._element.instance = this;
+
         this._paddingTop = 0;
         this._paddingBottom = 0;
         this._paddingLeft = 0;

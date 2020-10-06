@@ -44,10 +44,13 @@ const main = async () => {
     s.indent = 8;
     ActaTextStyleManager.getInstance().add('본문3', s);
 
-    $('button').on('click', () => {
+    $('button#submit').on('click', () => {
         let tt = ($('textarea').val() || '').toString();
         tt = tt.substring(0, tt.length);
         para.text = tt;
+    });
+    $('button#get').on('click', () => {
+        $('textarea').val(para.text);
     });
 };
 main();

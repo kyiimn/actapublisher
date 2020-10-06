@@ -1,5 +1,4 @@
 import opentype from 'opentype.js';
-import $ from 'jquery';
 
 export class ActaFont {
     private _url: string;
@@ -18,8 +17,8 @@ export class ActaFont {
         this._fontSubfamilyEN = font.names.fontSubfamily.en;
         this._fontFamilyKO = font.names.fontFamily.ko || font.names.fontFamily.en;
         this._fontSubfamilyKO = font.names.fontSubfamily.ko || font.names.fontSubfamily.en;
-        this._fontFullnameEN = $.trim(`${this._fontFamilyEN} ${this._fontSubfamilyEN}`);
-        this._fontFullnameKO = $.trim(`${this._fontFamilyKO} ${this._fontSubfamilyKO}`);
+        this._fontFullnameEN = `${this._fontFamilyEN} ${this._fontSubfamilyEN}`.trim();
+        this._fontFullnameKO = `${this._fontFamilyKO} ${this._fontSubfamilyKO}`.trim();
     }
     get url() { return this._url; }
     get font() { return this._font; }

@@ -202,6 +202,15 @@ export class ActaTextChar {
         return this._modified;
     }
 
+    get markupText() {
+        let returnValue = '';
+        switch (this._type) {
+            case TextCharType.NEWLINE: returnValue = '<br>'; break;
+            default: returnValue = this._char; break;
+        }
+        return returnValue;
+    }
+
     set textRow(textRow: ActaTextRow | null) {
         if (this._textRow === textRow) return;
         if (textRow) {

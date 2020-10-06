@@ -1,8 +1,9 @@
-import { ActaGalleyElement } from './element/galley-el';
-import $ from 'jquery';
 
-export class ActaGalley {
-    private _element: HTMLElement;
+import { ActaElementInstance } from './element/instance';
+import { ActaGalleyElement } from './element/galley-el';
+
+export class ActaGalley extends ActaElementInstance {
+    private _element: ActaGalleyElement;
     private _x: string | number;
     private _y: string | number;
     private _width: string | number;
@@ -13,7 +14,11 @@ export class ActaGalley {
     private _paddingRight: string | number;
 
     constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
+        super();
+
         this._element = document.createElement('x-galley') as ActaGalleyElement;
+        this._element.instance = this;
+
         this._x = 0;
         this._y = 0;
         this._width = 0;
@@ -31,8 +36,6 @@ export class ActaGalley {
         this.paddingBottom = 0;
         this.paddingLeft = 0;
         this.paddingRight = 0;
-
-        $(this._element).data('ActaGalley', this);
     }
 
     set x(x: string | number) {

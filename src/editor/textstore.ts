@@ -1,21 +1,23 @@
+import { ActaTextChar } from './textchar';
 import { ActaTextNode } from './textnode';
 import { TextAlign } from './textstyle';
 import { Stack } from '../utils';
 
 export class ActaTextStore extends ActaTextNode {
-    static import(textStyleName: string, text: string) {
+    static import(textStyleName: string, markupText: string) {
         const node = new Stack();
-        let currentnode = new ActaTextStore();
+        const rootnode = new ActaTextStore();
+        let currentnode: ActaTextStore | ActaTextNode = rootnode;
         let str = '';
 
         currentnode.defaultTextStyleName = textStyleName;
 
-        for (let i = 0; i < text.length; i++) {
-            let char = text[i];
+        for (let i = 0; i < markupText.length; i++) {
+            let char = markupText[i];
             if (char === '<') {
-                const endpos = text.indexOf('>', i);
+                const endpos = markupText.indexOf('>', i);
                 if (endpos > -1) {
-                    const tagstr = text.substr(i + 1, endpos - i - 1);
+                    const tagstr = markupText.substr(i + 1, endpos - i - 1);
                     i += tagstr.length + 1;
                     char = '';
                     if (tagstr[0] === '/') {
@@ -92,6 +94,21 @@ export class ActaTextStore extends ActaTextNode {
         }
         if (currentnode.length < 0 || str.length > 0) { currentnode.push(str); str = ''; }
 
-        return currentnode || node.first();
+        return rootnode;
+    }
+
+    get markupText() {
+        let returnValue = '';
+        for (const item of this.value) {
+            returnValue += item.markupText;
+        }
+        const styleText = this.customTextStyle.toString();
+        if (styleText !== '') returnValue = `<${this.tagName} ${styleText}>${returnValue}</${this.tagName}>`;
+
+        return returnValue;
+    }
+
+    get text() {
+        return this.toString();
     }
 };

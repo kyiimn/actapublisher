@@ -1,6 +1,9 @@
 import { ActaGuideElement } from './guide-el';
+import { ActaElementInstance } from './instance';
 
 export class ActaPageElement extends HTMLElement {
+    private _instance?: ActaElementInstance;
+
     constructor() { super(); }
     connectedCallback() {
         this.changeStyle();
@@ -33,4 +36,7 @@ export class ActaPageElement extends HTMLElement {
         this.style.paddingLeft = paddingLeft;
         this.style.paddingRight = paddingRight;
     }
+
+    set instance(instance: ActaElementInstance) { if (!this._instance && instance) this._instance = instance; }
+    get innstance() { return this._instance; }
 };

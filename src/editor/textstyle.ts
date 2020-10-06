@@ -69,6 +69,43 @@ class ActaTextStylePrivate {
         }
     }
 
+    copy(textStyle: ActaTextStylePrivate) {
+        this._font = textStyle.font;
+        this._fontSize = textStyle.fontSize;
+        this._xscale = textStyle.xscale;
+        this._letterSpacing = textStyle.letterSpacing;
+        this._lineHeight = textStyle.lineHeight;
+        this._textAlign = textStyle.textAlign;
+        this._underline = textStyle.underline;
+        this._strikeline = textStyle.strikeline;
+        this._indent = textStyle.indent;
+        this._color = textStyle.color;
+
+        this.triggerChangedEvent('');
+    }
+
+    toString() {
+        let returnValue = '';
+        if (this.font !== null) returnValue += `font-name="${this.font.fullname}" `;
+        if (this.fontSize !== null) returnValue += `font-size="${this.fontSize}" `;
+        if (this.xscale !== null) returnValue += `xscale="${this.xscale}" `;
+        if (this.letterSpacing !== null) returnValue += `letter-spacing="${this.letterSpacing}" `;
+        if (this.lineHeight !== null) returnValue += `font-size="${this.lineHeight}" `;
+        if (this.indent !== null) returnValue += `indent="${this.indent}" `;
+        if (this.color !== null) returnValue += `color="${this.color}" `;
+        if (this.underline !== null) returnValue += `underline="${this.underline ? 'yes' : 'no'}" `;
+        if (this.strikeline !== null) returnValue += `strikeline="${this.strikeline ? 'yes' : 'no'}" `;
+        if (this.textAlign !== null) {
+            switch (this.textAlign) {
+                case TextAlign.CENTER: returnValue += `text-align="center" `; break;
+                case TextAlign.LEFT: returnValue += `text-align="left" `; break;
+                case TextAlign.RIGHT: returnValue += `text-align="right" `; break;
+                default: returnValue += `text-align="justify" `; break;
+            }
+        }
+        return returnValue.trim();
+    }
+
     set onChanged(callback: callbackTextStyleChanged) {
         if (this._callbackChangedEventList.indexOf(callback) < 0) this._callbackChangedEventList.push(callback);
     }
@@ -187,6 +224,10 @@ export class ActaTextStyle extends ActaTextStylePrivate {
         super.merge(textStyle);
     }
 
+    copy(textStyle: ActaTextStyle) {
+        super.copy(textStyle);
+    }
+
     set font(font: ActaFont) { super.font = font; }
     set fontName(fontName: string) { super.fontName = fontName; }
     set fontSize(size: number) { super.fontSize = size; }
@@ -216,5 +257,9 @@ export class ActaTextStyle extends ActaTextStylePrivate {
 export class ActaTextStyleInherit extends ActaTextStylePrivate {
     merge(textStyle: ActaTextStyle | ActaTextStyleInherit) {
         super.merge(textStyle);
+    }
+
+    copy(textStyle: ActaTextStyle | ActaTextStyleInherit) {
+        super.copy(textStyle);
     }
 };
