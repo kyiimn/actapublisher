@@ -14,6 +14,8 @@ import { ActaClipboard } from '../clipboard';
 import { ActaTextRow } from './textrow';
 import { ActaTextChar, TextCharType } from './textchar';
 
+import selectHanja from './hanja';
+
 import Hangul from 'hangul-js';
 import $ from 'jquery';
 
@@ -303,8 +305,29 @@ export class ActaParagraph extends ActaElementInstance {
             this._redrawCursor();
             return false;
         } else if (e.keyCode === Keycode.HANJA) {
-            this._cursorMode = CursorMode.EDIT;
-            this._redrawCursor();
+            const textChar = this.textChars[this._cursor - 1];
+            if (textChar) {
+                this._selectionStartChar = this._cursor - 1;
+                this._cursorMode = CursorMode.SELECTION;
+                this._redrawCursor();
+
+                const textCharPos = this._getClientPosition(textChar);
+                selectHanja(textChar, textCharPos.x, textCharPos.y + textCharPos.height).then((data) => {
+                    const textNode = data.textChar.textNode;
+                    if (data.hanjaChar) {
+                        textNode.replace([data.textChar], data.hanjaChar);
+                        this._update();
+                    }
+                    this._cursorMode = CursorMode.EDIT;
+                    this._redrawCursor();
+                }).catch(err => {
+                    this._cursorMode = CursorMode.EDIT;
+                    this._redrawCursor();
+                });
+            } else {
+                this._cursorMode = CursorMode.EDIT;
+                this._redrawCursor();
+            }
             return false;
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'c') || (e.ctrlKey && e.keyCode === Keycode.INSERT)) {
             const selTextChars = this._getSelectionTextChars();
@@ -352,21 +375,6 @@ export class ActaParagraph extends ActaElementInstance {
             this._selectionStartChar = 0;
             this._cursorMode = CursorMode.SELECTION;
             this._redrawCursor();
-            return false;
-        } else if (e.altKey && e.key === 'd') {
-            const selTextItems = this._getSelectionTextChars();
-            if (selTextItems.length > 0) {
-                const aa = new ActaTextStyleInherit();
-                aa.fontSize = 15;
-                this._applyTextStyle(selTextItems, aa);//'본문2');
-            }
-            return false;
-        } else if (e.altKey && e.key === 'c') {
-            const selTextItems = this._getSelectionTextChars();
-            if (selTextItems.length > 0) {
-                const aa = new ActaTextStyleInherit();
-                this._applyDefinedTextStyle(selTextItems, '본문2');
-            }
             return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
@@ -889,6 +897,14 @@ export class ActaParagraph extends ActaElementInstance {
                     if (textChar.textRow === null) textChar.textRow = textRow;
                     if ([TextCharType.NEWLINE].indexOf(textChar.type) < 0) {
                         textChar.update(offsetX, offsetY);
+                    } else {
+                        const charPos = this.textChars.indexOf(textChar);
+                        if (charPos > 0) {
+                            const prevTextChar = this.textChars[charPos - 1];
+                            textChar.update(prevTextChar.x + prevTextChar.calcWidth, prevTextChar.y);
+                        } else {
+                            textChar.update(offsetX, offsetY);
+                        }
                     }
                     offsetX += textChar.calcWidth;
                 }
@@ -901,6 +917,18 @@ export class ActaParagraph extends ActaElementInstance {
         } else {
             this._element.classList.remove('overflow');
         }
+    }
+
+    private _getClientPosition(textChar: ActaTextChar) {
+        if (!textChar.textRow) return { x: 0, y: 0, width: 0, height: 0 };
+
+        const clientRect = textChar.textRow.column.getBoundingClientRect();
+        return {
+            x: textChar.x + clientRect.left,
+            y: textChar.y + clientRect.top,
+            width: textChar.calcWidth,
+            height: textChar.height
+        };
     }
 
     private _update() {
