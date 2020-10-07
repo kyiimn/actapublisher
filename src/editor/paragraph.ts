@@ -102,6 +102,7 @@ export class ActaParagraph extends ActaElementInstance {
     private _editable: boolean;
     private _inputChar: string;
     private _overflow: boolean;
+    private _focuslock: boolean;
 
     private static _inputMethod:InputMethod = InputMethod.EN;
 
@@ -129,6 +130,9 @@ export class ActaParagraph extends ActaElementInstance {
     private _initElement() {
         this._element.innerHTML = '';
     }
+
+    private set focuslock(val: boolean) { this._focuslock = val; }
+    private get focuslock() { return this._focuslock; }
 
     private get textChars() {
         return this._textStore ? this._textStore.toArray() : [];
@@ -311,6 +315,8 @@ export class ActaParagraph extends ActaElementInstance {
                 this._cursorMode = CursorMode.SELECTION;
                 this._redrawCursor();
 
+                this.focuslock = true;
+
                 const textCharPos = this._getClientPosition(textChar);
                 selectHanja(textChar, textCharPos.x, textCharPos.y + textCharPos.height).then((data) => {
                     const textNode = data.textChar.textNode;
@@ -318,9 +324,15 @@ export class ActaParagraph extends ActaElementInstance {
                         textNode.replace([data.textChar], data.hanjaChar);
                         this._update();
                     }
+                    this.el.focus();
+                    this.focuslock = false;
+
                     this._cursorMode = CursorMode.EDIT;
                     this._redrawCursor();
                 }).catch(err => {
+                    this.el.focus();
+                    this.focuslock = false;
+
                     this._cursorMode = CursorMode.EDIT;
                     this._redrawCursor();
                 });
@@ -953,6 +965,7 @@ export class ActaParagraph extends ActaElementInstance {
         this._cursor = null;
         this._inputChar = '';
         this._overflow = false;
+        this._focuslock = false;
 
         this.columnCount = columnCount;
         for (let i = 0; i < columnCount; i++) {
@@ -1038,11 +1051,15 @@ export class ActaParagraph extends ActaElementInstance {
             return false;
         });
         $(this._element).on('focus', (e) => {
+            if (this.focuslock) return false;
+
             this._element.classList.add('focus');
             this._redrawCursor();
             return false;
         });
         $(this._element).on('blur', (e) => {
+            if (this.focuslock) return false;
+
             this._element.classList.remove('focus');
             $(this._element.svg).find('.cursor').remove();
             this._selectionStartChar = null;

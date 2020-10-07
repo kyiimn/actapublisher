@@ -8,7 +8,6 @@ export default function selectHanja(textChar: ActaTextChar, x: number, y: number
         let hanjaChar;
         if (hanjaList.length < 1) reject();
 
-        
         hanjaChar = hanjaList[0][0];
         resolve({ textChar, hanjaChar });
     });
