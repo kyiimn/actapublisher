@@ -21,13 +21,15 @@ export default function selectHanja(textChar: ActaTextChar, x: number, y: number
 	const KEY_9 = 57;
 
     return new Promise<{ textChar: ActaTextChar, hanjaChar: string }>((resolve, reject) => {
-        if (hanjaList.length < 1) reject();
+        if (hanjaList.length < 1) {
+            reject();
+            return;
+        }
 
         const _hanjaClose = () => {
             cover.remove();
             select.remove();
             reject();
-            return false;
         };
 
         const _hanjaReturnItem = () => {
@@ -40,60 +42,75 @@ export default function selectHanja(textChar: ActaTextChar, x: number, y: number
             select.remove();
 
             resolve({ textChar, hanjaChar });
-            
-            return false;
         };
 
         const _hanjaNextPage = () => {
-            var now = this._dialog.find('.active');
-            now.removeClass('active');
-            if (now.next().length > 0) {
-                now.next().addClass('active');
+            const allPage = Array.prototype.slice.call(select.querySelectorAll('ul') || []);
+
+            let nowPage = select.querySelector('ul.active');
+            if (nowPage) nowPage.classList.remove('active');
+
+            const nowIdx = nowPage ? allPage.indexOf(nowPage) : -1;
+            const nextPage = allPage[nowIdx + 1];
+            if (nextPage) {
+                nextPage.classList.add('active');
             } else {
-                this._dialog.find('ul:first-child').addClass('active');
+                allPage[0].classList.add('active');
             }
-            $(this._dialog).find('.item.select').removeClass('select');
-            $(this._dialog).find('.active .item:first-child').addClass('select');
-    
+            nowPage = select.querySelector('ul.active');
+            if (nowPage) _hanjaSelectItem(nowPage.querySelector('li:first-child'));
         };
+
         const _hanjaPrevPage = () => {
-            var now = this._dialog.find('.active');
-            now.removeClass('active');
-            if (now.prev().length > 0) {
-                now.prev().addClass('active');
+            const allPage = Array.prototype.slice.call(select.querySelectorAll('ul') || []);
+
+            let nowPage = select.querySelector('ul.active');
+            if (nowPage) nowPage.classList.remove('active');
+
+            const nowIdx = nowPage ? allPage.indexOf(nowPage) : allPage.length;
+            const prevPage = allPage[nowIdx - 1];
+            if (prevPage) {
+                prevPage.classList.add('active');
             } else {
-                this._dialog.find('ul:last-child').addClass('active');
+                allPage[allPage.length - 1].classList.add('active');
             }
-            $(this._dialog).find('.item.select').removeClass('select');
-            $(this._dialog).find('.active .item:first-child').addClass('select');
-    
+            nowPage = select.querySelector('ul.active');
+            if (nowPage) _hanjaSelectItem(nowPage.querySelector('li:first-child'));
         };
+
         const _hanjaSelectPrevItem = () => {
-            $(self._dialog).find('.item.select').removeClass('select');
-            if (now.prev().length > 0) {
-                now.prev().addClass('select');
+            const allItem = Array.prototype.slice.call(select.querySelectorAll('ul.active .item') || []);
+            const nowItem = select.querySelector('ul.active .item.select');
+            let nowIdx = -1, prevItem;
+            if (nowItem) nowIdx = allItem.indexOf(nowItem);
+            if (nowIdx < 1) {
+                prevItem = allItem[allItem.length - 1];
             } else {
-                $(self._dialog).find('.active .item:last-child').prev().addClass('select');
+                prevItem = allItem[nowIdx - 1];
             }
-
+            _hanjaSelectItem(prevItem);
         };
+
         const _hanjaSelectNextItem = () => {
-            $(self._dialog).find('.item.select').removeClass('select');
-            if (now.next().length > 0 && now.next().attr('data-next') != '1') {
-                now.next().addClass('select');
+            const allItem = Array.prototype.slice.call(select.querySelectorAll('ul.active .item') || []);
+            const nowItem = select.querySelector('ul.active .item.select');
+            let nowIdx = -1, nextItem;
+            if (nowItem) nowIdx = allItem.indexOf(nowItem);
+            if (nowIdx < 0 || nowIdx === allItem.length - 1) {
+                nextItem = allItem[0];
             } else {
-                $(self._dialog).find('.active .item:first-child').addClass('select');
+                nextItem = allItem[nowIdx + 1];
             }
-
+            _hanjaSelectItem(nextItem);
         };
+
         const _hanjaSelectItem = (li: HTMLLIElement | null) => {
-            if (!li) return false;
-            if (!li.parentElement) return false;
-            for (const cli of li.parentElement.querySelectorAll('li.select')) {
+            if (!li) return;
+            if (!li.parentElement) return;
+            for (const cli of li.parentElement.querySelectorAll('.item.select')) {
                 cli.classList.remove('select');
             }
             li.classList.add('select');
-            return false;
         };
 
         const cover = document.createElement('div');
@@ -103,7 +120,7 @@ export default function selectHanja(textChar: ActaTextChar, x: number, y: number
         select.classList.add('hanja-select');
         select.style.left = `${x}px`;
         select.style.top = `${y + 2}px`;
-        select.setAttribute('tab-index', '1');
+        select.setAttribute('tabindex', '1');
 
         document.body.append(cover);
         document.body.append(select);
@@ -118,9 +135,14 @@ export default function selectHanja(textChar: ActaTextChar, x: number, y: number
                 const li = document.createElement('li');
                 li.classList.add('item');
                 li.setAttribute('data-hanja', hanja[0]);
-                li.addEventListener('mouseover', e => _hanjaSelectItem(e.currentTarget as HTMLLIElement));
-                li.addEventListener('mousedown', e => _hanjaReturnItem());
-
+                li.addEventListener('mouseover', e => {
+                    _hanjaSelectItem(e.currentTarget as HTMLLIElement);
+                    e.stopPropagation();
+                });
+                li.addEventListener('click', e => {
+                    _hanjaReturnItem();
+                    e.stopPropagation();
+                });
                 const dt = document.createElement('dt');
                 dt.innerHTML = hanja[0];
                 li.append(dt);
@@ -132,15 +154,23 @@ export default function selectHanja(textChar: ActaTextChar, x: number, y: number
                 }
                 ul.append(li);
             }
-            const next = document.createElement('li');
-            next.classList.add('item');
-            next.setAttribute('data-next', '1');
-            next.addEventListener('mousedown', e => _hanjaNextPage());
-            ul.append(next);
-
+            if (hanjaList.length > 9) {
+                const next = document.createElement('li');
+                next.classList.add('next');
+                next.addEventListener('mousedown', e => {
+                    _hanjaNextPage();
+                    e.stopPropagation();
+                });
+                ul.append(next);
+            }
             select.append(ul);
         }
-        cover.addEventListener('mousedown', e => _hanjaClose());
+        cover.addEventListener('click', e => {
+            _hanjaClose();
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
         select.addEventListener('keydown', e => {
             switch (e.which) {
                 case KEY_ESC: _hanjaClose(); break;
@@ -154,7 +184,9 @@ export default function selectHanja(textChar: ActaTextChar, x: number, y: number
                     _hanjaReturnItem();
                     break;
             }
-        })
+            e.preventDefault();
+            e.stopPropagation();
+        });
         select.focus();
     });
 };
