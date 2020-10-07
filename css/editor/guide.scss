@@ -1,0 +1,28 @@
+x-guide {
+    border-color: #eeeeee;
+    border-style: solid;
+    border-width: 0 1px;
+    box-sizing: content-box;
+    display: inline-flex;
+    user-select: none;
+}
+
+x-guide-col {
+    border-color: #eeeeee;
+    border-style: solid;
+    border-width: 1px 0;
+    box-sizing: border-box;
+    flex: 1;
+    height: 100%;
+    user-select: none;
+}
+
+x-guide-margin {
+    border-color: #eeeeee;
+    border-style: solid;
+    border-width: 0 1px;
+    box-sizing: border-box;
+    flex: 1;
+    height: 100%;
+    user-select: none;
+}

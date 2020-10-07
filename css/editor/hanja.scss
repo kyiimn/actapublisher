@@ -1,0 +1,66 @@
+.hanja-bodycover {
+    height: 100%;
+    left: 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 900000;
+}
+
+.hanja-select {
+    background-color: #fff;
+    border-color: #ddd;
+    border-style: solid;
+    border-width: 1px 1px 1px 6px;
+    box-shadow: 0 0 6px rgba(0,0,0,.2);
+    min-width: 120px;
+    position: fixed;
+    z-index: 900001;
+
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        &:not(.active) {
+            display: none;
+        }
+        li {
+            border: 0;
+            box-sizing: border-box;
+            cursor: pointer;
+            display: block;
+            font-size: 12px;
+            overflow-y: hidden;
+            outline: none;
+            padding: 3px 10px 3px 6px;
+            user-select: none;
+
+            &.select {
+                background-color: #ddd;
+            }
+            &[data-next] {
+                background-color: #ddd;
+                color: #555;
+
+                &:after {
+                    content: '다음 →';
+                    display: block;
+                    font-size: 10px;
+                    text-align: right;
+                }
+                &:hover {
+                    color: #000;
+                }
+            }
+            dt {
+                color: #000;
+                display: inline-block;
+            }
+            dl {
+                color: #555;
+                display: inline-block;
+                margin: 0 0 0 10px;
+            }
+        }
+    }
+}

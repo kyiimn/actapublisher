@@ -2,7 +2,9 @@
   "name": "actapublisher",
   "version": "1.0.0",
   "description": "",
-  "dependencies": {},
+  "dependencies": {
+    "rxjs": "^6.6.3"
+  },
   "devDependencies": {
     "@types/jquery": "^3.5.1",
     "@types/opentype.js": "^1.3.1",
