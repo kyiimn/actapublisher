@@ -324,13 +324,13 @@ export class ActaParagraph extends ActaElementInstance {
                         textNode.replace([data.textChar], data.hanjaChar);
                         this._update();
                     }
-                    this.el.focus();
+                    this.el.focus({ preventScroll: true });
                     this.focuslock = false;
 
                     this._cursorMode = CursorMode.EDIT;
                     this._redrawCursor();
                 }).catch(err => {
-                    this.el.focus();
+                    this.el.focus({ preventScroll: true });
                     this.focuslock = false;
 
                     this._cursorMode = CursorMode.EDIT;
@@ -1015,7 +1015,7 @@ export class ActaParagraph extends ActaElementInstance {
                 this._selectionStartChar = this._setCursor(textChar, e.offsetX);
                 this._redrawCursor();
 
-                this._element.focus();
+                this.el.focus({ preventScroll: true });
 
                 return false;
             }
