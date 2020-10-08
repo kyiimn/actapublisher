@@ -15,7 +15,6 @@ import { distinctUntilChanged, filter } from 'rxjs/operators';
 
 import selectHanja from './hanja';
 import Hangul from 'hangul-js';
-import $ from 'jquery';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
     'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
@@ -209,7 +208,7 @@ export class ActaParagraph extends ActaElementInstance {
             this._cursor++;
         }
         this._update();
-        this.emitRedrawCursor();
+        this._emitRedrawCursor();
 
         return false;
     }
@@ -263,7 +262,7 @@ export class ActaParagraph extends ActaElementInstance {
                 if (textRow && textRow.items.length > 0) {
                     this._cursor = this.textChars.indexOf((e.keyCode === Keycode.HOME) ? textRow.items[0] : textRow.items[textRow.items.length - 1]);
                     if (this._cursor === this.textChars.length - 1 && this.textChars[this._cursor].type !== TextCharType.NEWLINE) this._cursor++;
-                    this.emitRedrawCursor();
+                    this._emitRedrawCursor();
                 }
                 return false;
             } else if ([Keycode.UP, Keycode.DOWN].indexOf(e.keyCode) > -1) {
@@ -272,7 +271,7 @@ export class ActaParagraph extends ActaElementInstance {
                     const nearestItem = this._getNearestLineTextChar(this._getCursorTextChar(), nearTextRow.items);
                     if (nearestItem) {
                         this._cursor = this.textChars.indexOf(nearestItem);
-                        this.emitRedrawCursor();
+                        this._emitRedrawCursor();
                         return false;
                     }
                 }
@@ -280,7 +279,7 @@ export class ActaParagraph extends ActaElementInstance {
                 return false;
             } else if ([Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
                 this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this.textChars.length);
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
                 return false;
             }
         } else if ([Keycode.BACKSPACE, Keycode.DELETE].indexOf(e.keyCode) > -1) {
@@ -300,7 +299,7 @@ export class ActaParagraph extends ActaElementInstance {
                             this._cursorMode = CursorMode.EDIT;
                         }
                         this._update();
-                        this.emitRedrawCursor();
+                        this._emitRedrawCursor();
                         return false;
                     }
                     if (this._cursor === 0) return false;
@@ -309,19 +308,19 @@ export class ActaParagraph extends ActaElementInstance {
                 this._removeTextChars([this.textChars[this._cursor]]);
             }
             this._cursorMode = CursorMode.EDIT;
-            this.emitRedrawCursor();
+            this._emitRedrawCursor();
             return false;
         } else if (e.keyCode === Keycode.HANGUL) {
             ActaParagraph.toggleInputMethod();
             this._cursorMode = CursorMode.EDIT;
-            this.emitRedrawCursor();
+            this._emitRedrawCursor();
             return false;
         } else if (e.keyCode === Keycode.HANJA) {
             const textChar = this.textChars[this._cursor - 1];
             if (textChar) {
                 this._selectionStart = this._cursor - 1;
                 this._cursorMode = CursorMode.SELECTION;
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
 
                 this.focuslock = true;
 
@@ -339,12 +338,12 @@ export class ActaParagraph extends ActaElementInstance {
                         this.focuslock = false;
 
                         this._cursorMode = CursorMode.EDIT;
-                        this.emitRedrawCursor();
+                        this._emitRedrawCursor();
                         }
                 });
             } else {
                 this._cursorMode = CursorMode.EDIT;
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
             }
             return false;
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'c') || (e.ctrlKey && e.keyCode === Keycode.INSERT)) {
@@ -364,7 +363,7 @@ export class ActaParagraph extends ActaElementInstance {
             for (const textChar of selTextChars) selText += textChar.char || '';
             this._removeTextChars(selTextChars);
             this._update();
-            this.emitRedrawCursor();
+            this._emitRedrawCursor();
             ActaClipboard.in.write(selText);
             return false;
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'v') || (e.shiftKey && e.keyCode === Keycode.INSERT)) {
@@ -374,14 +373,14 @@ export class ActaParagraph extends ActaElementInstance {
                 this._removeTextChars(selTextChars);
             };
             this._update();
-            this.emitRedrawCursor();
+            this._emitRedrawCursor();
 
             ActaClipboard.in.read().then(v => {
                 if (!v) return;
                 if (this._cursor === null || typeof(v) !== 'string') return;
                 this._insertText(v);
                 this._update();
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
             });
             return false;
         } else if (e.ctrlKey && e.key.toLowerCase() === 'a') {
@@ -392,7 +391,7 @@ export class ActaParagraph extends ActaElementInstance {
             }
             this._selectionStart = 0;
             this._cursorMode = CursorMode.SELECTION;
-            this.emitRedrawCursor();
+            this._emitRedrawCursor();
             return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
@@ -439,7 +438,7 @@ export class ActaParagraph extends ActaElementInstance {
             textNode.customTextStyle = new ActaTextStyleInherit();
         }
         this._update();
-        this.emitRedrawCursor();
+        this._emitRedrawCursor();
     }
 
     private _applyTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
@@ -448,7 +447,7 @@ export class ActaParagraph extends ActaElementInstance {
             textNode.customTextStyle.merge(textStyle);
         }
         this._update();
-        this.emitRedrawCursor();
+        this._emitRedrawCursor();
     }
 
     private _removeTextChars(textChars: ActaTextChar[]) {
@@ -578,12 +577,16 @@ export class ActaParagraph extends ActaElementInstance {
         return this.textChars.length > 0 ? this.textChars[this.textChars.length - 1] : null;
     }
 
-    private _redrawCursor() {
+    private _removeCursor() {
         for (const svg of this._element.svg) {
             for (const cursor of svg.querySelectorAll('.cursor')) {
                 svg.removeChild(cursor);
             }
         }
+    }
+
+    private _redrawCursor() {
+        this._removeCursor();
         if (this._cursor === null) return;
 
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this._cursor !== this._selectionStart) {
@@ -775,8 +778,10 @@ export class ActaParagraph extends ActaElementInstance {
         this._overflow = false;
 
         for (const column of this.columns) {
-            column.svg.setAttribute('width', ($(column).innerWidth() || 0).toString());
-            column.svg.setAttribute('height', ($(column).innerHeight() || 0).toString());
+            const rect = column.getBoundingClientRect();
+            const style = window.getComputedStyle(column);
+            column.svg.setAttribute('width', (rect.width - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth)).toString());
+            column.svg.setAttribute('height', (rect.height - parseFloat(style.borderTopWidth) - parseFloat(style.borderBottomWidth)).toString());
             column.textRows = [];
         }
         for (const textChar of this.textChars) {
@@ -856,12 +861,13 @@ export class ActaParagraph extends ActaElementInstance {
                 }
 
                 const textRows: ActaTextRow[] = column.textRows;
+                const svgRect = column.svg.getBoundingClientRect();
                 for (let j = 0; j < textRows.length; j++) {
                     const row = textRows[j];
                     filledHeight += row.maxHeight;
                     if (j < textRows.length - 1) filledHeight += row.maxLeading;
                 }
-                if (filledHeight > ($(column.svg).height() || 0)) {
+                if (filledHeight > (svgRect.height || 0)) {
                     textRow = textRows.pop() || null;
                     column.textRows = textRows;
 
@@ -954,7 +960,7 @@ export class ActaParagraph extends ActaElementInstance {
         this._drawTextChars(true);
     }
 
-    private emitRedrawCursor() {
+    private _emitRedrawCursor() {
         const textChars = this.textChars;
         const state = {
             cursorMode: this._cursorMode,
@@ -1030,13 +1036,13 @@ export class ActaParagraph extends ActaElementInstance {
                     this._cursor = i + 1;
                 }
                 this._cursorMode = CursorMode.SELECTION;
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
             } else {
                 const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
                 this._cursorMode = CursorMode.SELECTIONSTART;
                 this._cursor = null;
                 this._selectionStart = this._setCursor(textChar, e.offsetX);
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
             }
             this.el.focus({ preventScroll: true });
 
@@ -1054,7 +1060,7 @@ export class ActaParagraph extends ActaElementInstance {
             const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
             }
             e.preventDefault();
             e.stopPropagation();
@@ -1069,7 +1075,7 @@ export class ActaParagraph extends ActaElementInstance {
             const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
-                this.emitRedrawCursor();
+                this._emitRedrawCursor();
             }
             if (this._cursor === null) {
                 this._cursorMode = CursorMode.NONE;
@@ -1085,14 +1091,14 @@ export class ActaParagraph extends ActaElementInstance {
 
         fromEvent(this.el, 'focus').pipe(filter(_ => !this.focuslock)).subscribe(e => {
             this._element.classList.add('focus');
-            this.emitRedrawCursor();
+            this._emitRedrawCursor();
             e.preventDefault();
             e.stopPropagation();
         });
         fromEvent(this.el, 'blur').pipe(filter(_ => !this.focuslock)).subscribe(e => {
             this._element.classList.remove('focus');
-            $(this._element.svg).find('.cursor').remove();
             this._selectionStart = null;
+            this._removeCursor();
             e.preventDefault();
             e.stopPropagation();
         });

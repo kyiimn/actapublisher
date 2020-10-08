@@ -3,7 +3,6 @@ import { ActaTextChar } from './textchar';
 import { TextAlign } from './textstyle';
 
 import { v4 as uuidv4 } from 'uuid';
-import $ from 'jquery';
 
 export class ActaTextRow {
     private _id: string;
@@ -44,9 +43,10 @@ export class ActaTextRow {
         if (!para) return;
 
         const columns = para.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col');
+        const svgRect = column.svg.getBoundingClientRect();
         this._indexOfColumn = Array.prototype.slice.call(columns).indexOf(column);
         this._indexOfLine = column.textRows.length;
-        this._limitWidth = $(column.svg).width() || 0;
+        this._limitWidth = svgRect.width;
 
         this._column = column;
         this._column.textRows.push(this);

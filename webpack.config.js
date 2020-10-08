@@ -1,7 +1,9 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const path = require('path');
+
+const isProd = process.env.NODE_ENV == 'production';
 
 module.exports = {
     entry: {
@@ -35,7 +37,7 @@ module.exports = {
     resolve: {
         extensions: ['.ts', '.tsx', '.js', '.css', '.scss', '.html'],
     },
-    devtool: 'eval-source-map',
+    devtool: isProd ? false : 'eval-source-map',
     output: {
         publicPath: 'dist',
         filename: '[name].bundle.js',
@@ -55,6 +57,20 @@ module.exports = {
         new MiniCssExtractPlugin({
             filename: '[name].css'
         }),
-        new UglifyJSPlugin()
+        new TerserPlugin({
+            cache: true,
+            parallel: true,
+            terserOptions: {
+                warnings: false,
+                compress: {
+                    warnings: false,
+                    unused: true,
+                },
+                ecma: 6,
+                mangle: true,
+                unused: true,
+            },
+            sourceMap: isProd ? false : true
+        })
     ]
 };
