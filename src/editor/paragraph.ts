@@ -326,23 +326,21 @@ export class ActaParagraph extends ActaElementInstance {
                 this.focuslock = true;
 
                 const textCharPos = this._getClientPosition(textChar);
-                selectHanja(textChar, textCharPos.x, textCharPos.y + textCharPos.height).then((data) => {
-                    const textNode = data.textChar.textNode;
-                    if (data.hanjaChar) {
-                        textNode.replace([data.textChar], data.hanjaChar);
-                        this._update();
-                    }
-                    this.el.focus({ preventScroll: true });
-                    this.focuslock = false;
+                selectHanja(textChar, textCharPos.x, textCharPos.y + textCharPos.height).subscribe({
+                    next: data => {
+                        const textNode = data.textChar.textNode;
+                        if (data.hanjaChar) {
+                            textNode.replace([data.textChar], data.hanjaChar);
+                            this._update();
+                        }
+                    },
+                    complete: () => {
+                        this.el.focus({ preventScroll: true });
+                        this.focuslock = false;
 
-                    this._cursorMode = CursorMode.EDIT;
-                    this.emitRedrawCursor();
-                }).catch(err => {
-                    this.el.focus({ preventScroll: true });
-                    this.focuslock = false;
-
-                    this._cursorMode = CursorMode.EDIT;
-                    this.emitRedrawCursor();
+                        this._cursorMode = CursorMode.EDIT;
+                        this.emitRedrawCursor();
+                        }
                 });
             } else {
                 this._cursorMode = CursorMode.EDIT;
@@ -587,8 +585,6 @@ export class ActaParagraph extends ActaElementInstance {
             }
         }
         if (this._cursor === null) return;
-
-        console.log(1);
 
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this._cursor !== this._selectionStart) {
             let currColumn: ActaParagraphColumnElement | undefined;
@@ -1006,7 +1002,11 @@ export class ActaParagraph extends ActaElementInstance {
         fromEvent<KeyboardEvent>(this.el, 'keydown').subscribe(e => this._onKeyPress(e));
 
         let waitTripleClickTimer: boolean = false;
-        fromEvent<MouseEvent>(this.el, 'mousedown').pipe(filter(e => e.target instanceof ActaParagraphColumnElement && this._editable)).subscribe(e => {
+        fromEvent<MouseEvent>(this.el, 'mousedown').pipe(filter(e => {
+            if (!this._editable) return false;
+            if (!(e.target instanceof ActaParagraphColumnElement)) return false;
+            return true;
+        })).subscribe(e => {
             if ((e && e.detail === 2) || waitTripleClickTimer) {
                 let breakType;
                 if (waitTripleClickTimer) {
@@ -1044,9 +1044,13 @@ export class ActaParagraph extends ActaElementInstance {
             e.stopPropagation();
         });
 
-        fromEvent<MouseEvent>(this.el, 'mousemove').pipe(
-            filter(e => e.target instanceof ActaParagraphColumnElement && this._cursorMode === CursorMode.SELECTIONSTART && e.buttons === 1 && this._editable)
-        ).subscribe(e => {
+        fromEvent<MouseEvent>(this.el, 'mousemove').pipe(filter(e => {
+            if (!this._editable) return false;
+            if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
+            if (!(e.target instanceof ActaParagraphColumnElement)) return false;
+            if (e.buttons !== 1) return false;
+            return true;
+        })).subscribe(e => {
             const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
@@ -1056,9 +1060,12 @@ export class ActaParagraph extends ActaElementInstance {
             e.stopPropagation();
         });
 
-        fromEvent<MouseEvent>(this.el, 'mouseup').pipe(
-            filter(e => e.target instanceof ActaParagraphColumnElement && this._cursorMode === CursorMode.SELECTIONSTART && this._editable)
-        ).subscribe(e => {
+        fromEvent<MouseEvent>(this.el, 'mouseup').pipe(filter(e => {
+            if (!this._editable) return false;
+            if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
+            if (!(e.target instanceof ActaParagraphColumnElement)) return false;
+            return true;
+        })).subscribe(e => {
             const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
