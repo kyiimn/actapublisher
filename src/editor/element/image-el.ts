@@ -1,7 +1,7 @@
 import { ActaGalleyElement, ActaGalleyChildElement } from './galley-el';
 import { ActaParagraphColumnElement } from './paragraph-col-el';
-import $ from 'jquery';
 import { ActaElementInstance } from './instance';
+import $ from 'jquery';
 
 export class ActaParagraphElement extends ActaGalleyChildElement {
     private _instance?: ActaElementInstance;

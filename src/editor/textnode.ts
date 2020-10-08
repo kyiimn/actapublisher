@@ -19,7 +19,7 @@ export class ActaTextNode {
         this._value = [];
         this._parentNode = null;
 
-        this._customTextStyle.onChanged = attr => this.changeTextStyle(attr);
+        this._customTextStyle.onchange = (attr: string) => this.changeTextStyle(attr);
     }
 
     changeTextStyle(attr?: string) {

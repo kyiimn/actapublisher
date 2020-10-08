@@ -1,21 +1,19 @@
 import { ActaElementInstance } from './element/instance';
-
 import { ActaParagraphElement } from './element/paragraph-el';
 import { ActaParagraphColumnElement } from './element/paragraph-col-el';
 import { ActaParagraphMarginElement } from './element/paragraph-margin-el';
-
 import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextStore } from './textstore';
 import { ActaTextNode } from './textnode';
 import { ActaTextStyle, ActaTextStyleInherit, TextAlign } from './textstyle';
-
 import { ActaClipboard } from '../clipboard';
-
 import { ActaTextRow } from './textrow';
 import { ActaTextChar, TextCharType } from './textchar';
 
-import selectHanja from './hanja';
+import { Subject, fromEvent } from 'rxjs';
+import { delay, distinctUntilChanged, filter } from 'rxjs/operators';
 
+import selectHanja from './hanja';
 import Hangul from 'hangul-js';
 import $ from 'jquery';
 
@@ -103,6 +101,8 @@ export class ActaParagraph extends ActaElementInstance {
     private _inputChar: string;
     private _overflow: boolean;
     private _focuslock: boolean;
+
+    private _redrawCursor$: Subject<number>;
 
     private static _inputMethod:InputMethod = InputMethod.EN;
 
@@ -201,7 +201,7 @@ export class ActaParagraph extends ActaElementInstance {
             this._cursor++;
         }
         this._update();
-        this._redrawCursor();
+        this.emitRedrawCursor();
 
         return false;
     }
@@ -255,7 +255,7 @@ export class ActaParagraph extends ActaElementInstance {
                 if (textRow && textRow.items.length > 0) {
                     this._cursor = this.textChars.indexOf((e.keyCode === Keycode.HOME) ? textRow.items[0] : textRow.items[textRow.items.length - 1]);
                     if (this._cursor === this.textChars.length - 1 && this.textChars[this._cursor].type !== TextCharType.NEWLINE) this._cursor++;
-                    this._redrawCursor();
+                    this.emitRedrawCursor();
                 }
                 return false;
             } else if ([Keycode.UP, Keycode.DOWN].indexOf(e.keyCode) > -1) {
@@ -264,7 +264,7 @@ export class ActaParagraph extends ActaElementInstance {
                     const nearestItem = this._getNearestLineTextChar(this._getCursorTextChar(), nearTextRow.items);
                     if (nearestItem) {
                         this._cursor = this.textChars.indexOf(nearestItem);
-                        this._redrawCursor();
+                        this.emitRedrawCursor();
                         return false;
                     }
                 }
@@ -272,7 +272,7 @@ export class ActaParagraph extends ActaElementInstance {
                 return false;
             } else if ([Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
                 this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this.textChars.length);
-                this._redrawCursor();
+                this.emitRedrawCursor();
                 return false;
             }
         } else if ([Keycode.BACKSPACE, Keycode.DELETE].indexOf(e.keyCode) > -1) {
@@ -292,7 +292,7 @@ export class ActaParagraph extends ActaElementInstance {
                             this._cursorMode = CursorMode.EDIT;
                         }
                         this._update();
-                        this._redrawCursor();
+                        this.emitRedrawCursor();
                         return false;
                     }
                     if (this._cursor === 0) return false;
@@ -301,19 +301,19 @@ export class ActaParagraph extends ActaElementInstance {
                 this._removeTextChars([this.textChars[this._cursor]]);
             }
             this._cursorMode = CursorMode.EDIT;
-            this._redrawCursor();
+            this.emitRedrawCursor();
             return false;
         } else if (e.keyCode === Keycode.HANGUL) {
             ActaParagraph.toggleInputMethod();
             this._cursorMode = CursorMode.EDIT;
-            this._redrawCursor();
+            this.emitRedrawCursor();
             return false;
         } else if (e.keyCode === Keycode.HANJA) {
             const textChar = this.textChars[this._cursor - 1];
             if (textChar) {
                 this._selectionStartChar = this._cursor - 1;
                 this._cursorMode = CursorMode.SELECTION;
-                this._redrawCursor();
+                this.emitRedrawCursor();
 
                 this.focuslock = true;
 
@@ -328,17 +328,17 @@ export class ActaParagraph extends ActaElementInstance {
                     this.focuslock = false;
 
                     this._cursorMode = CursorMode.EDIT;
-                    this._redrawCursor();
+                    this.emitRedrawCursor();
                 }).catch(err => {
                     this.el.focus({ preventScroll: true });
                     this.focuslock = false;
 
                     this._cursorMode = CursorMode.EDIT;
-                    this._redrawCursor();
+                    this.emitRedrawCursor();
                 });
             } else {
                 this._cursorMode = CursorMode.EDIT;
-                this._redrawCursor();
+                this.emitRedrawCursor();
             }
             return false;
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'c') || (e.ctrlKey && e.keyCode === Keycode.INSERT)) {
@@ -358,7 +358,7 @@ export class ActaParagraph extends ActaElementInstance {
             for (const textChar of selTextChars) selText += textChar.char || '';
             this._removeTextChars(selTextChars);
             this._update();
-            this._redrawCursor();
+            this.emitRedrawCursor();
             ActaClipboard.in.write(selText);
             return false;
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'v') || (e.shiftKey && e.keyCode === Keycode.INSERT)) {
@@ -368,14 +368,14 @@ export class ActaParagraph extends ActaElementInstance {
                 this._removeTextChars(selTextChars);
             };
             this._update();
-            this._redrawCursor();
+            this.emitRedrawCursor();
 
             ActaClipboard.in.read().then(v => {
                 if (!v) return;
                 if (this._cursor === null || typeof(v) !== 'string') return;
                 this._insertText(v);
                 this._update();
-                this._redrawCursor();
+                this.emitRedrawCursor();
             });
             return false;
         } else if (e.ctrlKey && e.key.toLowerCase() === 'a') {
@@ -386,7 +386,7 @@ export class ActaParagraph extends ActaElementInstance {
             }
             this._selectionStartChar = 0;
             this._cursorMode = CursorMode.SELECTION;
-            this._redrawCursor();
+            this.emitRedrawCursor();
             return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
@@ -433,7 +433,7 @@ export class ActaParagraph extends ActaElementInstance {
             textNode.customTextStyle = new ActaTextStyleInherit();
         }
         this._update();
-        this._redrawCursor();
+        this.emitRedrawCursor();
     }
 
     private _applyTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
@@ -442,7 +442,7 @@ export class ActaParagraph extends ActaElementInstance {
             textNode.customTextStyle.merge(textStyle);
         }
         this._update();
-        this._redrawCursor();
+        this.emitRedrawCursor();
     }
 
     private _removeTextChars(textChars: ActaTextChar[]) {
@@ -575,7 +575,7 @@ export class ActaParagraph extends ActaElementInstance {
     private _redrawCursor() {
         for (const svg of this._element.svg) {
             for (const cursor of svg.querySelectorAll('.cursor')) {
-                cursor.remove();
+                svg.removeChild(cursor);
             }
         }
         if (this._cursor === null) return;
@@ -816,9 +816,9 @@ export class ActaParagraph extends ActaElementInstance {
                         }
                         if (textRow.textAlign === TextAlign.JUSTIFY) {
                             const diffWidth = (textRow.limitWidth - filledWidth) / itemcnt;
-                            $.each(textRow.items, (j, item) => {
+                            for (const item of textRow.items) {
                                 if (item.calcWidth > 0) item.calcWidth += diffWidth;
-                            });
+                            }
                         } else if (textRow.textAlign === TextAlign.RIGHT) {
                             textRow.indent += textRow.limitWidth - filledWidth;
                         } else if (textRow.textAlign === TextAlign.CENTER) {
@@ -948,11 +948,20 @@ export class ActaParagraph extends ActaElementInstance {
         this._drawTextChars(true);
     }
 
+    private emitRedrawCursor() {
+        this._redrawCursor$.next(
+            Math.round((new Date()).getTime() / 1000)
+        );
+    }
+
     constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
         super();
 
         this._element = document.createElement('x-paragraph') as ActaParagraphElement;
         this._element.instance = this;
+
+        this._redrawCursor$ = new Subject();
+        this._redrawCursor$.pipe(delay(50), distinctUntilChanged()).subscribe(() => this._redrawCursor());
 
         this._columnCount = 1;
         this._innerMargin = 0;
@@ -973,16 +982,16 @@ export class ActaParagraph extends ActaElementInstance {
         }
         this.innerMargin = innerMargin;
 
-        $(this._element).on('resize', e => {
+        this.el.onresize = (e: Event) => {
             this._update();
-            return false;
-        });
-        $(this._element).on('keydown', (e) => e.originalEvent ? this._onKeyPress(e.originalEvent) : {});
+            e.preventDefault();
+            e.stopPropagation();
+        };
+        fromEvent<KeyboardEvent>(this.el, 'keydown').subscribe(e => this._onKeyPress(e));
 
         let waitTripleClickTimer: boolean = false;
-        $(this._element).on('mousedown', 'x-paragraph-col', (e) => {
-            if (!this._editable) return false;
-            if ((e.originalEvent && e.originalEvent.detail === 2) || waitTripleClickTimer) {
+        fromEvent<MouseEvent>(this.el, 'mousedown').pipe(filter(e => e.target instanceof ActaParagraphColumnElement && this._editable)).subscribe(e => {
+            if ((e && e.detail === 2) || waitTripleClickTimer) {
                 let breakType;
                 if (waitTripleClickTimer) {
                     waitTripleClickTimer = false;
@@ -992,7 +1001,7 @@ export class ActaParagraph extends ActaElementInstance {
                     setTimeout(() => { waitTripleClickTimer = false; }, 200);
                     breakType = [TextCharType.NEWLINE, TextCharType.SPACE];
                 }
-                const evtTextChar = this._getPositionTextChar(e.currentTarget, e.offsetX, e.offsetY);
+                const evtTextChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
                 if (!evtTextChar || evtTextChar.type !== TextCharType.CHAR) return;
 
                 const textChars = this.textChars;
@@ -1005,40 +1014,39 @@ export class ActaParagraph extends ActaElementInstance {
                     this._cursor = i + 1;
                 }
                 this._cursorMode = CursorMode.SELECTION;
-                this._redrawCursor();
-
-                return false;
+                this.emitRedrawCursor();
             } else {
-                const textChar = this._getPositionTextChar(e.currentTarget, e.offsetX, e.offsetY);
+                const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
                 this._cursorMode = CursorMode.SELECTIONSTART;
                 this._cursor = null;
                 this._selectionStartChar = this._setCursor(textChar, e.offsetX);
-                this._redrawCursor();
-
-                this.el.focus({ preventScroll: true });
-
-                return false;
+                this.emitRedrawCursor();
             }
+            this.el.focus({ preventScroll: true });
+
+            e.preventDefault();
+            e.stopPropagation();
         });
-        $(this._element).on('mousemove', 'x-paragraph-col', (e) => {
-            const ev = e.originalEvent as MouseEvent;
-            if (!this._editable) return false;
-            if (this._cursorMode !== CursorMode.SELECTIONSTART || ev.buttons !== 1) return false;
-            const textChar = this._getPositionTextChar(e.currentTarget, e.offsetX, e.offsetY);
+
+        fromEvent<MouseEvent>(this.el, 'mousemove').pipe(
+            filter(e => e.target instanceof ActaParagraphColumnElement && this._cursorMode === CursorMode.SELECTIONSTART && e.buttons === 1 && this._editable)
+        ).subscribe(e => {
+            const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
             if (this._selectionStartChar != null) {
                 this._setCursor(textChar, e.offsetX);
-                this._redrawCursor();
+                this.emitRedrawCursor();
             }
-            return false;
+            e.preventDefault();
+            e.stopPropagation();
         });
-        $(this._element).on('mouseup', 'x-paragraph-col', (e) => {
-            if (!this._editable) return false;
-            if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
 
-            const textChar = this._getPositionTextChar(e.currentTarget, e.offsetX, e.offsetY);
+        fromEvent<MouseEvent>(this.el, 'mouseup').pipe(
+            filter(e => e.target instanceof ActaParagraphColumnElement && this._cursorMode === CursorMode.SELECTIONSTART && this._editable)
+        ).subscribe(e => {
+            const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
             if (this._selectionStartChar != null) {
                 this._setCursor(textChar, e.offsetX);
-                this._redrawCursor();
+                this.emitRedrawCursor();
             }
             if (this._cursor === null) {
                 this._cursorMode = CursorMode.NONE;
@@ -1048,29 +1056,29 @@ export class ActaParagraph extends ActaElementInstance {
             } else {
                 this._cursorMode = CursorMode.EDIT;
             }
-            return false;
+            e.preventDefault();
+            e.stopPropagation();
         });
-        $(this._element).on('focus', (e) => {
-            if (this.focuslock) return false;
 
+        fromEvent(this.el, 'focus').pipe(filter(_ => !this.focuslock)).subscribe(e => {
             this._element.classList.add('focus');
-            this._redrawCursor();
-            return false;
+            this.emitRedrawCursor();
+            e.preventDefault();
+            e.stopPropagation();
         });
-        $(this._element).on('blur', (e) => {
-            if (this.focuslock) return false;
-
+        fromEvent(this.el, 'blur').pipe(filter(_ => !this.focuslock)).subscribe(e => {
             this._element.classList.remove('focus');
             $(this._element.svg).find('.cursor').remove();
             this._selectionStartChar = null;
-            return false;
+            e.preventDefault();
+            e.stopPropagation();
         });
     }
 
     columnWidth(idx: number, val: string | number) {
         if (arguments.length > 1) {
             this.columns[idx].setAttribute('width', (val || 0).toString());
-            $(this._element).trigger('resize');
+            this.el.emitResize();
         } else {
             return this.columns[idx].getAttribute('width') || false;
         }
@@ -1100,16 +1108,18 @@ export class ActaParagraph extends ActaElementInstance {
             if (i + 1 >= this._columnCount) continue;
 
             const margin = document.createElement('x-paragraph-margin') as ActaParagraphMarginElement;
-            $(margin).attr('width', this.innerMargin);
+            margin.setAttribute('width', this.innerMargin.toString());
             this._element.appendChild(margin);
         }
-        $(this._element).trigger('resize');
+        this.el.emitResize();
     }
 
     set innerMargin(innerMargin) {
         this._innerMargin = innerMargin;
-        $(this._element).find('x-paragraph-margin').attr('width', innerMargin);
-        $(this._element).trigger('resize');
+        for (const margin of this.el.querySelectorAll('x-paragraph-margin')) {
+            margin.setAttribute('width', innerMargin.toString());
+        }
+        this.el.emitResize();
     }
     set defaultTextStyleName(styleName: string) { this._defaultTextStyleName = styleName; }
     set editable(val: boolean) { this._editable = val; }

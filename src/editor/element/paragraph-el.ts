@@ -1,31 +1,41 @@
 import { ActaGalleyElement, ActaGalleyChildElement } from './galley-el';
 import { ActaParagraphColumnElement } from './paragraph-col-el';
-import $ from 'jquery';
 import { ActaElementInstance } from './instance';
+import { Observable, Subject, fromEvent, merge } from 'rxjs';
 
 export class ActaParagraphElement extends ActaGalleyChildElement {
     private _instance?: ActaElementInstance;
+    private _resize$: Observable<Event>;
+    private _emitResize$: Subject<Event>;
 
-    constructor() { super(); }
     static get observedAttributes() {
         return ['width', 'height', 'direction', 'text'];
     }
+
+    constructor() {
+        super();
+        this._emitResize$ = new Subject<Event>();
+        this._resize$ = merge(fromEvent(this, 'resize'), this._emitResize$);
+    }
+
     connectedCallback() {
         if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
 
         this.changeSize();
         this.changeDirection();
     }
+
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (oldValue === newValue) return;
         switch (name) {
             case 'direction': this.changeDirection(); break;
-            case 'text': $(this).trigger('change'); break;
+            case 'text': this.emitResize(); break;
             case 'width':
             case 'height': this.changeSize(); break;
             default: break;
         }
     }
+
     changeSize() {
         const parent = this.parentElement;
         if (parent !== null && parent.tagName.toLowerCase() === 'x-galley') {
@@ -34,18 +44,27 @@ export class ActaParagraphElement extends ActaGalleyChildElement {
             this.style.width = `calc(${attr.width} - ${attr.paddingLeft ? attr.paddingLeft : '0px'} - ${attr.paddingRight ? attr.paddingRight : '0px'})`;
             this.style.height = `calc(${attr.height} - ${attr.paddingTop ? attr.paddingTop : '0px'} - ${attr.paddingBottom ? attr.paddingBottom : '0px'})`;
         }
-        $(this).trigger('resize');
+        this.emitResize();
     }
+
     changeDirection() {
         this.style.flexDirection = this.getAttribute('direction') || 'row';
     }
+
+    emitResize() {
+        this._emitResize$.next(new Event('resize'));
+    }
+
     get svg(): SVGElement[] {
-        const columns = this.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col');
-        const ret: SVGElement[] = [];
-        for (let i = 0; i < columns.length; i++) {
-            ret.push(columns.item(i).svg);
+        const svg = [];
+        for (const col of this.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col')) {
+            svg.push(col.svg);
         }
-        return ret;
+        return svg;
+    }
+
+    set onresize(observe: any) {
+        this._resize$.subscribe(observe);
     }
 
     set instance(instance: ActaElementInstance) { if (!this._instance && instance) this._instance = instance; }

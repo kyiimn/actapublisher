@@ -6,15 +6,15 @@
     "rxjs": "^6.6.3"
   },
   "devDependencies": {
-    "@types/jquery": "^3.5.1",
+    "@types/jquery": "^3.5.2",
     "@types/opentype.js": "^1.3.1",
     "@types/uuid": "^8.3.0",
     "css-loader": "^4.3.0",
     "hangul-js": "^0.2.6",
-    "html-loader": "^1.3.0",
-    "html-webpack-plugin": "^4.4.1",
+    "html-loader": "^1.3.1",
+    "html-webpack-plugin": "^4.5.0",
     "jquery": "^3.5.1",
-    "mini-css-extract-plugin": "^0.11.2",
+    "mini-css-extract-plugin": "^0.11.3",
     "node-sass": "^4.14.1",
     "opentype.js": "^1.3.3",
     "sass-loader": "^10.0.2",
@@ -24,7 +24,7 @@
     "tslint-loader": "^3.5.4",
     "typescript": "^4.0.3",
     "uglifyjs-webpack-plugin": "^2.2.0",
-    "uuid": "^8.3.0",
+    "uuid": "^8.3.1",
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12"
   },
