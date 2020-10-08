@@ -5,8 +5,7 @@ import { Observable, Subject, fromEvent, merge } from 'rxjs';
 
 export class ActaParagraphElement extends ActaGalleyChildElement {
     private _instance?: ActaElementInstance;
-    private _resize$: Observable<Event>;
-    private _emitResize$: Subject<Event>;
+    private _resize$: Subject<Event>;
 
     static get observedAttributes() {
         return ['width', 'height', 'direction', 'text'];
@@ -14,8 +13,9 @@ export class ActaParagraphElement extends ActaGalleyChildElement {
 
     constructor() {
         super();
-        this._emitResize$ = new Subject<Event>();
-        this._resize$ = merge(fromEvent(this, 'resize'), this._emitResize$);
+
+        this._resize$ = new Subject<Event>();
+        fromEvent(this, 'resize').subscribe(e => this._resize$);
     }
 
     connectedCallback() {
@@ -52,7 +52,7 @@ export class ActaParagraphElement extends ActaGalleyChildElement {
     }
 
     emitResize() {
-        this._emitResize$.next(new Event('resize'));
+        this._resize$.next(new Event('resize'));
     }
 
     get svg(): SVGElement[] {

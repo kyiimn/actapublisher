@@ -11,7 +11,7 @@ import { ActaTextRow } from './textrow';
 import { ActaTextChar, TextCharType } from './textchar';
 
 import { Subject, fromEvent } from 'rxjs';
-import { delay, distinctUntilChanged, filter } from 'rxjs/operators';
+import { distinctUntilChanged, filter } from 'rxjs/operators';
 
 import selectHanja from './hanja';
 import Hangul from 'hangul-js';
@@ -88,13 +88,21 @@ enum InputMethod {
     EN, KO
 };
 
+interface CursorState {
+    cursorMode: CursorMode;
+    cursorIndex: number | null;
+    cursorCharID: string | null;
+    selectionStartIndex: number | null;
+    selectionStartCharID: string | null;
+}
+
 export class ActaParagraph extends ActaElementInstance {
     private _element: ActaParagraphElement;
     private _columnCount: number;
     private _innerMargin: string | number;
     private _textStore: ActaTextStore | null;
     private _defaultTextStyleName: string | null;
-    private _selectionStartChar: number | null;
+    private _selectionStart: number | null;
     private _cursorMode: CursorMode;
     private _cursor: number | null;
     private _editable: boolean;
@@ -102,7 +110,7 @@ export class ActaParagraph extends ActaElementInstance {
     private _overflow: boolean;
     private _focuslock: boolean;
 
-    private _redrawCursor$: Subject<number>;
+    private _redrawCursor$: Subject<string>;
 
     private static _inputMethod:InputMethod = InputMethod.EN;
 
@@ -244,7 +252,7 @@ export class ActaParagraph extends ActaElementInstance {
         if ([Keycode.HOME, Keycode.END, Keycode.UP, Keycode.DOWN, Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
             // Shift키를 누르고 커서이동시 셀럭션모드
             if (e.shiftKey) {
-                if (this._cursorMode !== CursorMode.SELECTION) this._selectionStartChar = this._cursor;
+                if (this._cursorMode !== CursorMode.SELECTION) this._selectionStart = this._cursor;
                 this._cursorMode = CursorMode.SELECTION;
             } else {
                 this._cursorMode = CursorMode.EDIT;
@@ -311,7 +319,7 @@ export class ActaParagraph extends ActaElementInstance {
         } else if (e.keyCode === Keycode.HANJA) {
             const textChar = this.textChars[this._cursor - 1];
             if (textChar) {
-                this._selectionStartChar = this._cursor - 1;
+                this._selectionStart = this._cursor - 1;
                 this._cursorMode = CursorMode.SELECTION;
                 this.emitRedrawCursor();
 
@@ -384,7 +392,7 @@ export class ActaParagraph extends ActaElementInstance {
             for (let i = 0; i < textChars.length && textChars[i].visable; i++) {
                 this._cursor = i + 1;
             }
-            this._selectionStartChar = 0;
+            this._selectionStart = 0;
             this._cursorMode = CursorMode.SELECTION;
             this.emitRedrawCursor();
             return false;
@@ -553,8 +561,8 @@ export class ActaParagraph extends ActaElementInstance {
     private _getSelectionTextChars() {
         const textChars: ActaTextChar[] = [];
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1) {
-            if (this._selectionStartChar !== null && this._cursor !== null) {
-                let startpos = this._selectionStartChar;
+            if (this._selectionStart !== null && this._cursor !== null) {
+                let startpos = this._selectionStart;
                 let endpos = this._cursor;
 
                 if (startpos > endpos) [startpos, endpos] = [endpos, startpos];
@@ -580,7 +588,9 @@ export class ActaParagraph extends ActaElementInstance {
         }
         if (this._cursor === null) return;
 
-        if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this._cursor !== this._selectionStartChar) {
+        console.log(1);
+
+        if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this._cursor !== this._selectionStart) {
             let currColumn: ActaParagraphColumnElement | undefined;
             let currLine = -1, startx = 0;
             let selBlock;
@@ -949,9 +959,15 @@ export class ActaParagraph extends ActaElementInstance {
     }
 
     private emitRedrawCursor() {
-        this._redrawCursor$.next(
-            Math.round((new Date()).getTime() / 1000)
-        );
+        const textChars = this.textChars;
+        const state = {
+            cursorMode: this._cursorMode,
+            cursorIndex: this._cursor,
+            cursorCharID: (this._cursor && this._cursor < textChars.length) ? textChars[this._cursor].id : null,
+            selectionStartIndex: this._selectionStart,
+            selectionStartCharID: (this._selectionStart && this._selectionStart < textChars.length) ? textChars[this._selectionStart].id : null
+        };
+        this._redrawCursor$.next(JSON.stringify(state));
     }
 
     constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
@@ -961,7 +977,7 @@ export class ActaParagraph extends ActaElementInstance {
         this._element.instance = this;
 
         this._redrawCursor$ = new Subject();
-        this._redrawCursor$.pipe(delay(50), distinctUntilChanged()).subscribe(() => this._redrawCursor());
+        this._redrawCursor$.pipe(distinctUntilChanged()).subscribe(() => this._redrawCursor());
 
         this._columnCount = 1;
         this._innerMargin = 0;
@@ -969,7 +985,7 @@ export class ActaParagraph extends ActaElementInstance {
         this._defaultTextStyleName = defaultTextStyleName;
 
         this._editable = true;
-        this._selectionStartChar = null;
+        this._selectionStart = null;
         this._cursorMode = CursorMode.NONE;
         this._cursor = null;
         this._inputChar = '';
@@ -1007,7 +1023,7 @@ export class ActaParagraph extends ActaElementInstance {
                 const textChars = this.textChars;
                 for (let i = textChars.indexOf(evtTextChar); i >= 0; i--) {
                     if (breakType.indexOf(textChars[i].type) > -1) break;
-                    this._selectionStartChar = i;
+                    this._selectionStart = i;
                 }
                 for (let i = this.textChars.indexOf(evtTextChar); i < this.textChars.length; i++) {
                     if (breakType.indexOf(textChars[i].type) > -1) break;
@@ -1019,7 +1035,7 @@ export class ActaParagraph extends ActaElementInstance {
                 const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
                 this._cursorMode = CursorMode.SELECTIONSTART;
                 this._cursor = null;
-                this._selectionStartChar = this._setCursor(textChar, e.offsetX);
+                this._selectionStart = this._setCursor(textChar, e.offsetX);
                 this.emitRedrawCursor();
             }
             this.el.focus({ preventScroll: true });
@@ -1032,7 +1048,7 @@ export class ActaParagraph extends ActaElementInstance {
             filter(e => e.target instanceof ActaParagraphColumnElement && this._cursorMode === CursorMode.SELECTIONSTART && e.buttons === 1 && this._editable)
         ).subscribe(e => {
             const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
-            if (this._selectionStartChar != null) {
+            if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
                 this.emitRedrawCursor();
             }
@@ -1044,14 +1060,14 @@ export class ActaParagraph extends ActaElementInstance {
             filter(e => e.target instanceof ActaParagraphColumnElement && this._cursorMode === CursorMode.SELECTIONSTART && this._editable)
         ).subscribe(e => {
             const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
-            if (this._selectionStartChar != null) {
+            if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
                 this.emitRedrawCursor();
             }
             if (this._cursor === null) {
                 this._cursorMode = CursorMode.NONE;
                 return false;
-            } else if (this._cursor !== this._selectionStartChar && this._selectionStartChar) {
+            } else if (this._cursor !== this._selectionStart && this._selectionStart) {
                 this._cursorMode = CursorMode.SELECTION;
             } else {
                 this._cursorMode = CursorMode.EDIT;
@@ -1069,7 +1085,7 @@ export class ActaParagraph extends ActaElementInstance {
         fromEvent(this.el, 'blur').pipe(filter(_ => !this.focuslock)).subscribe(e => {
             this._element.classList.remove('focus');
             $(this._element.svg).find('.cursor').remove();
-            this._selectionStartChar = null;
+            this._selectionStart = null;
             e.preventDefault();
             e.stopPropagation();
         });
