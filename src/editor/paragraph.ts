@@ -109,6 +109,7 @@ export class ActaParagraph extends ActaElementInstance {
     private _overflow: boolean;
     private _focuslock: boolean;
 
+    private _update$: Subject<undefined>;
     private _redrawCursor$: Subject<string>;
 
     private static _inputMethod:InputMethod = InputMethod.EN;
@@ -207,7 +208,7 @@ export class ActaParagraph extends ActaElementInstance {
             this._cursorMode = CursorMode.EDIT;
             this._cursor++;
         }
-        this._update();
+        this._emitUpdate();
         this._emitRedrawCursor();
 
         return false;
@@ -298,7 +299,7 @@ export class ActaParagraph extends ActaElementInstance {
                             this._cursor--;
                             this._cursorMode = CursorMode.EDIT;
                         }
-                        this._update();
+                        this._emitUpdate();
                         this._emitRedrawCursor();
                         return false;
                     }
@@ -330,7 +331,7 @@ export class ActaParagraph extends ActaElementInstance {
                         const textNode = data.textChar.textNode;
                         if (data.hanjaChar) {
                             textNode.replace([data.textChar], data.hanjaChar);
-                            this._update();
+                            this._emitUpdate();
                         }
                     },
                     complete: () => {
@@ -362,7 +363,7 @@ export class ActaParagraph extends ActaElementInstance {
 
             for (const textChar of selTextChars) selText += textChar.char || '';
             this._removeTextChars(selTextChars);
-            this._update();
+            this._emitUpdate();
             this._emitRedrawCursor();
             ActaClipboard.in.write(selText);
             return false;
@@ -372,14 +373,14 @@ export class ActaParagraph extends ActaElementInstance {
                 this._cursor = this.textChars.indexOf(selTextChars[0]);
                 this._removeTextChars(selTextChars);
             };
-            this._update();
+            this._emitUpdate();
             this._emitRedrawCursor();
 
             ActaClipboard.in.read().then(v => {
                 if (!v) return;
                 if (this._cursor === null || typeof(v) !== 'string') return;
                 this._insertText(v);
-                this._update();
+                this._emitUpdate();
                 this._emitRedrawCursor();
             });
             return false;
@@ -437,7 +438,7 @@ export class ActaParagraph extends ActaElementInstance {
             textNode.defaultTextStyleName = textStyleName;
             textNode.customTextStyle = new ActaTextStyleInherit();
         }
-        this._update();
+        this._emitUpdate();
         this._emitRedrawCursor();
     }
 
@@ -446,13 +447,13 @@ export class ActaParagraph extends ActaElementInstance {
         for (const textNode of textNodes) {
             textNode.customTextStyle.merge(textStyle);
         }
-        this._update();
+        this._emitUpdate();
         this._emitRedrawCursor();
     }
 
     private _removeTextChars(textChars: ActaTextChar[]) {
         for (const textChar of textChars) textChar.remove();
-        this._update();
+        this._emitUpdate();
     }
 
     private get columns() {
@@ -909,7 +910,7 @@ export class ActaParagraph extends ActaElementInstance {
         }
     }
 
-    private _drawTextChars(redraw: boolean = false) {
+    private _drawTextChars() {
         for (const column of this.columns) {
             const textRows: ActaTextRow[] = column.textRows;
             let offsetY = 0;
@@ -957,7 +958,11 @@ export class ActaParagraph extends ActaElementInstance {
 
     private _update() {
         this._computePositionTextChars();
-        this._drawTextChars(true);
+        this._drawTextChars();
+    }
+
+    private _emitUpdate() {
+        this._update$.next();
     }
 
     private _emitRedrawCursor() {
@@ -981,6 +986,9 @@ export class ActaParagraph extends ActaElementInstance {
         this._redrawCursor$ = new Subject();
         this._redrawCursor$.pipe(distinctUntilChanged()).subscribe(() => this._redrawCursor());
 
+        this._update$ = new Subject();
+        this._update$.subscribe(() => this._update());
+
         this._columnCount = 1;
         this._innerMargin = 0;
         this._textStore = null;
@@ -1001,11 +1009,15 @@ export class ActaParagraph extends ActaElementInstance {
         this.innerMargin = innerMargin;
 
         this.el.onresize = (e: Event) => {
-            this._update();
+            this._emitUpdate();
             e.preventDefault();
             e.stopPropagation();
         };
-        fromEvent<KeyboardEvent>(this.el, 'keydown').subscribe(e => this._onKeyPress(e));
+        fromEvent<KeyboardEvent>(this.el, 'keydown').subscribe(e => {
+            if (this._onKeyPress(e) !== false) return;
+            e.preventDefault();
+            e.stopPropagation();
+        });
 
         let waitTripleClickTimer: boolean = false;
         fromEvent<MouseEvent>(this.el, 'mousedown').pipe(filter(e => {
@@ -1113,16 +1125,11 @@ export class ActaParagraph extends ActaElementInstance {
         }
     }
 
-    reset() {
-        this._computePositionTextChars();
-        this._drawTextChars();
-    }
-
     set text(text: string) {
         if (this._textStore) this._textStore.remove();
         this._textStore = ActaTextStore.import(this.defaultTextStyleName, text);
         this._cursor = null;
-        this.reset();
+        this._emitUpdate();
     }
 
     set columnCount(count) {
