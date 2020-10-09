@@ -6,8 +6,6 @@ import { ActaFontManager } from './editor/fontmgr';
 import { ActaTextStyleManager } from './editor/textstylemgr';
 import { ActaTextStyle, TextAlign } from './editor/textstyle';
 
-import $ from 'jquery';
-
 import './editor/element';
 import '../css/element.scss';
 
@@ -18,11 +16,11 @@ const main = async () => {
     const guide = new ActaGuide(5, '2mm');
     const galley = new ActaGalley('5mm', '5mm', '143.25mm', '142mm');
     const para = new ActaParagraph('본문3', 3, '2mm')
-    $(page.el).append(guide.el);
-    $(page.el).append(galley.el);
-    $(page.el).appendTo('body');
+    page.el.appendChild(guide.el);
+    page.el.appendChild(galley.el);
+    document.body.appendChild(page.el);
 
-    $(galley.el).append(para.el);
+    galley.el.appendChild(para.el);
     galley.padding = '0mm';
 
     await ActaFontManager.getInstance().add('fonts/jabml.ttf');
@@ -44,13 +42,16 @@ const main = async () => {
     s.indent = 8;
     ActaTextStyleManager.getInstance().add('본문3', s);
 
-    $('button#submit').on('click', () => {
-        let tt = ($('textarea').val() || '').toString();
+    const submitButton = document.querySelector('button#submit');
+    const textarea = document.querySelector('textarea');
+    if (submitButton) submitButton.addEventListener('click', _ => {
+        let tt = textarea ? textarea.value : '';
         tt = tt.substring(0, tt.length);
         para.text = tt;
     });
-    $('button#get').on('click', () => {
-        $('textarea').val(para.text);
+    const getButton = document.querySelector('button#get');
+    if (getButton) getButton.addEventListener('click', _ => {
+        if (textarea) textarea.value = para.text;
     });
 };
 main();

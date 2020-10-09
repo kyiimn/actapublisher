@@ -1,7 +1,7 @@
 import { ActaGalleyElement, ActaGalleyChildElement } from './galley-el';
 import { ActaParagraphColumnElement } from './paragraph-col-el';
 import { ActaElementInstance } from './instance';
-import { Observable, Subject, fromEvent, merge } from 'rxjs';
+import { Subject, fromEvent } from 'rxjs';
 
 export class ActaParagraphElement extends ActaGalleyChildElement {
     private _instance?: ActaElementInstance;
