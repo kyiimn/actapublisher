@@ -438,8 +438,6 @@ export class ActaParagraph extends ActaElementInstance {
             textNode.defaultTextStyleName = textStyleName;
             textNode.customTextStyle = new ActaTextStyleInherit();
         }
-        this._emitUpdate();
-        this._emitRedrawCursor();
     }
 
     private _applyTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
@@ -447,8 +445,6 @@ export class ActaParagraph extends ActaElementInstance {
         for (const textNode of textNodes) {
             textNode.customTextStyle.merge(textStyle);
         }
-        this._emitUpdate();
-        this._emitRedrawCursor();
     }
 
     private _removeTextChars(textChars: ActaTextChar[]) {
@@ -896,7 +892,7 @@ export class ActaParagraph extends ActaElementInstance {
                 textStyle = this.lastTextChar.textStyle;
                 indexOfColumn = this.lastTextChar.textRow ? this.lastTextChar.indexOfColumn : 0;
             }
-            textStyle = ActaTextStyleManager.getInstance().get(this._defaultTextStyleName || '');
+            textStyle = this.defaultTextStyle;
             if (!textStyle || !textStyle.font || !textStyle.fontSize) return;
 
             const textHeight = textStyle.textHeight;
@@ -1125,6 +1121,50 @@ export class ActaParagraph extends ActaElementInstance {
         }
     }
 
+    applyCursorDefinedTextStyle(textStyleName: string) {
+        const selTextChars = this._getSelectionTextChars();
+        this._applyDefinedTextStyle(selTextChars, textStyleName);
+        this._emitUpdate();
+        this._emitRedrawCursor();
+    }
+
+    applyCursorTextStyle(textStyle: ActaTextStyleInherit) {
+        const selTextChars = this._getSelectionTextChars();
+        this._applyTextStyle(selTextChars, textStyle);
+        this._emitUpdate();
+        this._emitRedrawCursor();
+    }
+
+    getCursorTextStyleIntersection() {
+        const returnTextStyle = new ActaTextStyleInherit();
+
+        let selTextChars = this._getSelectionTextChars();
+        if (selTextChars.length < 1) {
+            const cursorTextChar = this._getCursorTextChar();
+            if (cursorTextChar) selTextChars = [cursorTextChar];
+        }
+        const textNodes = this._getTextCharBlocks(selTextChars);
+        if (textNodes.length < 1) {
+            returnTextStyle.copy(this.defaultTextStyle);
+            return returnTextStyle;
+        }
+        returnTextStyle.copy(textNodes[0].textStyle);
+        for (const textNode of textNodes) {
+            const textStyle = textNode.textStyle;
+            if (returnTextStyle.font !== textStyle.font) returnTextStyle.font = null;
+            if (returnTextStyle.fontSize !== textStyle.fontSize) returnTextStyle.fontSize = null;
+            if (returnTextStyle.xscale !== textStyle.xscale) returnTextStyle.xscale = null;
+            if (returnTextStyle.letterSpacing !== textStyle.letterSpacing) returnTextStyle.letterSpacing = null;
+            if (returnTextStyle.lineHeight !== textStyle.lineHeight) returnTextStyle.lineHeight = null;
+            if (returnTextStyle.textAlign !== textStyle.textAlign) returnTextStyle.textAlign = null;
+            if (returnTextStyle.underline !== textStyle.underline) returnTextStyle.underline = null;
+            if (returnTextStyle.strikeline !== textStyle.strikeline) returnTextStyle.strikeline = null;
+            if (returnTextStyle.indent !== textStyle.indent) returnTextStyle.indent = null;
+            if (returnTextStyle.color !== textStyle.color) returnTextStyle.color = null;
+        }
+        return returnTextStyle;
+    }
+
     set text(text: string) {
         if (this._textStore) this._textStore.remove();
         this._textStore = ActaTextStore.import(this.defaultTextStyleName, text);
@@ -1157,13 +1197,17 @@ export class ActaParagraph extends ActaElementInstance {
         }
         this.el.emitResize();
     }
-    set defaultTextStyleName(styleName: string) { this._defaultTextStyleName = styleName; }
+    set defaultTextStyleName(styleName: string) {
+        this._defaultTextStyleName = styleName;
+        if (this._textStore) this._textStore.defaultTextStyleName = styleName;
+    }
     set editable(val: boolean) { this._editable = val; }
 
     get columnCount() { return this._columnCount; }
     get innerMargin() { return this._innerMargin; }
     get text() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
+    get defaultTextStyle() { return ActaTextStyleManager.getInstance().get(this.defaultTextStyleName); }
     get editable() { return this._editable; }
 
     get el() { return this._element; }

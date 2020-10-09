@@ -10,19 +10,6 @@ import './editor/element';
 import '../css/element.scss';
 
 const main = async () => {
-    const page = new ActaPage('25cm', '30cm');
-    page.padding = '0.5cm';
-
-    const guide = new ActaGuide(5, '2mm');
-    const galley = new ActaGalley('5mm', '5mm', '143.25mm', '142mm');
-    const para = new ActaParagraph('본문3', 3, '2mm')
-    page.el.appendChild(guide.el);
-    page.el.appendChild(galley.el);
-    document.body.appendChild(page.el);
-
-    galley.el.appendChild(para.el);
-    galley.padding = '0mm';
-
     await ActaFontManager.getInstance().add('fonts/jabml.ttf');
     await ActaFontManager.getInstance().add('fonts/jahgl.ttf');
 
@@ -41,6 +28,19 @@ const main = async () => {
     s.fontSize = 12;
     s.indent = 8;
     ActaTextStyleManager.getInstance().add('본문3', s);
+
+    const page = new ActaPage('25cm', '30cm');
+    page.padding = '0.5cm';
+
+    const guide = new ActaGuide(5, '2mm');
+    const galley = new ActaGalley('5mm', '5mm', '143.25mm', '142mm');
+    const para = new ActaParagraph('본문3', 3, '2mm')
+    page.appendChild(guide);
+    page.appendChild(galley);
+    document.body.appendChild(page.el);
+
+    galley.appendChild(para);
+    galley.padding = '0mm';
 
     const submitButton = document.querySelector('button#submit');
     const textarea = document.querySelector('textarea');

@@ -18,7 +18,10 @@ export class ActaTextStyleManager {
     private _list: IActaTextStyleList;
     private constructor() { this._list = {}; }
 
-    add(name: string, style: ActaTextStyle) { this._list[name] = style; }
+    add(name: string, style: ActaTextStyle) {
+        style.name = name;
+        this._list[name] = style;
+    }
     remove(name: string) { delete this._list[name]; }
     get(name: string) { return this._list[name]; }
 
