@@ -31,13 +31,13 @@ const main = async () => {
 
     const page = new ActaPage('25cm', '30cm');
     page.padding = '0.5cm';
+    document.body.appendChild(page.el);
 
     const guide = new ActaGuide(5, '2mm');
     const galley = new ActaGalley('5mm', '5mm', '143.25mm', '142mm');
     const para = new ActaParagraph('본문3', 3, '2mm')
     page.appendChild(guide);
     page.appendChild(galley);
-    document.body.appendChild(page.el);
 
     galley.appendChild(para);
     galley.padding = '0mm';

@@ -777,8 +777,8 @@ export class ActaParagraph extends ActaElementInstance {
         for (const column of this.columns) {
             const rect = column.getBoundingClientRect();
             const style = window.getComputedStyle(column);
-            column.svg.setAttribute('width', (rect.width - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth)).toString());
-            column.svg.setAttribute('height', (rect.height - parseFloat(style.borderTopWidth) - parseFloat(style.borderBottomWidth)).toString());
+            column.svg.setAttribute('width', rect.width > 0 ? (rect.width - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.borderRightWidth) || 0)).toString() : '0');
+            column.svg.setAttribute('height', rect.height > 0 ? (rect.height - (parseFloat(style.borderTopWidth) || 0) - (parseFloat(style.borderBottomWidth) || 0)).toString() : '0');
             column.textRows = [];
         }
         for (const textChar of this.textChars) {
@@ -1004,10 +1004,11 @@ export class ActaParagraph extends ActaElementInstance {
         }
         this.innerMargin = innerMargin;
 
+        this.text = '';
+
         this.el.onresize = (e: Event) => {
             this._emitUpdate();
-            e.preventDefault();
-            e.stopPropagation();
+            this._emitRedrawCursor();
         };
         fromEvent<KeyboardEvent>(this.el, 'keydown').subscribe(e => {
             if (this._onKeyPress(e) !== false) return;
