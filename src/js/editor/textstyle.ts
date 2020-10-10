@@ -94,8 +94,8 @@ class ActaTextStylePrivate {
         return returnValue.trim();
     }
 
-    set onchange(observe: any) {
-        this._change$.pipe(distinctUntilChanged()).subscribe(observe);
+    subscribe(observer: any) {
+        return this._change$.pipe(distinctUntilChanged()).subscribe(observer);
     }
 
     set fontName(fontName: string) {
@@ -193,10 +193,12 @@ class ActaTextStylePrivate {
 
 // tslint:disable-next-line: max-classes-per-file
 export class ActaTextStyle extends ActaTextStylePrivate {
-    constructor(styleName: string) {
+    private _name?: string;
+
+    constructor(fontName: string) {
         super();
 
-        this.fontName = styleName;
+        this.fontName = fontName;
         this.fontSize = 10;
         this.xscale = 1;
         this.letterSpacing = 0;
@@ -216,6 +218,7 @@ export class ActaTextStyle extends ActaTextStylePrivate {
         super.copy(textStyle);
     }
 
+    set name(name: string) { this._name = name; }
     set font(font: ActaFont) { super.font = font; }
     set fontName(fontName: string) { super.fontName = fontName; }
     set fontSize(size: number) { super.fontSize = size; }
@@ -228,6 +231,7 @@ export class ActaTextStyle extends ActaTextStylePrivate {
     set indent(indent: number) { super.indent = indent; }
     set color(color: string) { super.color = color; }
 
+    get name() { return this._name || ''; }
     get font() { return super.font as ActaFont; }
     get fontName() { return super.fontName; }
     get fontSize() { return super.fontSize as number; }

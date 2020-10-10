@@ -1,4 +1,3 @@
-import { ActaTextChar } from './textchar';
 import { ActaTextNode } from './textnode';
 import { TextAlign } from './textstyle';
 import { Stack } from '../utils';

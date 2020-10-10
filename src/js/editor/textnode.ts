@@ -2,24 +2,29 @@ import { ActaTextChar } from './textchar';
 import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextStyle, ActaTextStyleInherit } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
+import { Subscription } from 'rxjs';
 
 export class ActaTextNode {
     private _id: string;
     private _tagname: string;
-    private _defaultTextStyleName: string | null;
-    private _customTextStyle: ActaTextStyleInherit;
     private _value: (ActaTextChar | ActaTextNode)[];
     private _parentNode: ActaTextNode | null;
+
+    private _defaultTextStyle: ActaTextStyle | null;
+    private _defaultTextStyle$: Subscription | null;
+    private _customTextStyle: ActaTextStyleInherit;
 
     constructor(tagname: string = 'x-style') {
         this._id = uuidv4();
         this._tagname = tagname.toLowerCase();
-        this._defaultTextStyleName = null;
-        this._customTextStyle = new ActaTextStyleInherit();
         this._value = [];
         this._parentNode = null;
 
-        this._customTextStyle.onchange = (attr: string) => this.changeTextStyle(attr);
+        this._defaultTextStyle = null;
+        this._defaultTextStyle$ = null;
+
+        this._customTextStyle = new ActaTextStyleInherit();
+        this._customTextStyle.subscribe((attr: string) => this.changeTextStyle(attr));
     }
 
     changeTextStyle(attr?: string) {
@@ -128,11 +133,27 @@ export class ActaTextNode {
         return returnArray;
     }
 
-    set defaultTextStyleName(styleName: string | null) {
-        if (this._defaultTextStyleName !== styleName) {
-            this._defaultTextStyleName = styleName;
-            this.changeTextStyle();
+    set defaultTextStyle(textStyle: ActaTextStyle | null) {
+        if (textStyle && this._defaultTextStyle) {
+            if (textStyle.name === this._defaultTextStyle.name) return;
+        } else if (!textStyle && !this._defaultTextStyle) return;
+
+        if (this._defaultTextStyle$) this._defaultTextStyle$.unsubscribe();
+        this._defaultTextStyle = textStyle;
+        if (this._defaultTextStyle) {
+            this._defaultTextStyle$ = this._defaultTextStyle.subscribe((attr: string) => this.changeTextStyle(attr));
+        } else {
+            this._defaultTextStyle$ = null;
         }
+        this.changeTextStyle();
+    }
+
+    set defaultTextStyleName(styleName: string | null) {
+        if (!styleName) {
+            this.defaultTextStyle = null;
+            return;
+        }
+        this.defaultTextStyle = ActaTextStyleManager.getInstance().get(styleName);
     }
 
     set customTextStyle(style: ActaTextStyleInherit) {
@@ -152,19 +173,16 @@ export class ActaTextNode {
     }
     get tagName() { return this._tagname; }
     get id() { return this._id; }
-    get defaultTextStyleName() { return this._defaultTextStyleName; }
+    get defaultTextStyle() { return this._defaultTextStyle; }
     get customTextStyle() { return this._customTextStyle; }
     get value() { return this._value; }
     get length() { return this.value.length; }
 
     get textStyle() {
-        const defaultTextStyle = ActaTextStyleManager.getInstance().get(this.defaultTextStyleName || '');
-        const returnTextStyle = new ActaTextStyle((defaultTextStyle ? defaultTextStyle.fontName : '') || '');
-
+        const returnTextStyle = new ActaTextStyle((this.defaultTextStyle ? this.defaultTextStyle.fontName : '') || '');
         if (this.parentNode) returnTextStyle.merge(this.parentNode.textStyle);
-        if (defaultTextStyle) returnTextStyle.merge(defaultTextStyle);
+        if (this.defaultTextStyle) returnTextStyle.merge(this.defaultTextStyle);
         returnTextStyle.merge(this.customTextStyle);
-
         return returnTextStyle;
     }
 
