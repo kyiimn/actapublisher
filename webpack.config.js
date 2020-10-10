@@ -7,8 +7,8 @@ const isProd = process.env.NODE_ENV == 'production';
 
 module.exports = {
     entry: {
-        login: './src/login.ts',
-        editor: './src/editor.ts'
+        login: './src/js/login.ts',
+        editor: './src/js/editor.ts'
     },
     module: {
         rules: [{
@@ -19,13 +19,15 @@ module.exports = {
             }]
         }, {
             test: /\.ts$/,
-            include: [path.resolve(__dirname, 'src')],
+            include: [path.resolve(__dirname, 'src/js')],
             use: 'ts-loader',
         }, {
             test: /\.css$/,
+            include: [path.resolve(__dirname, 'src/css')],
             use: [MiniCssExtractPlugin.loader, "css-loader"]
         }, {
             test: /\.scss$/,
+            include: [path.resolve(__dirname, 'src/css')],
             use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
         },
         {
@@ -45,12 +47,12 @@ module.exports = {
     },
     plugins: [
         new HtmlWebPackPlugin({
-            template: 'html/editor.html',
+            template: 'src/html/editor.html',
             filename: '../editor.html',
             chunks : ['editor']
         }),
         new HtmlWebPackPlugin({
-            template: 'html/login.html',
+            template: 'src/html/login.html',
             filename: '../login.html',
             chunks : ['login']
         }),
