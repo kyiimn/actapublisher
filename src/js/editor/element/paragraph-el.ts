@@ -1,11 +1,12 @@
 import { ActaGalleyElement, ActaGalleyChildElement } from './galley-el';
 import { ActaParagraphColumnElement } from './paragraph-col-el';
 import { ActaElementInstance } from './instance';
-import { Subject, fromEvent } from 'rxjs';
+import { Subject, Subscription, fromEvent } from 'rxjs';
 
 export class ActaParagraphElement extends ActaGalleyChildElement {
     private _instance?: ActaElementInstance;
     private _resize$: Subject<Event>;
+    private _parentChangeSize$?: Subscription;
 
     static get observedAttributes() {
         return ['width', 'height', 'direction', 'text'];
@@ -16,6 +17,16 @@ export class ActaParagraphElement extends ActaGalleyChildElement {
 
         this._resize$ = new Subject<Event>();
         fromEvent(this, 'resize').subscribe(e => this._resize$);
+    }
+
+    observe(observer: Subject<undefined>) {
+        this._parentChangeSize$ = observer.subscribe(_ => this.changeSize());
+        this.changeSize();
+    }
+
+    unobserve() {
+        if (this._parentChangeSize$) this._parentChangeSize$.unsubscribe();
+        this._parentChangeSize$ = undefined;
     }
 
     connectedCallback() {

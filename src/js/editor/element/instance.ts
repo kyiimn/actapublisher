@@ -16,3 +16,14 @@ export abstract class ActaElementInstance {
 
     abstract get el(): HTMLElement;
 };
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaElement extends HTMLElement {
+    protected _id: string;
+
+    constructor() {
+        super();
+        this._id = uuidv4();
+    }
+    get id() { return this._id; }
+}

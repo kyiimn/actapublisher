@@ -1,5 +1,5 @@
 
-import { ActaElementInstance } from './element/instance';
+/*import { ActaElementInstance } from './element/instance';
 import { ActaGalleyElement } from './element/galley-el';
 
 export class ActaGalley extends ActaElementInstance {
@@ -97,4 +97,4 @@ export class ActaGalley extends ActaElementInstance {
     get paddingRight() { return this._paddingRight; }
 
     get el() { return this._element; }
-};
+};*/
