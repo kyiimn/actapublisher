@@ -1,61 +1,178 @@
+import { ActaElement } from "./element/instance";
+import { Subject } from 'rxjs';
 
-/*import { ActaElementInstance } from './element/instance';
-import { ActaGalleyElement } from './element/galley-el';
+export class ActaGalley extends ActaElement {
+    private _changeSize$: Subject<undefined>;
+    private _mutation$: MutationObserver;
 
-export class ActaGalley extends ActaElementInstance {
-    private _element: ActaGalleyElement;
-    private _x: string | number;
-    private _y: string | number;
-    private _width: string | number;
-    private _height: string | number;
-    private _paddingTop: string | number;
-    private _paddingBottom: string | number;
-    private _paddingLeft: string | number;
-    private _paddingRight: string | number;
+    static get observedAttributes() {
+        return [
+            'width', 'height', 'x', 'y',
+            'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
+            'border-color', 'border', 'border-top', 'border-bottom', 'border-left', 'border-right'
+        ];
+    }
 
-    constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
+    private _applyLeft() {
+        const attr = this.getAttributes();
+        this.style.left = `calc(${attr.left} - ${attr.borderLeft ? attr.borderLeft : '1px'})`;
+    }
+
+    private _applyTop() {
+        const attr = this.getAttributes();
+        this.style.top = `calc(${attr.top} - ${attr.borderTop ? attr.borderTop : '1px'})`;
+    }
+
+    private _applyWidth() {
+        const attr = this.getAttributes();
+        this.style.width = `calc(${attr.width} + ${attr.borderLeft ? attr.borderLeft : '1px'} + ${attr.borderRight ? attr.borderRight : '1px'})`;
+    }
+
+    private _applyHeight() {
+        const attr = this.getAttributes();
+        this.style.height = `calc(${attr.height} + ${attr.borderTop ? attr.borderTop : '1px'} + ${attr.borderBottom ? attr.borderBottom : '1px'})`;
+    }
+
+    private _applyPaddingTop() {
+        const attr = this.getAttributes();
+        this.style.paddingTop = attr.paddingTop;
+    }
+
+    private _applyPaddingBottom() {
+        const attr = this.getAttributes();
+        this.style.paddingBottom = attr.paddingBottom;
+    }
+
+    private _applyPaddingLeft() {
+        const attr = this.getAttributes();
+        this.style.paddingLeft = attr.paddingLeft;
+    }
+
+    private _applyPaddingRight() {
+        const attr = this.getAttributes();
+        this.style.paddingRight = attr.paddingRight;
+    }
+
+    private _applyBorderTop() {
+        const attr = this.getAttributes();
+        this.style.borderTop = attr.borderTop ? `${attr.borderTop} solid ${attr.borderColor}` : '';
+    }
+
+    private _applyBorderBottom() {
+        const attr = this.getAttributes();
+        this.style.borderBottom = attr.borderBottom ? `${attr.borderBottom} solid ${attr.borderColor}` : '';
+    }
+
+    private _applyBorderLeft() {
+        const attr = this.getAttributes();
+        this.style.borderLeft = attr.borderLeft ? `${attr.borderLeft} solid ${attr.borderColor}` : '';
+    }
+
+    private _applyBorderRight() {
+        const attr = this.getAttributes();
+        this.style.borderRight = attr.borderRight ? `${attr.borderRight} solid ${attr.borderColor}` : '';
+    }
+
+    private _emitChangeSize() { this._changeSize$.next(); }
+
+    constructor(x?: string | number, y?: string | number, width?: string | number, height?: string | number) {
         super();
 
-        this._element = document.createElement('x-galley') as ActaGalleyElement;
-        this._element.instance = this;
+        this._changeSize$ = new Subject();
+        this._mutation$ = new MutationObserver(mutations => {
+            mutations.forEach(m => {
+                if (m.type !== 'childList') return;
+                for (let i = 0; i < m.removedNodes.length; i++) {
+                    if (!(m.removedNodes.item(i) instanceof ActaGalleyChildElement)) continue;
+                    const node = m.removedNodes.item(i) as ActaGalleyChildElement;
+                    node.unobserve();
+                }
+                for (let i = 0; i < m.addedNodes.length; i++) {
+                    if (!(m.addedNodes.item(i) instanceof ActaGalleyChildElement)) continue;
+                    const node = m.addedNodes.item(i) as ActaGalleyChildElement;
+                    node.observe(this._changeSize$);
+                }
+            });
+        });
+        if (x !== undefined) this.setAttribute('x', x.toString());
+        if (y !== undefined) this.setAttribute('y', y.toString());
+        if (width !== undefined) this.setAttribute('width', width.toString());
+        if (height !== undefined) this.setAttribute('height', height.toString());
+    }
 
-        this._x = 0;
-        this._y = 0;
-        this._width = 0;
-        this._height = 0;
-        this._paddingTop = 0;
-        this._paddingBottom = 0;
-        this._paddingLeft = 0;
-        this._paddingRight = 0;
+    connectedCallback() {
+        this._applyLeft();
+        this._applyTop();
+        this._applyPaddingTop();
+        this._applyPaddingBottom();
+        this._applyPaddingLeft();
+        this._applyPaddingRight();
 
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.paddingTop = 0;
-        this.paddingBottom = 0;
-        this.paddingLeft = 0;
-        this.paddingRight = 0;
+        this._mutation$.observe(this, { childList: true });
+    }
+
+    getAttributes() {
+        const style = window.getComputedStyle(this);
+        return {
+            paddingTop: this.getAttribute('padding-top') || this.getAttribute('padding') || '0px',
+            paddingBottom: this.getAttribute('padding-bottom') || this.getAttribute('padding') || '0px',
+            paddingLeft: this.getAttribute('padding-left') || this.getAttribute('padding') || '0px',
+            paddingRight: this.getAttribute('padding-right') || this.getAttribute('padding') || '0px',
+            borderTop: this.getAttribute('border-top') || this.getAttribute('border') || '0px',
+            borderBottom: this.getAttribute('border-bottom') || this.getAttribute('border') || '0px',
+            borderLeft: this.getAttribute('border-left') || this.getAttribute('border') || '0px',
+            borderRight: this.getAttribute('border-right') || this.getAttribute('border') || '0px',
+            borderColor: this.getAttribute('border-color') || '#000000',
+            left: this.getAttribute('x') || '0px',
+            top: this.getAttribute('y') || '0px',
+            width: this.getAttribute('width') || '',
+            height: this.getAttribute('height') || ''
+        };
+    }
+
+    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+        if (oldValue === newValue) return;
+        switch (name) {
+            case 'x': this._applyLeft(); break;
+            case 'y': this._applyTop(); break;
+
+            case 'width': this._applyWidth(); this._emitChangeSize(); break;
+            case 'height': this._applyHeight(); this._emitChangeSize(); break;
+
+            case 'padding-top': this._applyPaddingTop(); this._emitChangeSize(); break;
+            case 'padding-bottom': this._applyPaddingBottom(); this._emitChangeSize(); break;
+            case 'padding-left': this._applyPaddingLeft(); this._emitChangeSize(); break;
+            case 'padding-right': this._applyPaddingRight(); this._emitChangeSize(); break;
+            case 'padding': this._applyPaddingTop(); this._applyPaddingBottom(); this._applyPaddingLeft(); this._applyPaddingRight(); this._emitChangeSize(); break;
+
+            case 'border-top': this._applyTop(); this._applyBorderTop(); this._applyHeight(); this._emitChangeSize(); break;
+            case 'border-bottom': this._applyBorderBottom(); this._applyHeight(); this._emitChangeSize(); break;
+            case 'border-left': this._applyLeft(); this._applyBorderLeft(); this._applyWidth(); this._emitChangeSize(); break;
+            case 'border-right': this._applyBorderRight(); this._applyWidth(); this._emitChangeSize(); break;
+            case 'border':
+                this._applyBorderTop(); this._applyBorderLeft(); this._applyBorderLeft(); this._applyBorderRight();
+                this._applyWidth(); this._applyHeight(); this._emitChangeSize(); break;
+
+            case 'border-color': this._applyBorderTop(); this._applyBorderLeft(); this._applyBorderLeft(); this._applyBorderRight(); this._emitChangeSize(); break;
+
+            default: break;
+        }
     }
 
     set x(x: string | number) {
-        this._x = x;
-        this._element.setAttribute('x', x.toString());
+        this.setAttribute('x', x.toString());
     }
 
     set y(y: string | number) {
-        this._y = y;
-        this._element.setAttribute('y', y.toString());
+        this.setAttribute('y', y.toString());
     }
 
     set width(width: string | number) {
-        this._width = width;
-        this._element.setAttribute('width', width.toString());
+        this.setAttribute('width', width.toString());
     }
 
     set height(height: string | number) {
-        this._height = height;
-        this._element.setAttribute('height', height.toString());
+        this.setAttribute('height', height.toString());
     }
 
     set padding(padding: string | number) {
@@ -67,34 +184,37 @@ export class ActaGalley extends ActaElementInstance {
     }
 
     set paddingTop(padding: string | number) {
-        this._paddingTop = padding;
-        this._element.setAttribute('padding-top', padding.toString());
+        this.setAttribute('padding-top', padding.toString());
     }
 
     set paddingBottom(padding: string | number) {
-        this._paddingBottom = padding;
-        this._element.setAttribute('padding-bottom', padding.toString());
+        this.setAttribute('padding-bottom', padding.toString());
     }
 
     set paddingLeft(padding: string | number) {
-        this._paddingLeft = padding;
-        this._element.setAttribute('padding-left', padding.toString());
+        this.setAttribute('padding-left', padding.toString());
     }
 
     set paddingRight(padding: string | number) {
-        this._paddingRight = padding;
-        this._element.setAttribute('padding-right', padding.toString());
+        this.setAttribute('padding-right', padding.toString());
     }
 
-    get x() { return this._x; }
-    get y() { return this._y; }
-    get width() { return this._width; }
-    get height() { return this._height; }
-    get padding() { return `${this._paddingTop} ${this._paddingLeft} ${this._paddingBottom} ${this._paddingRight}`; }
-    get paddingTop() { return this.paddingTop; }
-    get paddingBottom() { return this._paddingBottom; }
-    get paddingLeft() { return this._paddingLeft; }
-    get paddingRight() { return this._paddingRight; }
+    get x() { return this.getAttributes().left; }
+    get y() { return this.getAttributes().top; }
+    get width() { return this.getAttributes().width; }
+    get height() { return this.getAttributes().height; }
+    get paddingTop() { return this.getAttributes().paddingTop; }
+    get paddingBottom() { return this.getAttributes().paddingBottom; }
+    get paddingLeft() { return this.getAttributes().paddingLeft; }
+    get paddingRight() { return this.getAttributes().paddingRight; }
+    get padding() {
+        return `${this.paddingTop} ${this.paddingLeft} ${this.paddingBottom} ${this.paddingRight}`;
+    }
+};
+customElements.define('x-galley', ActaGalley);
 
-    get el() { return this._element; }
-};*/
+// tslint:disable-next-line: max-classes-per-file
+export abstract class ActaGalleyChildElement extends ActaElement {
+    abstract observe(observer: Subject<undefined>): void;
+    abstract unobserve(): void;
+};

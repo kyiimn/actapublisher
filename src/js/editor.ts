@@ -1,6 +1,6 @@
 import { ActaPage } from './editor/page';
 import { ActaGuide } from './editor/guide';
-import { ActaGalleyElement } from './editor/element/galley-el';
+import { ActaGalley } from './editor/galley';
 import { ActaParagraph } from './editor/paragraph';
 import { ActaFontManager } from './editor/fontmgr';
 import { ActaTextStyleManager } from './editor/textstylemgr';
@@ -34,7 +34,7 @@ const main = async () => {
     document.body.appendChild(page);
 
     const guide = new ActaGuide(5, '2mm');
-    const galley = new ActaGalleyElement('5mm', '5mm', '143.25mm', '142mm');
+    const galley = new ActaGalley('5mm', '5mm', '143.25mm', '142mm');
     const para = new ActaParagraph('본문3', 3, '2mm')
     page.appendChild(guide);
     page.appendChild(galley);

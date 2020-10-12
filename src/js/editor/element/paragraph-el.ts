@@ -1,4 +1,4 @@
-import { ActaGalleyElement, ActaGalleyChildElement } from './galley-el';
+import { ActaGalley, ActaGalleyChildElement } from '../galley';
 import { ActaParagraphColumnElement } from './paragraph-col-el';
 import { ActaElementInstance } from './instance';
 import { Subject, Subscription, fromEvent } from 'rxjs';
@@ -50,7 +50,7 @@ export class ActaParagraphElement extends ActaGalleyChildElement {
     changeSize() {
         const parent = this.parentElement;
         if (parent !== null && parent.tagName.toLowerCase() === 'x-galley') {
-            const parentGalley = parent as ActaGalleyElement;
+            const parentGalley = parent as ActaGalley;
             const attr = parentGalley.getAttributes();
             this.style.width = `calc(${attr.width} - ${attr.paddingLeft ? attr.paddingLeft : '0px'} - ${attr.paddingRight ? attr.paddingRight : '0px'})`;
             this.style.height = `calc(${attr.height} - ${attr.paddingTop ? attr.paddingTop : '0px'} - ${attr.paddingBottom ? attr.paddingBottom : '0px'})`;

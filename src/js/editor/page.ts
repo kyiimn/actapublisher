@@ -1,24 +1,25 @@
 import { ActaGuide } from './guide';
 import { ActaElement } from './element/instance';
 import { Subject } from 'rxjs';
+import U from './units';
 
 export class ActaPage extends ActaElement {
     private _changeStyle$: Subject<string>;
     private _mutation$: MutationObserver;
 
     static get observedAttributes() {
-        return ['width', 'height', 'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'];
+        return ['width', 'height', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'];
     }
 
-    private _applyAttribute(name: string, value: string) {
+    private _applyAttribute(name: string, value: string | number) {
+        if (typeof(value) === 'string') value = U.px(value);
         switch (name) {
-            case 'width': this.style.width = value; break;
-            case 'height': this.style.height = value; break;
-            case 'padding': this.style.padding = value; break;
-            case 'padding-top': this.style.paddingTop = value; break;
-            case 'padding-bottom': this.style.paddingBottom = value; break;
-            case 'padding-left': this.style.paddingLeft = value; break;
-            case 'padding-right': this.style.paddingRight = value; break;
+            case 'width': this.style.width = !isNaN(value) ? (value + 'px') : ''; break;
+            case 'height': this.style.height = !isNaN(value) ? (value + 'px') : ''; break;
+            case 'padding-top': this.style.paddingTop = !isNaN(value) ? (value + 'px') : ''; break;
+            case 'padding-bottom': this.style.paddingBottom = !isNaN(value) ? (value + 'px') : ''; break;
+            case 'padding-left': this.style.paddingLeft = !isNaN(value) ? (value + 'px') : ''; break;
+            case 'padding-right': this.style.paddingRight = !isNaN(value) ? (value + 'px') : ''; break;
             default: break;
         }
     }
@@ -42,16 +43,13 @@ export class ActaPage extends ActaElement {
                 }
             });
         });
-        if (width !== undefined) this.setAttribute('width', width.toString());
-        if (height !== undefined) this.setAttribute('height', height.toString());
+        if (!isNaN(U.px(width))) this.setAttribute('width', U.px(width) + 'px');
+        if (!isNaN(U.px(height))) this.setAttribute('height', U.px(height) + 'px');
     }
 
     connectedCallback() {
         for (const attr of ActaPage.observedAttributes) {
-            const val = this.getAttribute(attr) || '';
-            if (val === '') continue;
-
-            this._applyAttribute(attr, val);
+            this._applyAttribute(attr, this.getAttribute(attr) || '');
         }
         this._mutation$.observe(this, { childList: true });
     }
@@ -59,36 +57,39 @@ export class ActaPage extends ActaElement {
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (oldValue === newValue) return;
 
-        this._applyAttribute(name, newValue);
+        this._applyAttribute(name, U.px(newValue));
         this._changeStyle$.next(name);
     }
 
     set width(width: string | number) {
-        this.setAttribute('width', width.toString());
+        this.setAttribute('width', U.px(width) + 'px');
     }
 
     set height(height: string | number) {
-        this.setAttribute('height', height.toString());
+        this.setAttribute('height', U.px(height) + 'px');
     }
 
     set padding(padding: string | number) {
-        this.setAttribute('padding', padding.toString());
+        this.setAttribute('padding-top', U.px(padding) + 'px');
+        this.setAttribute('padding-bottom', U.px(padding) + 'px');
+        this.setAttribute('padding-left', U.px(padding) + 'px');
+        this.setAttribute('padding-right', U.px(padding) + 'px');
     }
 
     set paddingTop(padding: string | number) {
-        this.setAttribute('padding-top', padding.toString());
+        this.setAttribute('padding-top', U.px(padding) + 'px');
     }
 
     set paddingBottom(padding: string | number) {
-        this.setAttribute('padding-bottom', padding.toString());
+        this.setAttribute('padding-bottom', U.px(padding) + 'px');
     }
 
     set paddingLeft(padding: string | number) {
-        this.setAttribute('padding-left', padding.toString());
+        this.setAttribute('padding-left', U.px(padding) + 'px');
     }
 
     set paddingRight(padding: string | number) {
-        this.setAttribute('padding-right', padding.toString());
+        this.setAttribute('padding-right', U.px(padding) + 'px');
     }
 
     get width() { return this.style.width; }

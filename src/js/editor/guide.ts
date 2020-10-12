@@ -1,5 +1,6 @@
 import { ActaElement } from "./element/instance";
 import { Subject, Subscription } from 'rxjs';
+import U from './units';
 
 export class ActaGuide extends ActaElement {
     private _parentChangeStyle$?: Subscription;
@@ -21,6 +22,19 @@ export class ActaGuide extends ActaElement {
         }
     }
 
+    private _updateColumnWidth() {
+        const columns = this.querySelectorAll<ActaGuideColumn>('x-guide-col');
+        for (let i = 0; i < columns.length; i++) {
+            columns.item(i).width = this._columnWidth[i] || null;
+        }
+    }
+
+    private _updateInnerMargin() {
+        for (const margin of this.querySelectorAll('x-guide-margin')) {
+            margin.setAttribute('width', U.px(this._innerMargin) + 'px');
+        }
+    }
+
     private _applyColumnCount(count: number) {
         this._columnCount = count || 1;
         this.innerHTML = '';
@@ -30,29 +44,21 @@ export class ActaGuide extends ActaElement {
             if (i + 1 >= this._columnCount) continue;
             this.appendChild(document.createElement('x-guide-margin'));
         }
-        this.columnWidth = this._columnWidth;
-        this.innerMargin = this.innerMargin;
+        this._updateColumnWidth();
+        this._updateInnerMargin();
     }
 
     private _applyInnerMargin(innerMargin: string | number) {
-        innerMargin = innerMargin.toString();
-        if (innerMargin !== '' && !isNaN(parseInt(innerMargin[innerMargin.length - 1], 10))) innerMargin += 'px';
-
-        this._innerMargin = innerMargin;
-        for (const margin of this.querySelectorAll('x-guide-margin')) {
-            margin.setAttribute('width', innerMargin.toString());
-        }
+        this._innerMargin = U.px(innerMargin) || 0;
+        this._updateInnerMargin();
     }
 
     private _applyColumnWidth(widths: string[] | number[]) {
-        const columns = this.querySelectorAll<ActaGuideColumn>('x-guide-col');
-
         this._columnWidth = [];
-        for (let i = 0; i < columns.length; i++) {
-            const val = (widths[i] || 0).toString();
-            this._columnWidth[i] = (parseFloat(val)) ? widths[i] : 0;
-            columns.item(i).width = (val !== '0') ? val : null;
+        for (let i = 0; i < this._columnCount; i++) {
+            this._columnWidth[i] = U.px(widths[i]) || 0;
         }
+        this._updateColumnWidth();
     }
 
     private _updateSize() {
@@ -123,8 +129,9 @@ export class ActaGuide extends ActaElement {
         this.setAttribute('innermargin', innerMargin.toString());
     }
 
-    get columnCount() { return this._columnCount; }
     get innerMargin() { return this._innerMargin; }
+    get columnCount() { return this._columnCount; }
+    get columnWidth() { return this._columnWidth; }
 };
 customElements.define('x-guide', ActaGuide);
 
@@ -134,10 +141,10 @@ export class ActaGuideColumn extends ActaElement {
         return ['width'];
     }
 
-    private _applyWidth(width: string | number | null) {
-        if (width !== null && parseFloat(width.toString())) {
-            this.style.maxWidth = width.toString();
-            this.style.minWidth = width.toString();
+    private _applyWidth(width: number) {
+        if (width) {
+            this.style.maxWidth = width + 'px';
+            this.style.minWidth = width + 'px';
         } else {
             this.style.maxWidth = '';
             this.style.minWidth = '';
@@ -151,12 +158,12 @@ export class ActaGuideColumn extends ActaElement {
     }
 
     connectedCallback() {
-        this._applyWidth(this.getAttribute('width'));
+        this._applyWidth(U.px(this.getAttribute('width')));
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (oldValue === newValue) return;
-        this._applyWidth(newValue);
+        this._applyWidth(U.px(newValue));
     }
 
     set width(width: string | number | null) {
@@ -168,7 +175,7 @@ export class ActaGuideColumn extends ActaElement {
     }
 
     get width() {
-        return this.style.width;
+        return U.px(this.style.width);
     }
 };
 customElements.define('x-guide-col', ActaGuideColumn);
