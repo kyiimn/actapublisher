@@ -153,7 +153,7 @@ export class ActaTextNode {
             this.defaultTextStyle = null;
             return;
         }
-        this.defaultTextStyle = ActaTextStyleManager.getInstance().get(styleName);
+        this.defaultTextStyle = ActaTextStyleManager.in.get(styleName);
     }
 
     set customTextStyle(style: ActaTextStyleInherit) {

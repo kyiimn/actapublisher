@@ -99,8 +99,7 @@ class ActaTextStylePrivate {
     }
 
     set fontName(fontName: string) {
-        const fontmgr = ActaFontManager.getInstance();
-        const font = fontmgr.get(fontName);
+        const font = ActaFontManager.in.get(fontName);
         if (!font) return;
         if (this._font !== font) {
             this._font = font;

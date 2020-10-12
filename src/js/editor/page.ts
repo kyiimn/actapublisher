@@ -1,5 +1,5 @@
 import { ActaGuide } from './guide';
-import { ActaElement } from './element/instance';
+import { ActaElement } from './element';
 import { Subject } from 'rxjs';
 import U from './units';
 
@@ -11,15 +11,15 @@ export class ActaPage extends ActaElement {
         return ['width', 'height', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'];
     }
 
-    private _applyAttribute(name: string, value: string | number) {
-        if (typeof(value) === 'string') value = U.px(value);
+    private _applyAttribute(name: string, value: string | null) {
+        const num = U.px(value);
         switch (name) {
-            case 'width': this.style.width = !isNaN(value) ? (value + 'px') : ''; break;
-            case 'height': this.style.height = !isNaN(value) ? (value + 'px') : ''; break;
-            case 'padding-top': this.style.paddingTop = !isNaN(value) ? (value + 'px') : ''; break;
-            case 'padding-bottom': this.style.paddingBottom = !isNaN(value) ? (value + 'px') : ''; break;
-            case 'padding-left': this.style.paddingLeft = !isNaN(value) ? (value + 'px') : ''; break;
-            case 'padding-right': this.style.paddingRight = !isNaN(value) ? (value + 'px') : ''; break;
+            case 'width': this.style.width = !isNaN(num) ? (num + 'px') : ''; break;
+            case 'height': this.style.height = !isNaN(num) ? (num + 'px') : ''; break;
+            case 'padding-top': this.style.paddingTop = !isNaN(num) ? (num + 'px') : ''; break;
+            case 'padding-bottom': this.style.paddingBottom = !isNaN(num) ? (num + 'px') : ''; break;
+            case 'padding-left': this.style.paddingLeft = !isNaN(num) ? (num + 'px') : ''; break;
+            case 'padding-right': this.style.paddingRight = !isNaN(num) ? (num + 'px') : ''; break;
             default: break;
         }
     }
@@ -43,8 +43,8 @@ export class ActaPage extends ActaElement {
                 }
             });
         });
-        if (!isNaN(U.px(width))) this.setAttribute('width', U.px(width) + 'px');
-        if (!isNaN(U.px(height))) this.setAttribute('height', U.px(height) + 'px');
+        if (width !== undefined) this.setAttribute('width', width.toString());
+        if (height !== undefined) this.setAttribute('height', height.toString());
     }
 
     connectedCallback() {
@@ -54,49 +54,25 @@ export class ActaPage extends ActaElement {
         this._mutation$.observe(this, { childList: true });
     }
 
-    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
         if (oldValue === newValue) return;
 
-        this._applyAttribute(name, U.px(newValue));
+        this._applyAttribute(name, newValue);
         this._changeStyle$.next(name);
     }
 
-    set width(width: string | number) {
-        this.setAttribute('width', U.px(width) + 'px');
-    }
+    set width(width: string | number) { this.setAttribute('width', width.toString()); }
+    set height(height: string | number) { this.setAttribute('height', height.toString()); }
+    set paddingTop(padding: string | number) { this.setAttribute('padding-top', padding.toString()); }
+    set paddingBottom(padding: string | number) { this.setAttribute('padding-bottom', padding.toString()); }
+    set paddingLeft(padding: string | number) { this.setAttribute('padding-left', padding.toString()); }
+    set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
 
-    set height(height: string | number) {
-        this.setAttribute('height', U.px(height) + 'px');
-    }
-
-    set padding(padding: string | number) {
-        this.setAttribute('padding-top', U.px(padding) + 'px');
-        this.setAttribute('padding-bottom', U.px(padding) + 'px');
-        this.setAttribute('padding-left', U.px(padding) + 'px');
-        this.setAttribute('padding-right', U.px(padding) + 'px');
-    }
-
-    set paddingTop(padding: string | number) {
-        this.setAttribute('padding-top', U.px(padding) + 'px');
-    }
-
-    set paddingBottom(padding: string | number) {
-        this.setAttribute('padding-bottom', U.px(padding) + 'px');
-    }
-
-    set paddingLeft(padding: string | number) {
-        this.setAttribute('padding-left', U.px(padding) + 'px');
-    }
-
-    set paddingRight(padding: string | number) {
-        this.setAttribute('padding-right', U.px(padding) + 'px');
-    }
-
-    get width() { return this.style.width; }
-    get height() { return this.style.height; }
-    get paddingTop() { return this.style.paddingTop; }
-    get paddingBottom() { return this.style.paddingBottom; }
-    get paddingLeft() { return this.style.paddingLeft; }
-    get paddingRight() { return this.style.paddingRight; }
+    get width() { return this.getAttribute('width') || ''; }
+    get height() { return this.getAttribute('height') || ''; }
+    get paddingTop() { return this.getAttribute('padding-top') || ''; }
+    get paddingBottom() { return this.getAttribute('padding-bottom') || ''; }
+    get paddingLeft() { return this.getAttribute('padding-left') || ''; }
+    get paddingRight() { return this.getAttribute('padding-right') || ''; }
 };
 customElements.define('x-page', ActaPage);

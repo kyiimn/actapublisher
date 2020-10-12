@@ -1,7 +1,6 @@
-import { ActaElementInstance } from './element/instance';
-import { ActaParagraphElement } from './element/paragraph-el';
-import { ActaParagraphColumnElement } from './element/paragraph-col-el';
-import { ActaParagraphMarginElement } from './element/paragraph-margin-el';
+import { ActaGalleyChild } from './galley';
+import { ActaParagraphColumn } from './paragraph-col';
+import { ActaParagraphMargin } from './paragraph-margin';
 import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextStore } from './textstore';
 import { ActaTextNode } from './textnode';
@@ -13,8 +12,8 @@ import { ActaTextChar, TextCharType } from './textchar';
 import { Subject, fromEvent } from 'rxjs';
 import { distinctUntilChanged, filter } from 'rxjs/operators';
 
-import selectHanja from './hanja';
 import Hangul from 'hangul-js';
+import SelectHanja from './hanja';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
     'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
@@ -87,16 +86,7 @@ enum InputMethod {
     EN, KO
 };
 
-interface CursorState {
-    cursorMode: CursorMode;
-    cursorIndex: number | null;
-    cursorCharID: string | null;
-    selectionStartIndex: number | null;
-    selectionStartCharID: string | null;
-}
-
-export class ActaParagraph extends ActaElementInstance {
-    private _element: ActaParagraphElement;
+export class ActaParagraph extends ActaGalleyChild {
     private _columnCount: number;
     private _innerMargin: string | number;
     private _textStore: ActaTextStore | null;
@@ -133,17 +123,6 @@ export class ActaParagraph extends ActaElementInstance {
         if (KEYCODE_CHAR_MAP[e.key]) return CharType.TEXT;
         else if (KEYCODE_SPECIALCHAR_MAP[e.key]) return CharType.SPECIAL;
         return CharType.NONE;
-    }
-
-    private _initElement() {
-        this._element.innerHTML = '';
-    }
-
-    private set focuslock(val: boolean) { this._focuslock = val; }
-    private get focuslock() { return this._focuslock; }
-
-    private get textChars() {
-        return this._textStore ? this._textStore.toArray() : [];
     }
 
     private _updateInputMethodChar() {
@@ -326,7 +305,7 @@ export class ActaParagraph extends ActaElementInstance {
                 this.focuslock = true;
 
                 const textCharPos = this._getClientPosition(textChar);
-                selectHanja(textChar, textCharPos.x, textCharPos.y + textCharPos.height).subscribe({
+                SelectHanja(textChar, textCharPos.x, textCharPos.y + textCharPos.height).subscribe({
                     next: data => {
                         const textNode = data.textChar.textNode;
                         if (data.hanjaChar) {
@@ -335,7 +314,7 @@ export class ActaParagraph extends ActaElementInstance {
                         }
                     },
                     complete: () => {
-                        this.el.focus({ preventScroll: true });
+                        this.focus({ preventScroll: true });
                         this.focuslock = false;
 
                         this._cursorMode = CursorMode.EDIT;
@@ -432,7 +411,7 @@ export class ActaParagraph extends ActaElementInstance {
     }
 
     private _applyDefinedTextStyle(textChars: ActaTextChar[], textStyleName: string) {
-        if (!ActaTextStyleManager.getInstance().get(textStyleName)) return;
+        if (!ActaTextStyleManager.in.get(textStyleName)) return;
         const textNodes = this._getTextCharBlocks(textChars);
         for (const textNode of textNodes) {
             textNode.defaultTextStyleName = textStyleName;
@@ -450,15 +429,6 @@ export class ActaParagraph extends ActaElementInstance {
     private _removeTextChars(textChars: ActaTextChar[]) {
         for (const textChar of textChars) textChar.remove();
         this._emitUpdate();
-    }
-
-    private get columns() {
-        const nodeList = this._element.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col');
-        const ret = [];
-        for (let i = 0; i < nodeList.length; i++) {
-            ret.push(nodeList.item(i));
-        }
-        return ret
     }
 
     private _getNearestVisableTextChar(textChar: ActaTextChar | null) {
@@ -570,12 +540,8 @@ export class ActaParagraph extends ActaElementInstance {
         return textChars;
     }
 
-    private get lastTextChar() {
-        return this.textChars.length > 0 ? this.textChars[this.textChars.length - 1] : null;
-    }
-
     private _removeCursor() {
-        for (const svg of this._element.svg) {
+        for (const svg of this.svg) {
             for (const cursor of svg.querySelectorAll('.cursor')) {
                 svg.removeChild(cursor);
             }
@@ -587,7 +553,7 @@ export class ActaParagraph extends ActaElementInstance {
         if (this._cursor === null) return;
 
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this._cursor !== this._selectionStart) {
-            let currColumn: ActaParagraphColumnElement | undefined;
+            let currColumn: ActaParagraphColumn | undefined;
             let currLine = -1, startx = 0;
             let selBlock;
 
@@ -646,7 +612,7 @@ export class ActaParagraph extends ActaElementInstance {
 
             column.svg.appendChild(selBlock);
         } else {
-            let currColumn: ActaParagraphColumnElement | undefined;
+            let currColumn: ActaParagraphColumn | undefined;
             let textChar: ActaTextChar | null;
             let textRow: ActaTextRow | null;
             let x, y, height;
@@ -712,7 +678,7 @@ export class ActaParagraph extends ActaElementInstance {
         }
     }
 
-    private _getPositionTextChar(column: ActaParagraphColumnElement, x: number, y: number) {
+    private _getPositionTextChar(column: ActaParagraphColumn, x: number, y: number) {
         let textChar: ActaTextChar | undefined;
 
         for (const fTextChar of this.textChars) {
@@ -748,7 +714,7 @@ export class ActaParagraph extends ActaElementInstance {
         return textChar;
     }
 
-    private _getPositionTextChars(column: ActaParagraphColumnElement, x: number, y: number, width: number = 1, height: number = 1) {
+    private _getPositionTextChars(column: ActaParagraphColumn, x: number, y: number, width: number = 1, height: number = 1) {
         const textChars: ActaTextChar[] = [];
         const x2 = x + width;
         const y2 = y + height;
@@ -885,7 +851,7 @@ export class ActaParagraph extends ActaElementInstance {
             if (this.lastTextChar.type === TextCharType.NEWLINE) lastCharIsNewline = true;
         }
         if (this.textChars.length < 1 || lastCharIsNewline) {
-            let column: ActaParagraphColumnElement | undefined;
+            let column: ActaParagraphColumn | undefined;
             let textStyle: ActaTextStyle | undefined;
             let indexOfColumn = 0;
             if (lastCharIsNewline && this.lastTextChar !== null) {
@@ -934,9 +900,9 @@ export class ActaParagraph extends ActaElementInstance {
             }
         }
         if (this._overflow) {
-            this._element.classList.add('overflow');
+            this.classList.add('overflow');
         } else {
-            this._element.classList.remove('overflow');
+            this.classList.remove('overflow');
         }
     }
 
@@ -973,11 +939,34 @@ export class ActaParagraph extends ActaElementInstance {
         this._redrawCursor$.next(JSON.stringify(state));
     }
 
+    private set focuslock(val: boolean) { this._focuslock = val; }
+    private get focuslock() { return this._focuslock; }
+
+    private get columns() {
+        const nodeList = this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col');
+        const ret = [];
+        for (let i = 0; i < nodeList.length; i++) {
+            ret.push(nodeList.item(i));
+        }
+        return ret
+    }
+
+    private get lastTextChar() {
+        return this.textChars.length > 0 ? this.textChars[this.textChars.length - 1] : null;
+    }
+
+    private get textChars() {
+        return this._textStore ? this._textStore.toArray() : [];
+    }
+
+    private get svg(): SVGElement[] {
+        const svg = [];
+        for (const col of this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col')) svg.push(col.svg);
+        return svg;
+    }
+
     constructor(defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []) {
         super();
-
-        this._element = document.createElement('x-paragraph') as ActaParagraphElement;
-        this._element.instance = this;
 
         this._redrawCursor$ = new Subject();
         this._redrawCursor$.pipe(distinctUntilChanged()).subscribe(() => this._redrawCursor());
@@ -1006,20 +995,20 @@ export class ActaParagraph extends ActaElementInstance {
 
         this.text = '';
 
-        this.el.onresize = (e: Event) => {
+        this._resize$.subscribe((e: Event) => {
             this._emitUpdate();
             this._emitRedrawCursor();
-        };
-        fromEvent<KeyboardEvent>(this.el, 'keydown').subscribe(e => {
+        });
+        fromEvent<KeyboardEvent>(this, 'keydown').subscribe(e => {
             if (this._onKeyPress(e) !== false) return;
             e.preventDefault();
             e.stopPropagation();
         });
 
         let waitTripleClickTimer: boolean = false;
-        fromEvent<MouseEvent>(this.el, 'mousedown').pipe(filter(e => {
+        fromEvent<MouseEvent>(this, 'mousedown').pipe(filter(e => {
             if (!this._editable) return false;
-            if (!(e.target instanceof ActaParagraphColumnElement)) return false;
+            if (!(e.target instanceof ActaParagraphColumn)) return false;
             return true;
         })).subscribe(e => {
             if ((e && e.detail === 2) || waitTripleClickTimer) {
@@ -1032,7 +1021,7 @@ export class ActaParagraph extends ActaElementInstance {
                     setTimeout(() => { waitTripleClickTimer = false; }, 200);
                     breakType = [TextCharType.NEWLINE, TextCharType.SPACE];
                 }
-                const evtTextChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
+                const evtTextChar = this._getPositionTextChar(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
                 if (!evtTextChar || evtTextChar.type !== TextCharType.CHAR) return;
 
                 const textChars = this.textChars;
@@ -1047,26 +1036,26 @@ export class ActaParagraph extends ActaElementInstance {
                 this._cursorMode = CursorMode.SELECTION;
                 this._emitRedrawCursor();
             } else {
-                const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
+                const textChar = this._getPositionTextChar(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
                 this._cursorMode = CursorMode.SELECTIONSTART;
                 this._cursor = null;
                 this._selectionStart = this._setCursor(textChar, e.offsetX);
                 this._emitRedrawCursor();
             }
-            this.el.focus({ preventScroll: true });
+            this.focus({ preventScroll: true });
 
             e.preventDefault();
             e.stopPropagation();
         });
 
-        fromEvent<MouseEvent>(this.el, 'mousemove').pipe(filter(e => {
+        fromEvent<MouseEvent>(this, 'mousemove').pipe(filter(e => {
             if (!this._editable) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
-            if (!(e.target instanceof ActaParagraphColumnElement)) return false;
+            if (!(e.target instanceof ActaParagraphColumn)) return false;
             if (e.buttons !== 1) return false;
             return true;
         })).subscribe(e => {
-            const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
+            const textChar = this._getPositionTextChar(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
                 this._emitRedrawCursor();
@@ -1075,13 +1064,13 @@ export class ActaParagraph extends ActaElementInstance {
             e.stopPropagation();
         });
 
-        fromEvent<MouseEvent>(this.el, 'mouseup').pipe(filter(e => {
+        fromEvent<MouseEvent>(this, 'mouseup').pipe(filter(e => {
             if (!this._editable) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
-            if (!(e.target instanceof ActaParagraphColumnElement)) return false;
+            if (!(e.target instanceof ActaParagraphColumn)) return false;
             return true;
         })).subscribe(e => {
-            const textChar = this._getPositionTextChar(e.target as ActaParagraphColumnElement, e.offsetX, e.offsetY);
+            const textChar = this._getPositionTextChar(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
                 this._emitRedrawCursor();
@@ -1098,14 +1087,14 @@ export class ActaParagraph extends ActaElementInstance {
             e.stopPropagation();
         });
 
-        fromEvent(this.el, 'focus').pipe(filter(_ => !this.focuslock)).subscribe(e => {
-            this._element.classList.add('focus');
+        fromEvent(this, 'focus').pipe(filter(_ => !this.focuslock)).subscribe(e => {
+            this.classList.add('focus');
             this._emitRedrawCursor();
             e.preventDefault();
             e.stopPropagation();
         });
-        fromEvent(this.el, 'blur').pipe(filter(_ => !this.focuslock)).subscribe(e => {
-            this._element.classList.remove('focus');
+        fromEvent(this, 'blur').pipe(filter(_ => !this.focuslock)).subscribe(e => {
+            this.classList.remove('focus');
             this._selectionStart = null;
             this._removeCursor();
             e.preventDefault();
@@ -1116,7 +1105,7 @@ export class ActaParagraph extends ActaElementInstance {
     columnWidth(idx: number, val: string | number) {
         if (arguments.length > 1) {
             this.columns[idx].setAttribute('width', (val || 0).toString());
-            this.el.emitResize();
+            this._emitResize();
         } else {
             return this.columns[idx].getAttribute('width') || false;
         }
@@ -1174,29 +1163,28 @@ export class ActaParagraph extends ActaElementInstance {
     }
 
     set columnCount(count) {
-        this._initElement();
-
+        this.innerHTML = '';
         this._columnCount = count || 1;
         for (let i = 0; i < this._columnCount; i++) {
-            const column = document.createElement('x-paragraph-col') as ActaParagraphColumnElement;
-            this._element.appendChild(column);
+            const column = new ActaParagraphColumn();
+            this.appendChild(column);
             column.textRows = [];
 
             if (i + 1 >= this._columnCount) continue;
 
-            const margin = document.createElement('x-paragraph-margin') as ActaParagraphMarginElement;
+            const margin = new ActaParagraphMargin();
             margin.setAttribute('width', this.innerMargin.toString());
-            this._element.appendChild(margin);
+            this.appendChild(margin);
         }
-        this.el.emitResize();
+        this._emitResize();
     }
 
     set innerMargin(innerMargin) {
         this._innerMargin = innerMargin;
-        for (const margin of this.el.querySelectorAll('x-paragraph-margin')) {
+        for (const margin of this.querySelectorAll('x-paragraph-margin')) {
             margin.setAttribute('width', innerMargin.toString());
         }
-        this.el.emitResize();
+        this._emitResize();
     }
     set defaultTextStyleName(styleName: string) {
         this._defaultTextStyleName = styleName;
@@ -1208,8 +1196,7 @@ export class ActaParagraph extends ActaElementInstance {
     get innerMargin() { return this._innerMargin; }
     get text() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
-    get defaultTextStyle() { return ActaTextStyleManager.getInstance().get(this.defaultTextStyleName); }
+    get defaultTextStyle() { return ActaTextStyleManager.in.get(this.defaultTextStyleName); }
     get editable() { return this._editable; }
-
-    get el() { return this._element; }
 };
+customElements.define('x-paragraph', ActaParagraph);

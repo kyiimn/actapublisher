@@ -1,5 +1,5 @@
-import { ActaGalley, ActaGalleyChildElement } from '../galley';
-import { ActaParagraphColumnElement } from './paragraph-col-el';
+/*import { ActaGalley, ActaGalleyChildElement } from '../galley';
+import { ActaParagraphColumn } from '../paragraph-col';
 import { ActaElementInstance } from './instance';
 import { Subject, fromEvent } from 'rxjs';
 
@@ -58,7 +58,7 @@ export class ActaParagraphElement extends ActaGalleyChildElement {
     }
 
     get svg(): SVGElement[] {
-        const columns = this.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col');
+        const columns = this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col');
         const ret: SVGElement[] = [];
         for (let i = 0; i < columns.length; i++) {
             ret.push(columns.item(i).svg);
@@ -68,4 +68,4 @@ export class ActaParagraphElement extends ActaGalleyChildElement {
 
     set instance(instance: ActaElementInstance) { if (!this._instance && instance) this._instance = instance; }
     get innstance() { return this._instance; }
-};
+};*/

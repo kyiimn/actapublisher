@@ -1,64 +1,51 @@
-import { ActaElement } from "./element/instance";
+import { ActaElement } from "./element";
 import { Subject, Subscription } from 'rxjs';
 import U from './units';
 
 export class ActaGuide extends ActaElement {
     private _parentChangeStyle$?: Subscription;
-    private _columnCount: number;
-    private _columnWidth: string[] | number[];
-    private _innerMargin: string | number;
 
     static get observedAttributes() {
-        return ['direction', 'column', 'innermargin', 'column-width'];
+        return ['direction', 'column-count', 'column-width', 'innermargin'];
     }
 
     private _applyAttribute(name: string, value: string) {
         switch (name) {
             case 'direction': this.style.direction = value; break;
-            case 'column': this._applyColumnCount(parseInt(value, 10)); break;
-            case 'innermargin': this._applyInnerMargin(value); break;
-            case 'column-width': this._applyColumnWidth(value.split(' ')); break;
+            case 'column-count': this._applyColumnCount(parseInt(value, 10)); break;
+            case 'column-width': this._applyColumnWidth(); break;
+            case 'innermargin': this._applyInnerMargin(); break;
             default: break;
         }
     }
 
-    private _updateColumnWidth() {
-        const columns = this.querySelectorAll<ActaGuideColumn>('x-guide-col');
-        for (let i = 0; i < columns.length; i++) {
-            columns.item(i).width = this._columnWidth[i] || null;
-        }
-    }
-
-    private _updateInnerMargin() {
-        for (const margin of this.querySelectorAll('x-guide-margin')) {
-            margin.setAttribute('width', U.px(this._innerMargin) + 'px');
-        }
-    }
-
     private _applyColumnCount(count: number) {
-        this._columnCount = count || 1;
         this.innerHTML = '';
-        for (let i = 0; i < this._columnCount; i++) {
+        for (let i = 0; i < count; i++) {
             this.appendChild(document.createElement('x-guide-col'));
 
-            if (i + 1 >= this._columnCount) continue;
+            if (i + 1 >= count) continue;
             this.appendChild(document.createElement('x-guide-margin'));
         }
-        this._updateColumnWidth();
-        this._updateInnerMargin();
+        this._applyColumnWidth();
+        this._applyInnerMargin();
     }
 
-    private _applyInnerMargin(innerMargin: string | number) {
-        this._innerMargin = U.px(innerMargin) || 0;
-        this._updateInnerMargin();
-    }
-
-    private _applyColumnWidth(widths: string[] | number[]) {
-        this._columnWidth = [];
-        for (let i = 0; i < this._columnCount; i++) {
-            this._columnWidth[i] = U.px(widths[i]) || 0;
+    private _applyColumnWidth() {
+        const widths = this.columnWidth;
+        const columns = this.querySelectorAll('x-guide-col');
+        for (let i = 0; i < columns.length; i++) {
+            const width = U.px(widths[i]);
+            if (!isNaN(width)) columns.item(i).setAttribute('width', width + 'px');
+            else columns.item(i).removeAttribute('width');
         }
-        this._updateColumnWidth();
+    }
+
+    private _applyInnerMargin() {
+        const innerMargin = U.px(this.innerMargin);
+        for (const margin of this.querySelectorAll('x-guide-margin')) {
+            margin.setAttribute('width', innerMargin + 'px');
+        }
     }
 
     private _updateSize() {
@@ -84,21 +71,14 @@ export class ActaGuide extends ActaElement {
     constructor(columnCount: number = 1, innerMargin: string | number = 0, columnWidth: string[] | number[] = []) {
         super();
 
-        this._columnCount = columnCount;
-        this._columnWidth = columnWidth;
-        this._innerMargin = innerMargin;
+        this.columnCount = columnCount;
+        this.innerMargin = innerMargin;
+        if (columnWidth.length > 0) this.columnWidth = columnWidth;
     }
 
     connectedCallback() {
         for (const attr of ActaGuide.observedAttributes) {
-            let val = this.getAttribute(attr) || '';
-            switch (attr) {
-                case 'column': val = this._columnCount.toString(); break;
-                case 'column-width': val = this._columnWidth.join(' '); break;
-                case 'innermargin': val = this._innerMargin.toString(); break;
-                default: break;
-            }
-            this._applyAttribute(attr, val);
+            this._applyAttribute(attr, this.getAttribute(attr) || '');
         }
     }
 
@@ -117,21 +97,13 @@ export class ActaGuide extends ActaElement {
         this._parentChangeStyle$ = undefined;
     }
 
-    set columnWidth(widths: string[] | number[]) {
-        this.setAttribute('column-width', widths.join(' '));
-    }
+    set columnCount(count: number) { this.setAttribute('column-count', Math.max(count, 1).toString()); }
+    set columnWidth(widths: string[] | number[]) { this.setAttribute('column-width', widths.join(' ')); }
+    set innerMargin(innerMargin: string | number) { this.setAttribute('innermargin', innerMargin.toString()); }
 
-    set columnCount(count: number) {
-        this.setAttribute('column', count.toString());
-    }
-
-    set innerMargin(innerMargin: string | number) {
-        this.setAttribute('innermargin', innerMargin.toString());
-    }
-
-    get innerMargin() { return this._innerMargin; }
-    get columnCount() { return this._columnCount; }
-    get columnWidth() { return this._columnWidth; }
+    get columnCount() { return parseInt(this.getAttribute('column-count') || '1', 10); }
+    get columnWidth() { return (this.getAttribute('column-width') || '').split(' '); }
+    get innerMargin() { return this.getAttribute('innermargin') || ''; }
 };
 customElements.define('x-guide', ActaGuide);
 
@@ -141,10 +113,11 @@ export class ActaGuideColumn extends ActaElement {
         return ['width'];
     }
 
-    private _applyWidth(width: number) {
-        if (width) {
-            this.style.maxWidth = width + 'px';
-            this.style.minWidth = width + 'px';
+    private _applyWidth(width: string) {
+        const num = U.px(width);
+        if (!isNaN(num)) {
+            this.style.maxWidth = num + 'px';
+            this.style.minWidth = num + 'px';
         } else {
             this.style.maxWidth = '';
             this.style.minWidth = '';
@@ -158,12 +131,12 @@ export class ActaGuideColumn extends ActaElement {
     }
 
     connectedCallback() {
-        this._applyWidth(U.px(this.getAttribute('width')));
+        this._applyWidth(this.getAttribute('width') || '');
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (oldValue === newValue) return;
-        this._applyWidth(U.px(newValue));
+        this._applyWidth(newValue);
     }
 
     set width(width: string | number | null) {
@@ -175,7 +148,7 @@ export class ActaGuideColumn extends ActaElement {
     }
 
     get width() {
-        return U.px(this.style.width);
+        return this.getAttribute('width') || '';
     }
 };
 customElements.define('x-guide-col', ActaGuideColumn);

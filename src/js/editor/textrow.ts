@@ -1,4 +1,4 @@
-import { ActaParagraphColumnElement } from './element/paragraph-col-el';
+import { ActaParagraphColumn } from './paragraph-col';
 import { ActaTextChar } from './textchar';
 import { TextAlign } from './textstyle';
 
@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export class ActaTextRow {
     private _id: string;
-    private _column: ActaParagraphColumnElement;
+    private _column: ActaParagraphColumn;
     private _indexOfColumn: number;
     private _indexOfLine: number;
     private _limitWidth: number;
@@ -17,7 +17,7 @@ export class ActaTextRow {
     private _items: ActaTextChar[];
     private _offsetY: number;
 
-    constructor(column: ActaParagraphColumnElement, indent: number = 0) {
+    constructor(column: ActaParagraphColumn, indent: number = 0) {
         this._id = uuidv4();
         this._column = column;
         this._indexOfColumn = -1;
@@ -34,7 +34,7 @@ export class ActaTextRow {
         this.column = column;
     }
 
-    set column(column: ActaParagraphColumnElement) {
+    set column(column: ActaParagraphColumn) {
         this._indexOfColumn = -1;
         this._indexOfLine = -1;
         this._limitWidth = -1;
@@ -42,7 +42,7 @@ export class ActaTextRow {
         const para = column.parentElement;
         if (!para) return;
 
-        const columns = para.querySelectorAll<ActaParagraphColumnElement>('x-paragraph-col');
+        const columns = para.querySelectorAll<ActaParagraphColumn>('x-paragraph-col');
         const svgRect = column.svg.getBoundingClientRect();
         this._indexOfColumn = Array.prototype.slice.call(columns).indexOf(column);
         this._indexOfLine = column.textRows.length;

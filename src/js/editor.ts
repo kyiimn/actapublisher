@@ -6,31 +6,33 @@ import { ActaFontManager } from './editor/fontmgr';
 import { ActaTextStyleManager } from './editor/textstylemgr';
 import { ActaTextStyle, TextAlign } from './editor/textstyle';
 
-import './editor/element';
 import '../css/element.scss';
 
 const main = async () => {
-    await ActaFontManager.getInstance().add('fonts/jabml.ttf');
-    await ActaFontManager.getInstance().add('fonts/jahgl.ttf');
+    await ActaFontManager.in.add('fonts/jabml.ttf');
+    await ActaFontManager.in.add('fonts/jahgl.ttf');
 
     let s;
     s = new ActaTextStyle('중앙신문명조');
     s.fontSize = 12;
-    ActaTextStyleManager.getInstance().add('본문1', s);
+    ActaTextStyleManager.in.add('본문1', s);
 
     s = new ActaTextStyle('중앙세고딕');
     s.fontSize = 12;
     s.letterSpacing = 1;
     s.color = '#ff0000';
-    ActaTextStyleManager.getInstance().add('본문2', s);
+    ActaTextStyleManager.in.add('본문2', s);
 
     s = new ActaTextStyle('중앙신문명조');
     s.fontSize = 12;
     s.indent = 8;
-    ActaTextStyleManager.getInstance().add('본문3', s);
+    ActaTextStyleManager.in.add('본문3', s);
 
     const page = new ActaPage('25cm', '30cm');
-    page.padding = '0.5cm';
+    page.paddingTop = '0.5cm';
+    page.paddingBottom = '0.5cm';
+    page.paddingLeft = '0.5cm';
+    page.paddingRight = '0.5cm';
     document.body.appendChild(page);
 
     const guide = new ActaGuide(5, '2mm');
@@ -39,8 +41,7 @@ const main = async () => {
     page.appendChild(guide);
     page.appendChild(galley);
 
-    galley.appendChild(para.el);
-    galley.padding = '0mm';
+    galley.appendChild(para);
 
     const submitButton = document.querySelector('button#submit');
     const textarea = document.querySelector('textarea');

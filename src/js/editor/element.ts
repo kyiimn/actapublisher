@@ -1,7 +1,11 @@
-import { ActaParagraphElement } from './element/paragraph-el';
-import { ActaParagraphColumnElement } from './element/paragraph-col-el';
-import { ActaParagraphMarginElement } from './element/paragraph-margin-el';
+import { v4 as uuidv4 } from 'uuid';
 
-customElements.define('x-paragraph-col', ActaParagraphColumnElement);
-customElements.define('x-paragraph', ActaParagraphElement);
-customElements.define('x-paragraph-margin', ActaParagraphMarginElement);
+export class ActaElement extends HTMLElement {
+    protected _id: string;
+
+    constructor() {
+        super();
+        this._id = uuidv4();
+    }
+    get id() { return this._id; }
+}
