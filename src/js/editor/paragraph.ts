@@ -1,4 +1,4 @@
-import { ActaGalleyChild } from './galley';
+import { ActaGalley, ActaGalleyChild } from './galley';
 import { ActaParagraphColumn } from './paragraph-col';
 import { ActaParagraphMargin } from './paragraph-margin';
 import { ActaTextStyleManager } from './textstylemgr';
@@ -1153,6 +1153,10 @@ export class ActaParagraph extends ActaGalleyChild {
             if (returnTextStyle.color !== textStyle.color) returnTextStyle.color = null;
         }
         return returnTextStyle;
+    }
+
+    collision() {
+        console.log('collision');
     }
 
     set text(text: string) {

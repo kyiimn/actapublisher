@@ -36,12 +36,21 @@ const main = async () => {
     document.body.appendChild(page);
 
     const guide = new ActaGuide(5, '2mm');
+    page.appendChild(guide);
+
     const galley = new ActaGalley('5mm', '5mm', '143.25mm', '142mm');
     const para = new ActaParagraph('본문3', 3, '2mm')
-    page.appendChild(guide);
+    galley.appendChild(para);
+
     page.appendChild(galley);
 
-    galley.appendChild(para);
+
+    const galley2 = new ActaGalley('130mm', '130mm', '143.25mm', '142mm');
+    const para2 = new ActaParagraph('본문3', 3, '2mm')
+    galley2.appendChild(para2);
+
+    page.appendChild(galley2);
+
 
     const submitButton = document.querySelector('button#submit');
     const textarea = document.querySelector('textarea');

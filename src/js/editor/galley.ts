@@ -4,7 +4,10 @@ import U from './units';
 
 export class ActaGalley extends ActaElement {
     private _changeSize$: Subject<undefined>;
+    private _collision$: Subject<ActaGalley>;
     private _mutation$: MutationObserver;
+
+    private _collisionList: ActaGalley[];
 
     static get observedAttributes() {
         return [
@@ -78,22 +81,28 @@ export class ActaGalley extends ActaElement {
     constructor(x?: string | number, y?: string | number, width?: string | number, height?: string | number) {
         super();
 
+        this._collisionList = [];
         this._changeSize$ = new Subject();
+        this._collision$ = new Subject();
         this._mutation$ = new MutationObserver(mutations => {
             mutations.forEach(m => {
                 if (m.type !== 'childList') return;
                 for (let i = 0; i < m.removedNodes.length; i++) {
                     if (!(m.removedNodes.item(i) instanceof ActaGalleyChild)) continue;
                     const node = m.removedNodes.item(i) as ActaGalleyChild;
-                    node.unobserve();
+                    node.unsubscribeCollision();
+                    node.unsubscribeChangeSize();
                 }
                 for (let i = 0; i < m.addedNodes.length; i++) {
                     if (!(m.addedNodes.item(i) instanceof ActaGalleyChild)) continue;
                     const node = m.addedNodes.item(i) as ActaGalleyChild;
-                    node.observe(this._changeSize$);
+                    node.subscribeCollision(this._collision$);
+                    node.subscribeChangeSize(this._changeSize$);
                 }
             });
         });
+        this._mutation$.observe(this, { childList: true });
+
         if (x !== undefined) this.setAttribute('x', x.toString());
         if (y !== undefined) this.setAttribute('y', y.toString());
         if (width !== undefined) this.setAttribute('width', width.toString());
@@ -113,8 +122,6 @@ export class ActaGalley extends ActaElement {
         this._applyPaddingBottom();
         this._applyPaddingLeft();
         this._applyPaddingRight();
-
-        this._mutation$.observe(this, { childList: true });
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -158,6 +165,7 @@ export class ActaGalley extends ActaElement {
     set paddingBottom(padding: string | number) { this.setAttribute('padding-bottom', padding.toString()); }
     set paddingLeft(padding: string | number) { this.setAttribute('padding-left', padding.toString()); }
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
+    set collisionList(list: ActaGalley[]) { this._collisionList = list; }
 
     get x() { return this.getAttribute('x') || '0'; }
     get y() { return this.getAttribute('y') || '0'; }
@@ -171,13 +179,16 @@ export class ActaGalley extends ActaElement {
     get paddingBottom() { return this.getAttribute('padding-bottom') || '0'; }
     get paddingLeft() { return this.getAttribute('padding-left') || '0'; }
     get paddingRight() { return this.getAttribute('padding-right') || '0'; }
+    get collisionList() { return this._collisionList; }
+    get collisionObservable() { return this._collision$; }
 };
 customElements.define('x-galley', ActaGalley);
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaGalleyChild extends ActaElement {
+export abstract class ActaGalleyChild extends ActaElement {
+    private _subscriptionChangeSize$?: Subscription;
+    private _subscriptionCollision$?: Subscription;
     protected _resize$: Subject<Event>;
-    private _parentChangeSize$?: Subscription;
 
     static get observedAttributes() {
         return ['direction'];
@@ -213,14 +224,24 @@ export class ActaGalleyChild extends ActaElement {
         fromEvent(this, 'resize').subscribe(e => this._resize$);
     }
 
-    observe(observer: Subject<undefined>) {
-        this._parentChangeSize$ = observer.subscribe(_ => this._changeSize());
+    subscribeChangeSize(observable: Subject<undefined>) {
+        this._subscriptionChangeSize$ = observable.subscribe(_ => this._changeSize());
         this._changeSize();
     }
 
-    unobserve() {
-        if (this._parentChangeSize$) this._parentChangeSize$.unsubscribe();
-        this._parentChangeSize$ = undefined;
+    unsubscribeChangeSize() {
+        if (this._subscriptionChangeSize$) this._subscriptionChangeSize$.unsubscribe();
+        this._subscriptionChangeSize$ = undefined;
+    }
+
+    subscribeCollision(observable: Subject<ActaGalley>) {
+        this._subscriptionCollision$ = observable.subscribe(_ => this.collision());
+        this.collision();
+    }
+
+    unsubscribeCollision() {
+        if (this._subscriptionCollision$) this._subscriptionCollision$.unsubscribe();
+        this._subscriptionCollision$ = undefined;
     }
 
     connectedCallback() {
@@ -234,4 +255,13 @@ export class ActaGalleyChild extends ActaElement {
         if (oldValue === newValue) return;
         this._applyDirection();
     }
+
+    get collisionList() {
+        if (!(this.parentElement instanceof ActaGalley)) return [];
+
+        const parent = this.parentElement as ActaGalley;
+        return parent.collisionList;
+    }
+
+    abstract collision(): void;
 };

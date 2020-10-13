@@ -94,8 +94,8 @@ class ActaTextStylePrivate {
         return returnValue.trim();
     }
 
-    subscribe(observer: any) {
-        return this._change$.pipe(distinctUntilChanged()).subscribe(observer);
+    subscribe(observable: any) {
+        return this._change$.pipe(distinctUntilChanged()).subscribe(observable);
     }
 
     set fontName(fontName: string) {
