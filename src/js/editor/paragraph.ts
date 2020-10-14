@@ -10,7 +10,7 @@ import { ActaTextRow } from './textrow';
 import { ActaTextChar, TextCharType } from './textchar';
 
 import { Subject, fromEvent } from 'rxjs';
-import { distinctUntilChanged, filter } from 'rxjs/operators';
+import { distinctUntilChanged, throttleTime, filter } from 'rxjs/operators';
 
 import Hangul from 'hangul-js';
 import SelectHanja from './hanja';
@@ -103,9 +103,11 @@ export class ActaParagraph extends ActaGalleyChild {
     private _redrawCursor$: Subject<string>;
 
     private static _inputMethod:InputMethod = InputMethod.EN;
+    private static _inputMethod$: Subject<InputMethod> = new Subject();
 
     private static toggleInputMethod() {
         ActaParagraph._inputMethod = ActaParagraph._inputMethod === InputMethod.KO ? InputMethod.EN : InputMethod.KO;
+        ActaParagraph._inputMethod$.next(ActaParagraph._inputMethod);
     }
 
     private static get inputMethod() {
@@ -125,7 +127,7 @@ export class ActaParagraph extends ActaGalleyChild {
         return CharType.NONE;
     }
 
-    private _updateInputMethodChar() {
+    private _updateInputHangulChar() {
         if (!this._cursor) return;
 
         const textChar = this.textChars[this._cursor - 1];
@@ -174,7 +176,7 @@ export class ActaParagraph extends ActaGalleyChild {
             if (this._cursorMode === CursorMode.INPUT) {
                 this._cursorMode = CursorMode.EDIT;
                 this._inputChar += char;
-                this._updateInputMethodChar();
+                this._updateInputHangulChar();
             } else {
                 this._inputChar = char;
                 this._cursor++;
@@ -273,7 +275,7 @@ export class ActaParagraph extends ActaGalleyChild {
                 if (e.keyCode === Keycode.BACKSPACE) {
                     if (ActaParagraph.inputMethod === InputMethod.KO && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
                         this._inputChar = this._inputChar.substr(0, this._inputChar.length - 1);
-                        this._updateInputMethodChar();
+                        this._updateInputHangulChar();
                         if (this._inputChar === '') {
                             this._cursor--;
                             this._cursorMode = CursorMode.EDIT;
@@ -423,7 +425,7 @@ export class ActaParagraph extends ActaGalleyChild {
         const textNodes = this._getTextCharBlocks(textChars);
         for (const textNode of textNodes) {
             textNode.defaultTextStyleName = textStyleName;
-            textNode.customTextStyle = new ActaTextStyleInherit();
+            textNode.modifiedTextStyle = new ActaTextStyleInherit();
             for (const textChar of textNode.value) {
                 if (textChar instanceof ActaTextChar) textChar.modified = true;
             }
@@ -433,7 +435,7 @@ export class ActaParagraph extends ActaGalleyChild {
     private _applyTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
         const textNodes = this._getTextCharBlocks(textChars);
         for (const textNode of textNodes) {
-            textNode.customTextStyle.merge(textStyle);
+            textNode.modifiedTextStyle.merge(textStyle);
         }
     }
 

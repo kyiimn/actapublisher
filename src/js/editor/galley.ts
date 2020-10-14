@@ -186,8 +186,8 @@ customElements.define('x-galley', ActaGalley);
 
 // tslint:disable-next-line: max-classes-per-file
 export abstract class ActaGalleyChild extends ActaElement {
-    private _subscriptionChangeSize$?: Subscription;
-    private _subscriptionCollision$?: Subscription;
+    private _subscriptionChangeSize?: Subscription;
+    private _subscriptionCollision?: Subscription;
     protected _resize$: Subject<Event>;
 
     static get observedAttributes() {
@@ -225,23 +225,23 @@ export abstract class ActaGalleyChild extends ActaElement {
     }
 
     subscribeChangeSize(observable: Subject<undefined>) {
-        this._subscriptionChangeSize$ = observable.subscribe(_ => this._changeSize());
+        this._subscriptionChangeSize = observable.subscribe(_ => this._changeSize());
         this._changeSize();
     }
 
     unsubscribeChangeSize() {
-        if (this._subscriptionChangeSize$) this._subscriptionChangeSize$.unsubscribe();
-        this._subscriptionChangeSize$ = undefined;
+        if (this._subscriptionChangeSize) this._subscriptionChangeSize.unsubscribe();
+        this._subscriptionChangeSize = undefined;
     }
 
     subscribeCollision(observable: Subject<ActaGalley>) {
-        this._subscriptionCollision$ = observable.subscribe(_ => this.collision());
+        this._subscriptionCollision = observable.subscribe(_ => this.collision());
         this.collision();
     }
 
     unsubscribeCollision() {
-        if (this._subscriptionCollision$) this._subscriptionCollision$.unsubscribe();
-        this._subscriptionCollision$ = undefined;
+        if (this._subscriptionCollision) this._subscriptionCollision.unsubscribe();
+        this._subscriptionCollision = undefined;
     }
 
     connectedCallback() {

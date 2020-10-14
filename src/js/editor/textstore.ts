@@ -37,7 +37,7 @@ export class ActaTextStore extends ActaTextNode {
                         if (tagname === 'x-style') {
                             if (str.length > 0) { currentnode.push(str); str = ''; }
                             const newnode = new ActaTextNode(tagname);
-                            const textStyle = newnode.customTextStyle;
+                            const textStyle = newnode.modifiedTextStyle;
 
                             currentnode.push(newnode);
                             node.push(currentnode);
@@ -69,7 +69,7 @@ export class ActaTextStore extends ActaTextNode {
                                     default: break;
                                 }
                             }
-                            newnode.customTextStyle = textStyle;
+                            newnode.modifiedTextStyle = textStyle;
                             currentnode = newnode;
                         } else {
                             switch (tagname) {
@@ -101,7 +101,7 @@ export class ActaTextStore extends ActaTextNode {
         for (const item of this.value) {
             returnValue += item.markupText;
         }
-        const styleText = this.customTextStyle.toString();
+        const styleText = this.modifiedTextStyle.toString();
         if (styleText !== '') returnValue = `<${this.tagName} ${styleText}>${returnValue}</${this.tagName}>`;
 
         return returnValue;

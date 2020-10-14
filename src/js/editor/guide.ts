@@ -3,7 +3,7 @@ import { Subject, Subscription } from 'rxjs';
 import U from './units';
 
 export class ActaGuide extends ActaElement {
-    private _subscriptionChangePageSize$?: Subscription;
+    private _subscriptionChangePageSize?: Subscription;
 
     static get observedAttributes() {
         return ['direction', 'column-count', 'column-width', 'innermargin'];
@@ -88,13 +88,13 @@ export class ActaGuide extends ActaElement {
     }
 
     subscribeChangePageSize(observer: Subject<string>) {
-        this._subscriptionChangePageSize$ = observer.subscribe(_ => this._updateSize());
+        this._subscriptionChangePageSize = observer.subscribe(_ => this._updateSize());
         this._updateSize();
     }
 
     unsubscribeChangePageSize() {
-        if (this._subscriptionChangePageSize$) this._subscriptionChangePageSize$.unsubscribe();
-        this._subscriptionChangePageSize$ = undefined;
+        if (this._subscriptionChangePageSize) this._subscriptionChangePageSize.unsubscribe();
+        this._subscriptionChangePageSize = undefined;
     }
 
     set columnCount(count: number) { this.setAttribute('column-count', Math.max(count, 1).toString()); }
