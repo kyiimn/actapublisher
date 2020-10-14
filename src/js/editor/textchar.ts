@@ -25,8 +25,8 @@ export class ActaTextChar {
     private _drawOffsetY: number;
     private _width: number;
 
-    private _posX?: number;
-    private _posY?: number;
+    private _oldOffsetX?: number;
+    private _oldOffsetY?: number;
 
     private _oldMaxHeight?: number;
     private _oldLetterSpacing?: number;
@@ -39,7 +39,7 @@ export class ActaTextChar {
             const width = (textStyle.fontSize !== null) ? textStyle.fontSize / 3 : 0;
             if (this._width !== width) {
                 this._width = width;
-                this.modified = true;
+                this._modified = true;
             }
         } else if (this._type === TextCharType.CHAR) {
             const font = textStyle.font.font, size = textStyle.fontSize;
@@ -55,15 +55,15 @@ export class ActaTextChar {
 
             if (this._drawOffsetX !== 0) {
                 this._drawOffsetX = 0;
-                this.modified = true;
+                this._modified = true;
             }
             if (this._drawOffsetY !== height + yMin) {
                 this._drawOffsetY = height + yMin;
-                this.modified = true;
+                this._modified = true;
             }
             if (this._width !== glyph.advanceWidth / unitsPerSize ) {
                 this._width = glyph.advanceWidth / unitsPerSize;
-                this.modified = true;
+                this._modified = true;
             }
         }
         this.calcWidth = this.width;
@@ -98,36 +98,22 @@ export class ActaTextChar {
         this._oldLetterSpacing = undefined;
     }
 
-    update(x?: number, y?: number) {
+    update() {
         const textStyle = this.textNode.textStyle;
+        if (!this.textRow || !this.modified) return;
 
-        if (!this.textRow) return;
-        if (x !== undefined && y !== undefined) {
-            if (this._posX !== x || this._posY !== y) this.modified = true;
-            this._posX = x;
-            this._posY = y;
-        } else {
-            if (this._posX === undefined || this._posY === undefined) return;
-            x = this._posX;
-            y = this._posY;
-        }
-        if (this._oldMaxHeight !== this.textRow.maxHeight) {
-            this._oldMaxHeight = this.textRow.maxHeight;
-            this.modified = true;
-        }
-        if (this._oldLetterSpacing !== textStyle.letterSpacing) {
-            this._oldLetterSpacing = textStyle.letterSpacing;
-            this.modified = true;
-        }
-        if (!this.modified) return;
+        this._oldOffsetX = this.offsetX;
+        this._oldOffsetY = this.textRow.offsetY;
+        this._oldMaxHeight = this.textRow.maxHeight;
+        this._oldLetterSpacing = textStyle.letterSpacing;
 
         for (const textDecoration of this._textDecorations) if (textDecoration) textDecoration.remove();
         this._textDecorations = [];
 
         let transform = 'translate(';
-        transform += `${(this.drawOffsetX || 0) + ((textStyle.letterSpacing || 0) / 2) + x}px`;
+        transform += `${(this.drawOffsetX || 0) + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX}px`;
         transform += ', ';
-        transform += `${(this.drawOffsetY || 0) + y - this.textRow.maxHeight + ((this.textRow.maxHeight - (this.height || 0)) * 2)}px`;
+        transform += `${(this.drawOffsetY || 0) + this._oldOffsetY - this.textRow.maxHeight + ((this.textRow.maxHeight - (this.height || 0)) * 2)}px`;
         transform += ') ';
         transform += `scaleX(${textStyle.xscale || 1})`;
 
@@ -138,8 +124,8 @@ export class ActaTextChar {
         this._SVGPath.setAttribute('data-height', this.textRow.maxHeight.toString());
         this._SVGPath.setAttribute('data-leading', this.textRow.maxLeading.toString());
 
-        this._SVGPath.setAttribute('data-x', x.toString());
-        this._SVGPath.setAttribute('data-y', y.toString());
+        this._SVGPath.setAttribute('data-x', this._oldOffsetX.toString());
+        this._SVGPath.setAttribute('data-y', this._oldOffsetY.toString());
 
         if (this.indexOfColumn !== null) this._SVGPath.setAttribute('data-index-of-column', this.indexOfColumn.toString());
         if (this.indexOfLine !== null) this._SVGPath.setAttribute('data-index-of-line', this.indexOfLine.toString());
@@ -155,10 +141,10 @@ export class ActaTextChar {
             const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             strikeline.setAttribute('data-id', this.id);
             strikeline.setAttribute('data-textnode', this._textNode.id);
-            strikeline.setAttribute('x1', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + x).toString());
-            strikeline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + x + this.calcWidth).toString());
-            strikeline.setAttribute('y1', (this.drawOffsetY + y - (this.textRow.maxHeight / 3)).toString());
-            strikeline.setAttribute('y2', (this.drawOffsetY + y - (this.textRow.maxHeight / 3)).toString());
+            strikeline.setAttribute('x1', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX).toString());
+            strikeline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
+            strikeline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
+            strikeline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
             strikeline.style.stroke = textStyle.color || '#000000';
             strikeline.style.strokeLinecap = 'butt';
             strikeline.style.strokeWidth = '1';
@@ -170,10 +156,10 @@ export class ActaTextChar {
             const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             underline.setAttribute('data-id', this.id);
             underline.setAttribute('data-textnode', this._textNode.id);
-            underline.setAttribute('x1', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + x).toString());
-            underline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + x + this.calcWidth).toString());
-            underline.setAttribute('y1', (this.drawOffsetY + y).toString());
-            underline.setAttribute('y2', (this.drawOffsetY + y).toString());
+            underline.setAttribute('x1', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX).toString());
+            underline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
+            underline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY).toString());
+            underline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY).toString());
             underline.style.stroke = textStyle.color || '#000000';
             underline.style.strokeLinecap = 'butt';
             underline.style.strokeWidth = '1';
@@ -181,7 +167,7 @@ export class ActaTextChar {
             this._textDecorations.push(underline);
             this.textRow.column.svg.appendChild(underline);
         }
-        this.modified = false;
+        this._modified = false;
     }
 
     remove() {
@@ -193,14 +179,6 @@ export class ActaTextChar {
 
     private get drawOffsetX() { return this._drawOffsetX; }
     private get drawOffsetY() { return this._drawOffsetY; }
-
-    private set modified(modify) {
-        this._modified = modify;
-    }
-
-    private get modified() {
-        return this._modified;
-    }
 
     get markupText() {
         let returnValue = '';
@@ -214,17 +192,17 @@ export class ActaTextChar {
     set textRow(textRow: ActaTextRow | null) {
         if (this._textRow === textRow) return;
         if (textRow) {
-            if (this._textRow && this._textRow.column !== textRow.column) this.modified = true;
+            if (this._textRow && this._textRow.column !== textRow.column) this._modified = true;
             this._textRow = textRow;
         } else {
             this._textRow = undefined;
             if (this._SVGPath.parentElement) {
-                this._posX = undefined;
-                this._posY = undefined;
+                this._oldOffsetX = undefined;
+                this._oldOffsetY = undefined;
                 this._oldMaxHeight = undefined;
                 this._SVGPath.parentElement.removeChild(this._SVGPath);
             }
-            this.modified = true;
+            this._modified = true;
         }
     }
     set calcWidth(width: number) { this._calcWidth = width; }
@@ -242,9 +220,28 @@ export class ActaTextChar {
     get textRow() { return this._textRow || null; }
     get textStyle() { return this.textNode.textStyle; }
     get visable() { return (this._textRow !== null) ? true : false; }
+    get offsetX() {
+        if (this.textRow === null) return 0;
 
-    get x() { return this._posX !== undefined ? this._posX : -1; }
-    get y() { return this._posY !== undefined ? this._posY : -1; }
+        let offsetX = this.textRow.indent;
+        for (const otherChar of this.textRow.items) {
+            if (otherChar === this) break;
+            offsetX += otherChar.calcWidth;
+        }
+        return offsetX;
+    }
 
-    get el() { return this._SVGPath; }
+    get x() { return this._oldOffsetX !== undefined ? this._oldOffsetX : -1; }
+    get y() { return this._oldOffsetY !== undefined ? this._oldOffsetY : -1; }
+
+    set modified(v) { this._modified = v; }
+    get modified() {
+        if (!this.textRow) return false;
+        if (this._modified) return true;
+        if (this._oldOffsetX !== this.offsetX || this._oldOffsetY !== this.textRow.offsetY) return true;
+        if (this._oldMaxHeight !== this.textRow.maxHeight) return true;
+        if (this._oldLetterSpacing !== this.textNode.textStyle.letterSpacing) return true;
+
+        return false;
+    }
 };

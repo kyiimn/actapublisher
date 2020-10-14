@@ -174,6 +174,7 @@ export class ActaTextNode {
     get tagName() { return this._tagname; }
     get id() { return this._id; }
     get defaultTextStyle() { return this._defaultTextStyle; }
+    get defaultTextStyleName() { return this.defaultTextStyle ? this.defaultTextStyle.name : null; }
     get customTextStyle() { return this._customTextStyle; }
     get value() { return this._value; }
     get length() { return this.value.length; }

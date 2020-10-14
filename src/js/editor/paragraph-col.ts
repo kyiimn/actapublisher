@@ -49,7 +49,14 @@ export class ActaParagraphColumn extends ActaElement {
         this._applyWidth();
     }
 
-    set textRows(items: ActaTextRow[]) { this._textRows = items; }
+    update() {
+        this.textRows.forEach(textRow => textRow.update());
+    }
+
+    clear() {
+        this._textRows = [];
+    }
+
     get textRows() { return this._textRows; }
     get svg() { return this._svg; }
 };

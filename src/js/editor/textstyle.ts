@@ -50,7 +50,7 @@ class ActaTextStylePrivate {
         if (textStyle.indent !== null) { this.indent = textStyle.indent; changed = true; }
         if (textStyle.color !== null) { this.color = textStyle.color; changed = true; }
 
-        if (changed) this.emitChange();
+        if (changed) this.emitChange('merge');
     }
 
     protected emitChange(styleName: string = '') {
@@ -69,7 +69,7 @@ class ActaTextStylePrivate {
         this._indent = textStyle.indent;
         this._color = textStyle.color;
 
-        this.emitChange();
+        this.emitChange('copy');
     }
 
     toString() {
@@ -95,7 +95,7 @@ class ActaTextStylePrivate {
     }
 
     subscribe(observable: any) {
-        return this._change$.pipe(distinctUntilChanged()).subscribe(observable);
+        return this._change$.subscribe(observable);
     }
 
     set fontName(fontName: string) {
