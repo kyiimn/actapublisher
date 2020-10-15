@@ -1,12 +1,14 @@
 import { ActaGuide } from './guide';
 import { ActaGalley } from './galley';
 import { ActaElement } from './element';
-import { Subject } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 import U from './units';
 
 export class ActaPage extends ActaElement {
     private _changePageStyle$: Subject<string>;
     private _changeGalleyStyle$: Subject<ActaGalley>;
+    private _changeFocus$: Subject<ActaGalley>;
     private _mutationAddRemoveGuide$: MutationObserver;
     private _mutationChangeGalleyStyle$: MutationObserver;
 
@@ -51,8 +53,9 @@ export class ActaPage extends ActaElement {
         super();
 
         this._changePageStyle$ = new Subject();
-        this._changeGalleyStyle$ = new Subject();
+        this._changeFocus$ = new Subject();
 
+        this._changeGalleyStyle$ = new Subject();
         this._changeGalleyStyle$.subscribe(src => {
             for (const dest of src.collisionList) {
                 dest.collisionObservable.next(src);
@@ -75,6 +78,9 @@ export class ActaPage extends ActaElement {
                     if (removedNode instanceof ActaGuide) {
                         const node = removedNode as ActaGuide;
                         node.unsubscribeChangePageSize();
+                    } else if (removedNode instanceof ActaGalley) {
+                        const node = removedNode as ActaGalley;
+                        node.unsubscribeChangeFocus();
                     }
                 }
                 for (let i = 0; i < m.addedNodes.length; i++) {
@@ -83,13 +89,23 @@ export class ActaPage extends ActaElement {
                         const node = addedNode as ActaGuide;
                         node.subscribeChangePageSize(this._changePageStyle$);
                     } else if (addedNode instanceof ActaGalley) {
+                        const node = addedNode as ActaGalley;
+                        node.order = this.lastGalleyOrder + 1;
                         this._refreshCollisionList();
-                        this._changeGalleyStyle$.next(addedNode as ActaGalley);
-
-                        this._mutationChangeGalleyStyle$.observe(addedNode, {
+                        this._changeGalleyStyle$.next(node);
+                        this._mutationChangeGalleyStyle$.observe(node, {
                             attributes: true,
                             attributeFilter: ActaGalley.observedAttributes
                         });
+                        fromEvent(node, 'focus').pipe(filter(e => {
+                            return e.target ? true : false;
+                        }), map(e => {
+                            e.preventDefault();
+                            return e.target as ActaGalley;
+                        })).subscribe(target => {
+                            this._changeFocus$.next(target);
+                        });
+                        node.subscribeChangeFocus(this._changeFocus$);
                     }
                 }
             });
@@ -126,5 +142,20 @@ export class ActaPage extends ActaElement {
     get paddingBottom() { return this.getAttribute('padding-bottom') || ''; }
     get paddingLeft() { return this.getAttribute('padding-left') || ''; }
     get paddingRight() { return this.getAttribute('padding-right') || ''; }
+
+    get lastGalleyOrder() {
+        let lastOrder = 0;
+        for (const g of this.galley) lastOrder = Math.max(lastOrder, g.order);
+        return lastOrder;
+    }
+
+    get galley() {
+        const galley: ActaGalley[] = [];
+        this.childNodes.forEach(child => {
+            if (child instanceof ActaGalley) galley.push(child);
+        });
+        galley.sort((x, y) => ((x.order < y.order) ? -1 : ((x.order > y.order) ? 1 : 0)));
+        return galley;
+    }
 };
 customElements.define('x-page', ActaPage);

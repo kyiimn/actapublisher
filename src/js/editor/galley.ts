@@ -1,17 +1,17 @@
 import { ActaElement } from "./element";
-import { Subject, Subscription, fromEvent } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import U from './units';
 
-export class ActaGalley extends ActaElement {
-    private _changeSize$: Subject<undefined>;
-    private _collision$: Subject<ActaGalley>;
-    private _mutation$: MutationObserver;
-
+export abstract class ActaGalley extends ActaElement {
+    private _subscriptionChangeFocus?: Subscription;
     private _collisionList: ActaGalley[];
+
+    protected _changeSize$: Subject<undefined>;
+    protected _collision$: Subject<ActaGalley>;
 
     static get observedAttributes() {
         return [
-            'width', 'height', 'x', 'y',
+            'width', 'height', 'x', 'y', 'order',
             'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
             'border-color', 'border-top', 'border-bottom', 'border-left', 'border-right'
         ];
@@ -76,37 +76,27 @@ export class ActaGalley extends ActaElement {
         this.style.borderRightColor = (border) ? this.getAttribute('border-color') || '#000000' : '';
     }
 
-    private _emitChangeSize() { this._changeSize$.next(); }
+    private _applyOrder() {
+        const order = this.getAttribute('order') || '0';
+        this.style.zIndex = order;
+    }
 
-    constructor(x?: string | number, y?: string | number, width?: string | number, height?: string | number) {
+    protected _emitChangeSize() { this._changeSize$.next(); }
+
+    protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
 
         this._collisionList = [];
         this._changeSize$ = new Subject();
         this._collision$ = new Subject();
-        this._mutation$ = new MutationObserver(mutations => {
-            mutations.forEach(m => {
-                if (m.type !== 'childList') return;
-                for (let i = 0; i < m.removedNodes.length; i++) {
-                    if (!(m.removedNodes.item(i) instanceof ActaGalleyChild)) continue;
-                    const node = m.removedNodes.item(i) as ActaGalleyChild;
-                    node.unsubscribeCollision();
-                    node.unsubscribeChangeSize();
-                }
-                for (let i = 0; i < m.addedNodes.length; i++) {
-                    if (!(m.addedNodes.item(i) instanceof ActaGalleyChild)) continue;
-                    const node = m.addedNodes.item(i) as ActaGalleyChild;
-                    node.subscribeCollision(this._collision$);
-                    node.subscribeChangeSize(this._changeSize$);
-                }
-            });
-        });
-        this._mutation$.observe(this, { childList: true });
+        this._collision$.subscribe(_ => this.collision());
 
         if (x !== undefined) this.setAttribute('x', x.toString());
         if (y !== undefined) this.setAttribute('y', y.toString());
         if (width !== undefined) this.setAttribute('width', width.toString());
         if (height !== undefined) this.setAttribute('height', height.toString());
+
+        this.setAttribute('order', '0');
     }
 
     connectedCallback() {
@@ -122,6 +112,10 @@ export class ActaGalley extends ActaElement {
         this._applyPaddingBottom();
         this._applyPaddingLeft();
         this._applyPaddingRight();
+        this._applyOrder();
+
+        if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
+        this.classList.add('galley');
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -149,8 +143,28 @@ export class ActaGalley extends ActaElement {
 
             case 'border-color': this._applyBorderTop(); this._applyBorderLeft(); this._applyBorderLeft(); this._applyBorderRight(); this._emitChangeSize(); break;
 
+            case 'order': this._applyOrder(); this._emitChangeSize(); break;
+
             default: break;
         }
+    }
+
+    subscribeChangeFocus(observer: Subject<ActaGalley>) {
+        this._subscriptionChangeFocus = observer.subscribe(src => {
+            if (src === this) {
+                if (this.classList.contains('focus')) return;
+                this.classList.add('focus');
+                this._focus();
+            } else {
+                this.classList.remove('focus');
+                this._blur();
+            }
+        });
+    }
+
+    unsubscribeChangeFocus() {
+        if (this._subscriptionChangeFocus) this._subscriptionChangeFocus.unsubscribe();
+        this._subscriptionChangeFocus = undefined;
     }
 
     set x(x: string | number) { this.setAttribute('x', x.toString()); }
@@ -166,6 +180,7 @@ export class ActaGalley extends ActaElement {
     set paddingLeft(padding: string | number) { this.setAttribute('padding-left', padding.toString()); }
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
     set collisionList(list: ActaGalley[]) { this._collisionList = list; }
+    set order(order: number) { this.setAttribute('order', order.toString()); }
 
     get x() { return this.getAttribute('x') || '0'; }
     get y() { return this.getAttribute('y') || '0'; }
@@ -181,87 +196,10 @@ export class ActaGalley extends ActaElement {
     get paddingRight() { return this.getAttribute('padding-right') || '0'; }
     get collisionList() { return this._collisionList; }
     get collisionObservable() { return this._collision$; }
-};
-customElements.define('x-galley', ActaGalley);
+    get order() { return parseInt(this.getAttribute('order') || '0', 10); }
 
-// tslint:disable-next-line: max-classes-per-file
-export abstract class ActaGalleyChild extends ActaElement {
-    private _subscriptionChangeSize?: Subscription;
-    private _subscriptionCollision?: Subscription;
-    protected _resize$: Subject<Event>;
-
-    static get observedAttributes() {
-        return ['direction'];
-    }
-
-    protected _emitResize() {
-        this._resize$.next(new Event('resize'));
-    }
-
-    private _applyDirection() {
-        this.style.flexDirection = this.getAttribute('direction') || 'row';
-    }
-
-    private _changeSize() {
-        const parent = this.parentElement;
-        if (parent !== null && parent.tagName.toLowerCase() === 'x-galley') {
-            const parentGalley = parent as ActaGalley;
-            const paddingTop = U.px(parentGalley.paddingTop) || 0;
-            const paddingBottom = U.px(parentGalley.paddingBottom) || 0;
-            const paddingLeft = U.px(parentGalley.paddingLeft) || 0;
-            const paddingRight = U.px(parentGalley.paddingRight) || 0;
-
-            this.style.width = `calc(100% - ${paddingLeft + 'px'} - ${paddingRight + 'px'})`;
-            this.style.height = `calc(100% - ${paddingTop + 'px'} - ${paddingBottom + 'px'})`;
-        }
-        this._emitResize();
-    }
-
-    constructor() {
-        super();
-
-        this._resize$ = new Subject<Event>();
-        fromEvent(this, 'resize').subscribe(e => this._resize$);
-    }
-
-    subscribeChangeSize(observable: Subject<undefined>) {
-        this._subscriptionChangeSize = observable.subscribe(_ => this._changeSize());
-        this._changeSize();
-    }
-
-    unsubscribeChangeSize() {
-        if (this._subscriptionChangeSize) this._subscriptionChangeSize.unsubscribe();
-        this._subscriptionChangeSize = undefined;
-    }
-
-    subscribeCollision(observable: Subject<ActaGalley>) {
-        this._subscriptionCollision = observable.subscribe(_ => this.collision());
-        this.collision();
-    }
-
-    unsubscribeCollision() {
-        if (this._subscriptionCollision) this._subscriptionCollision.unsubscribe();
-        this._subscriptionCollision = undefined;
-    }
-
-    connectedCallback() {
-        if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
-
-        this._changeSize();
-        this._applyDirection();
-    }
-
-    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-        if (oldValue === newValue) return;
-        this._applyDirection();
-    }
-
-    get collisionList() {
-        if (!(this.parentElement instanceof ActaGalley)) return [];
-
-        const parent = this.parentElement as ActaGalley;
-        return parent.collisionList;
-    }
-
+    protected abstract _focus(): void;
+    protected abstract _blur(): void;
     abstract collision(): void;
+    abstract get type(): string;
 };

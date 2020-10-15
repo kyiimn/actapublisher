@@ -1,6 +1,5 @@
 import { ActaPage } from './editor/page';
 import { ActaGuide } from './editor/guide';
-import { ActaGalley } from './editor/galley';
 import { ActaParagraph } from './editor/paragraph';
 import { ActaFontManager } from './editor/fontmgr';
 import { ActaTextStyleManager } from './editor/textstylemgr';
@@ -38,19 +37,11 @@ const main = async () => {
     const guide = new ActaGuide(5, '2mm');
     page.appendChild(guide);
 
-    const galley = new ActaGalley('5mm', '5mm', '143.25mm', '142mm');
-    const para = new ActaParagraph('본문3', 3, '2mm')
-    galley.appendChild(para);
+    const para = new ActaParagraph('5mm', '5mm', '143.25mm', '142mm', '본문3', 3, '2mm')
+    page.appendChild(para);
 
-    page.appendChild(galley);
-
-
-    const galley2 = new ActaGalley('130mm', '130mm', '143.25mm', '142mm');
-    const para2 = new ActaParagraph('본문3', 3, '2mm')
-    galley2.appendChild(para2);
-
-    page.appendChild(galley2);
-
+    const para2 = new ActaParagraph('130mm', '130mm', '143.25mm', '142mm', '본문3', 3, '2mm')
+    page.appendChild(para2);
 
     const submitButton = document.querySelector('button#submit');
     const textarea = document.querySelector('textarea');
@@ -62,6 +53,10 @@ const main = async () => {
     const getButton = document.querySelector('button#get');
     if (getButton) getButton.addEventListener('click', _ => {
         if (textarea) textarea.value = para.text;
+    });
+    const chColButton = document.querySelector('button#column');
+    if (chColButton) chColButton.addEventListener('click', _ => {
+        para.columnCount = 2;
     });
 };
 main();
