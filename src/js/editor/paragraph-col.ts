@@ -4,7 +4,7 @@ import U from './units';
 
 export class ActaParagraphColumn extends ActaElement {
     private _root: ShadowRoot;
-    private _svg: SVGElement;
+    private _canvas: SVGElement;
     private _textRows: ActaTextRow[];
 
     static get observedAttributes() {
@@ -34,14 +34,14 @@ export class ActaParagraphColumn extends ActaElement {
 
         this._textRows = [];
         this._root = this.attachShadow({ mode: 'open' });
-        this._svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        this._svg.classList.add('canvas');
-        this._svg.style.position = 'absolute';
+        this._canvas = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        this._canvas.classList.add('canvas');
+        this._canvas.style.position = 'absolute';
     }
 
     connectedCallback() {
         this._applyWidth();
-        this._root.appendChild(this._svg);
+        this._root.appendChild(this._canvas);
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -58,6 +58,6 @@ export class ActaParagraphColumn extends ActaElement {
     }
 
     get textRows() { return this._textRows; }
-    get svg() { return this._svg; }
+    get canvas() { return this._canvas; }
 };
 customElements.define('x-paragraph-col', ActaParagraphColumn);

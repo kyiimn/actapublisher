@@ -110,7 +110,7 @@ export class ActaTextRow {
     }
 
     get limitWidth() {
-        const svgRect = this.column.svg.getBoundingClientRect();
+        const svgRect = this.column.canvas.getBoundingClientRect();
         return svgRect.width;
     }
 

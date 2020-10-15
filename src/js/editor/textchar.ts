@@ -133,8 +133,8 @@ export class ActaTextChar {
         this._SVGPath.style.transform = transform;
         this._SVGPath.style.fill = textStyle.color || '#000000';
 
-        if (!this._SVGPath.parentElement || this._SVGPath.parentElement as any as SVGElement !== this.textRow.column.svg) {
-            this.textRow.column.svg.appendChild(this._SVGPath);
+        if (!this._SVGPath.parentElement || this._SVGPath.parentElement as any as SVGElement !== this.textRow.column.canvas) {
+            this.textRow.column.canvas.appendChild(this._SVGPath);
         }
 
         if (textStyle.strikeline) {
@@ -150,7 +150,7 @@ export class ActaTextChar {
             strikeline.style.strokeWidth = '1';
 
             this._textDecorations.push(strikeline);
-            this.textRow.column.svg.appendChild(strikeline);
+            this.textRow.column.canvas.appendChild(strikeline);
         }
         if (textStyle.underline) {
             const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -165,7 +165,7 @@ export class ActaTextChar {
             underline.style.strokeWidth = '1';
 
             this._textDecorations.push(underline);
-            this.textRow.column.svg.appendChild(underline);
+            this.textRow.column.canvas.appendChild(underline);
         }
         this._modified = false;
     }

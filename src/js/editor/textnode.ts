@@ -11,7 +11,7 @@ export class ActaTextNode {
     private _parentNode: ActaTextNode | null;
 
     private _defaultTextStyle: ActaTextStyle | null;
-    private _subscrptionChangeDefaultTextStyle$: Subscription | null;
+    private _subscrptionChangeDefaultTextStyle: Subscription | null;
 
     private _modifiedTextStyle: ActaTextStyleInherit;
 
@@ -22,7 +22,7 @@ export class ActaTextNode {
         this._parentNode = null;
 
         this._defaultTextStyle = null;
-        this._subscrptionChangeDefaultTextStyle$ = null;
+        this._subscrptionChangeDefaultTextStyle = null;
 
         this._modifiedTextStyle = new ActaTextStyleInherit();
         this._modifiedTextStyle.subscribe((attr: string) => this.changeTextStyle(attr));
@@ -139,12 +139,12 @@ export class ActaTextNode {
             if (textStyle.name === this._defaultTextStyle.name) return;
         } else if (!textStyle && !this._defaultTextStyle) return;
 
-        if (this._subscrptionChangeDefaultTextStyle$) this._subscrptionChangeDefaultTextStyle$.unsubscribe();
+        if (this._subscrptionChangeDefaultTextStyle) this._subscrptionChangeDefaultTextStyle.unsubscribe();
         this._defaultTextStyle = textStyle;
         if (this._defaultTextStyle) {
-            this._subscrptionChangeDefaultTextStyle$ = this._defaultTextStyle.subscribe((attr: string) => this.changeTextStyle(attr));
+            this._subscrptionChangeDefaultTextStyle = this._defaultTextStyle.subscribe((attr: string) => this.changeTextStyle(attr));
         } else {
-            this._subscrptionChangeDefaultTextStyle$ = null;
+            this._subscrptionChangeDefaultTextStyle = null;
         }
         this.changeTextStyle();
     }
