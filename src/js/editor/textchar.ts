@@ -1,5 +1,4 @@
 import { ActaTextNode } from "./textnode";
-import { ActaTextStyle } from "./textstyle";
 import { ActaTextRow } from './textrow';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -13,6 +12,7 @@ export class ActaTextChar {
 
     private _char: string;
     private _type: TextCharType;
+    private _invalidChar: boolean;
 
     private _modified: boolean;
 
@@ -50,6 +50,8 @@ export class ActaTextChar {
             const path = glyph.getPath(0, height, size);
             const pathData = path.toPathData(3);
 
+            if (glyph.unicode === undefined) this._invalidChar = true;
+
             this._SVGPath.setAttribute('d', pathData);
             this._SVGPath.setAttribute('data-char', this._char);
 
@@ -74,6 +76,7 @@ export class ActaTextChar {
         this._modified = true;
 
         this._char = char;
+        this._invalidChar = false;
 
         this._textNode = textNode;
 
@@ -131,7 +134,7 @@ export class ActaTextChar {
         if (this.indexOfLine !== null) this._SVGPath.setAttribute('data-index-of-line', this.indexOfLine.toString());
 
         this._SVGPath.style.transform = transform;
-        this._SVGPath.style.fill = textStyle.color || '#000000';
+        this._SVGPath.style.fill = this._invalidChar ? 'red' : (textStyle.color || '#000000');
 
         if (!this._SVGPath.parentElement || this._SVGPath.parentElement as any as SVGElement !== this.textRow.column.canvas) {
             this.textRow.column.canvas.appendChild(this._SVGPath);
@@ -205,7 +208,13 @@ export class ActaTextChar {
             this._modified = true;
         }
     }
+    set char(char: string) {
+        this._char = char;
+        this._createSVGPath();
+        this._modified = true;
+    }
     set calcWidth(width: number) { this._calcWidth = width; }
+    set modified(v) { this._modified = v; }
 
     get id() { return this._id; }
     get char() { return this._char; }
@@ -233,8 +242,8 @@ export class ActaTextChar {
 
     get x() { return this._oldOffsetX !== undefined ? this._oldOffsetX : -1; }
     get y() { return this._oldOffsetY !== undefined ? this._oldOffsetY : -1; }
+    get isInvalid() { return this._invalidChar; }
 
-    set modified(v) { this._modified = v; }
     get modified() {
         if (!this.textRow) return false;
         if (this._modified) return true;

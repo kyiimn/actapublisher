@@ -134,11 +134,15 @@ export class ActaParagraph extends ActaGalleyChild {
         if (!textChar) return;
 
         let hangulText = Hangul.a(this._inputChar.split(''));
-        textChar.textNode.replace(textChar.indexOfNode, hangulText);
-
         if (hangulText.length > 1) {
+            textChar.char = hangulText.substr(0, 1);
+            textChar.textNode.insert(textChar.indexOfNode + 1, hangulText.substr(1));
             this._cursor += hangulText.length - 1;
             hangulText = hangulText.substr(hangulText.length - 1);
+        } else if (hangulText.length < 1) {
+            textChar.remove();
+        } else {
+            textChar.char = hangulText;
         }
         this._inputChar = Hangul.d(hangulText).join('');
     }
