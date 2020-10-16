@@ -3,15 +3,15 @@ import { ActaTextRow } from './textrow';
 
 import { v4 as uuidv4 } from 'uuid';
 
-export enum TextCharType {
-    NEWLINE, SPACE, CHAR
+export enum CharType {
+    RETURN, SPACE, CHAR
 };
 
 export class ActaTextChar {
     private _id: string;
 
     private _char: string;
-    private _type: TextCharType;
+    private _type: CharType;
     private _invalidChar: boolean;
 
     private _modified: boolean;
@@ -20,14 +20,13 @@ export class ActaTextChar {
     private _textRow?: ActaTextRow;
 
     private _SVGPath: SVGPathElement;
-    private _calcWidth: number;
     private _drawOffsetX: number;
     private _drawOffsetY: number;
     private _width: number;
+    private _calcWidth: number;
 
     private _oldOffsetX?: number;
     private _oldOffsetY?: number;
-
     private _oldMaxHeight?: number;
     private _oldLetterSpacing?: number;
 
@@ -35,13 +34,13 @@ export class ActaTextChar {
 
     private _createSVGPath() {
         const textStyle = this.textNode.textStyle;
-        if (this._type === TextCharType.SPACE) {
+        if (this._type === CharType.SPACE) {
             const width = (textStyle.fontSize !== null) ? textStyle.fontSize / 3 : 0;
             if (this._width !== width) {
                 this._width = width;
                 this._modified = true;
             }
-        } else if (this._type === TextCharType.CHAR) {
+        } else if (this._type === CharType.CHAR) {
             const font = textStyle.font.font, size = textStyle.fontSize;
             const glyph = font.charToGlyph(this._char);
             const unitsPerSize = font.unitsPerEm / size;
@@ -50,7 +49,7 @@ export class ActaTextChar {
             const path = glyph.getPath(0, height, size);
             const pathData = path.toPathData(3);
 
-            if (glyph.unicode === undefined) this._invalidChar = true;
+            this._invalidChar = (glyph.unicode === undefined) ? true : false;
 
             this._SVGPath.setAttribute('d', pathData);
             this._SVGPath.setAttribute('data-char', this._char);
@@ -89,9 +88,9 @@ export class ActaTextChar {
         this._calcWidth = 0;
 
         switch (char) {
-            case '\n': this._type = TextCharType.NEWLINE; break;
-            case ' ': this._type = TextCharType.SPACE; break;
-            default: this._type = TextCharType.CHAR; break;
+            case '\n': this._type = CharType.RETURN; break;
+            case ' ': this._type = CharType.SPACE; break;
+            default: this._type = CharType.CHAR; break;
         }
         this._createSVGPath();
     }
@@ -186,7 +185,7 @@ export class ActaTextChar {
     get markupText() {
         let returnValue = '';
         switch (this._type) {
-            case TextCharType.NEWLINE: returnValue = '<br>'; break;
+            case CharType.RETURN: returnValue = '<br>'; break;
             default: returnValue = this._char; break;
         }
         return returnValue;
@@ -229,10 +228,19 @@ export class ActaTextChar {
     get textRow() { return this._textRow || null; }
     get textStyle() { return this.textNode.textStyle; }
     get visable() { return (this._textRow !== null) ? true : false; }
+    get leading() {
+        return (this.height || 0) * ((this.textStyle.lineHeight || 1) - 1);
+    }
+
+    get scaledWidth() {
+        const xscale = this.textNode ? this.textNode.textStyle.xscale : 1;
+        return this.width * (xscale);
+    }
+
     get offsetX() {
         if (this.textRow === null) return 0;
 
-        let offsetX = this.textRow.indent;
+        let offsetX = this.textRow.indent + this.textRow.paddingLeft;
         for (const otherChar of this.textRow.items) {
             if (otherChar === this) break;
             offsetX += otherChar.calcWidth;

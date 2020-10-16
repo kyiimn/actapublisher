@@ -7,7 +7,7 @@ import { ActaTextNode } from './textnode';
 import { ActaTextStyle, ActaTextStyleInherit, TextAlign } from './textstyle';
 import { ActaClipboard } from '../clipboard';
 import { ActaTextRow } from './textrow';
-import { ActaTextChar, TextCharType } from './textchar';
+import { ActaTextChar, CharType } from './textchar';
 
 import { Subject, fromEvent } from 'rxjs';
 import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
@@ -70,7 +70,7 @@ const KEYCODE_SPECIALCHAR_MAP: { [key: string ]: string } = {
     '\'': '\'', '"': '"'
 };
 
-enum CharType {
+enum InputCharType {
     TEXT, SPECIAL, NONE
 };
 
@@ -121,9 +121,9 @@ export class ActaParagraph extends ActaGalley {
     }
 
     private static isCharType(e: KeyboardEvent) {
-        if (KEYCODE_CHAR_MAP[e.key]) return CharType.TEXT;
-        else if (KEYCODE_SPECIALCHAR_MAP[e.key]) return CharType.SPECIAL;
-        return CharType.NONE;
+        if (KEYCODE_CHAR_MAP[e.key]) return InputCharType.TEXT;
+        else if (KEYCODE_SPECIALCHAR_MAP[e.key]) return InputCharType.SPECIAL;
+        return InputCharType.NONE;
     }
 
     private _updateInputHangulChar() {
@@ -175,7 +175,7 @@ export class ActaParagraph extends ActaGalley {
             insertPos = textChar.indexOfNode;
             textNode = textChar.textNode;
         }
-        if (ActaParagraph.inputMethod === InputMethod.KO && ActaParagraph.isCharType(e) === CharType.TEXT) {
+        if (ActaParagraph.inputMethod === InputMethod.KO && ActaParagraph.isCharType(e) === InputCharType.TEXT) {
             if (this._cursorMode === CursorMode.INPUT) {
                 this._cursorMode = CursorMode.EDIT;
                 this._inputChar += char;
@@ -244,8 +244,8 @@ export class ActaParagraph extends ActaGalley {
                 if (this._cursor > this.textChars.length - 1) this._cursor--;
                 const textRow = this._getTextRowAtCursor();
                 if (textRow && textRow.length > 0) {
-                    this._cursor = this.textChars.indexOf((e.keyCode === Keycode.HOME) ? textRow.firstItem : textRow.lastItem);
-                    if (this._cursor === this.textChars.length - 1 && this.textChars[this._cursor].type !== TextCharType.NEWLINE) this._cursor++;
+                    this._cursor = this.textChars.indexOf((e.keyCode === Keycode.HOME) ? textRow.firstTextChar : textRow.lastTextChar);
+                    if (this._cursor === this.textChars.length - 1 && this.textChars[this._cursor].type !== CharType.RETURN) this._cursor++;
                     this._emitRedrawCursor();
                 }
                 return false;
@@ -446,10 +446,10 @@ export class ActaParagraph extends ActaGalley {
             else {
                 do {
                     if (--tmpIdx < 1) break;
-                    if (!textChar.textRow.item(tmpIdx).visable) continue;
+                    if (!textChar.textRow.get(tmpIdx).visable) continue;
                 } while (false);
             }
-            textChar = textChar.textRow.item(Math.max(tmpIdx, 0));
+            textChar = textChar.textRow.get(Math.max(tmpIdx, 0));
         }
         return textChar;
     }
@@ -491,7 +491,7 @@ export class ActaParagraph extends ActaGalley {
         const currTextRow = this._getTextRowAtCursor();
         if (!currTextRow) return null;
 
-        const firstTextCharIdx = this.textChars.indexOf(currTextRow.firstItem);
+        const firstTextCharIdx = this.textChars.indexOf(currTextRow.firstTextChar);
         if (firstTextCharIdx === 0)  return null;
 
         return this.textChars[firstTextCharIdx - 1].textRow;
@@ -501,7 +501,7 @@ export class ActaParagraph extends ActaGalley {
         const currTextRow = this._getTextRowAtCursor();
         if (!currTextRow) return null;
 
-        const lastTextCharIdx = this.textChars.indexOf(currTextRow.lastItem);
+        const lastTextCharIdx = this.textChars.indexOf(currTextRow.lastTextChar);
         if (lastTextCharIdx === this.textChars.length - 1)  return null;
 
         return this.textChars[lastTextCharIdx + 1].textRow;
@@ -624,7 +624,7 @@ export class ActaParagraph extends ActaGalley {
             if (this._cursor > this.textChars.length - 1) {
                 let lastCharIsNewline = false;
                 if (this.textChars.length > 0) {
-                    if (this.lastTextChar && this.lastTextChar.type === TextCharType.NEWLINE) lastCharIsNewline = true;
+                    if (this.lastTextChar && this.lastTextChar.type === CharType.RETURN) lastCharIsNewline = true;
                 }
                 if (lastCharIsNewline || this.textChars.length < 1) {
                     currColumn = this.columns[0];
@@ -657,7 +657,7 @@ export class ActaParagraph extends ActaGalley {
                 if (!textChar || !textRow) return;
 
                 currColumn = this.columns[textRow.indexOfColumn];
-                if (textChar.type !== TextCharType.NEWLINE) {
+                if (textChar.type !== CharType.RETURN) {
                     x = textChar.visable ? textChar.x :textRow.indent;
                     y = textChar.visable ? textChar.y : textRow.offsetY;
                     height = textRow.maxHeight;
@@ -710,7 +710,7 @@ export class ActaParagraph extends ActaGalley {
                 if (itemY1 < y && itemY2 > y) {
                     let maxWidth = 0;
                     for (const textChars of textRow.items) maxWidth += textChars.calcWidth;
-                    textChar = maxWidth <= x ? textRow.lastItem : textRow.firstItem;
+                    textChar = maxWidth <= x ? textRow.lastTextChar : textRow.firstTextChar;
                     break;
                 }
             }
@@ -739,69 +739,29 @@ export class ActaParagraph extends ActaGalley {
 
     private _computeDrawPointOfTextChars(): void {
         let textRow: ActaTextRow | null = null;
-        let columnIdx = 0;
-        let indent = true;
+        let colIdx = 0, indent = true;
 
+        this.columns.forEach(col => col.clear());
         this._overflow = false;
 
-        for (const column of this.columns) {
-            const rect = column.getBoundingClientRect();
-            const style = window.getComputedStyle(column);
-            column.canvas.setAttribute('width', rect.width > 0 ? (rect.width - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.borderRightWidth) || 0)).toString() : '0');
-            column.canvas.setAttribute('height', rect.height > 0 ? (rect.height - (parseFloat(style.borderTopWidth) || 0) - (parseFloat(style.borderBottomWidth) || 0)).toString() : '0');
-            column.clear();
-        }
         for (const textChar of this.textChars) {
             if (this._overflow) { textChar.textRow = null; continue; }
 
-            textChar.calcWidth = textChar.width * (textChar.textStyle.xscale || 1);
-            if (textChar.calcWidth > 0) textChar.calcWidth += textChar.textStyle.letterSpacing || 0;
             while (1) {
+                const col = this.columns[colIdx];
+                if (!col) break;
                 if (!textRow) {
-                    const column = this.columns[columnIdx];
-                    if (!column) break;
-
-                    textRow = new ActaTextRow(column, indent ? textChar.textStyle.indent || 0 : 0);
+                    textRow = new ActaTextRow(col, indent ? textChar.textStyle.indent || 0 : 0);
                     indent = false;
-
-                    if ([TextCharType.SPACE].indexOf(textChar.type) > -1) textChar.calcWidth = 0;
                 } else {
-                    let itemcnt = 0;
-                    let filledWidth = textRow.indent;
-                    for (const item of textRow.items) {
-                        if (item.calcWidth > 0) {
-                            filledWidth += item.calcWidth;
-                            itemcnt++;
+                    if (!col.availablePushTextChar(textChar)) {
+                        textRow = null;
+                        if (!this.columns[++colIdx]) {
+                            this._overflow = true;
+                            break;
                         }
-                    }
-                    if (filledWidth + textChar.calcWidth > textRow.limitWidth) {
-                        itemcnt = textRow.items.length;
-                        if (itemcnt > 0) {
-                            const firstItem = textRow.firstItem;
-                            if ([TextCharType.SPACE].indexOf(firstItem.type) > -1) {
-                                filledWidth -= firstItem.calcWidth;
-                                itemcnt--;
-                                firstItem.calcWidth = 0;
-                            }
-                        }
-                        if (itemcnt > 1) {
-                            const lastItem = textRow.lastItem;
-                            if ([TextCharType.SPACE].indexOf(lastItem.type) > -1) {
-                                filledWidth -= lastItem.calcWidth;
-                                itemcnt--;
-                                lastItem.calcWidth = 0;
-                            }
-                        }
-                        if (textRow.textAlign === TextAlign.JUSTIFY) {
-                            const diffWidth = (textRow.limitWidth - filledWidth) / itemcnt;
-                            for (const item of textRow.items) {
-                                if (item.calcWidth > 0) item.calcWidth += diffWidth;
-                            }
-                        } else if (textRow.textAlign === TextAlign.RIGHT) {
-                            textRow.indent += textRow.limitWidth - filledWidth;
-                        } else if (textRow.textAlign === TextAlign.CENTER) {
-                            textRow.indent += (textRow.limitWidth - filledWidth) / 2;
-                        }
+                        continue;
+                    } else if (!textRow.availablePushTextChar(textChar)) {
                         textRow = null;
                         continue;
                     }
@@ -809,41 +769,14 @@ export class ActaParagraph extends ActaGalley {
                 break;
             }
             if (textRow == null) continue;
+
             textRow.push(textChar);
-
-            if (textChar.type === TextCharType.NEWLINE) {
-                indent = true;
-                textRow = null;
-            } else {
-                let column = this.columns[columnIdx];
-                let filledHeight = 0;
-                if (!column) {
-                    this._overflow = true;
-                    break;
-                }
-
-                const svgRect = column.canvas.getBoundingClientRect();
-                for (let j = 0; j < column.textRows.length; j++) {
-                    const row = column.textRows[j];
-                    filledHeight += row.maxHeight;
-                    if (j < column.textRows.length - 1) filledHeight += row.maxLeading;
-                }
-                if (filledHeight > (svgRect.height || 0)) {
-                    textRow = column.textRows.pop() || null;
-
-                    column = this.columns[++columnIdx];
-                    if (!column) {
-                        for (const otextChar of textRow ? textRow.items : []) otextChar.textRow = null;
-                        this._overflow = true;
-                        continue;
-                    }
-                    if (textRow != null) textRow.column = column;
-                }
-            }
+            if (textRow.lastTextChar === this.lastTextChar) textRow.endLine = true;
+            if (textRow.lastTextChar.type === CharType.RETURN) indent = true;
         }
         let lastCharIsNewline = false;
         if (this.lastTextChar !== null) {
-            if (this.lastTextChar.type === TextCharType.NEWLINE) lastCharIsNewline = true;
+            if (this.lastTextChar.type === CharType.RETURN) lastCharIsNewline = true;
         }
         if (this.textChars.length < 1 || lastCharIsNewline) {
             let column: ActaParagraphColumn | undefined;
@@ -986,14 +919,14 @@ export class ActaParagraph extends ActaGalley {
                 let breakType;
                 if (waitTripleClickTimer) {
                     waitTripleClickTimer = false;
-                    breakType = [TextCharType.NEWLINE];
+                    breakType = [CharType.RETURN];
                 } else {
                     waitTripleClickTimer = true;
                     setTimeout(() => { waitTripleClickTimer = false; }, 200);
-                    breakType = [TextCharType.NEWLINE, TextCharType.SPACE];
+                    breakType = [CharType.RETURN, CharType.SPACE];
                 }
                 const evtTextChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
-                if (!evtTextChar || evtTextChar.type !== TextCharType.CHAR) return;
+                if (!evtTextChar || evtTextChar.type !== CharType.CHAR) return;
 
                 const textChars = this.textChars;
                 for (let i = textChars.indexOf(evtTextChar); i >= 0; i--) {

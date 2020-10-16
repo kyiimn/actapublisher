@@ -1,4 +1,5 @@
 import { ActaElement } from "./element";
+import { ActaTextChar, CharType } from "./textchar";
 import { ActaTextRow } from './textrow';
 import U from './units';
 
@@ -54,7 +55,29 @@ export class ActaParagraphColumn extends ActaElement {
     }
 
     clear() {
+        const rect = this.getBoundingClientRect();
+        const style = window.getComputedStyle(this);
+
+        this._canvas.setAttribute('width', rect.width > 0 ? (rect.width - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.borderRightWidth) || 0)).toString() : '0');
+        this._canvas.setAttribute('height', rect.height > 0 ? (rect.height - (parseFloat(style.borderTopWidth) || 0) - (parseFloat(style.borderBottomWidth) || 0)).toString() : '0');
         this._textRows = [];
+    }
+
+    availablePushTextChar(textChar: ActaTextChar) {
+        const lastRow = this.textRows[this.textRows.length - 1];
+        if (this.textRows.length > 0) {
+            if (lastRow.availablePushTextChar(textChar)) return true;
+        }
+        const rect = this.canvas.getBoundingClientRect();
+        return (this.calcHeight + textChar.height <= (rect.height || 0)) ? true : false;
+    }
+
+    get calcHeight() {
+        let height = 0;
+        this.textRows.forEach(textRows => {
+            height += !textRows.fragment ? textRows.calcHeight : 0;
+        });
+        return height;
     }
 
     get textRows() { return this._textRows; }
