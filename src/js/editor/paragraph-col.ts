@@ -1,3 +1,4 @@
+import { ActaParagraph } from "./paragraph";
 import { ActaElement } from "./element";
 import { ActaTextChar, CharType } from "./textchar";
 import { ActaTextRow } from './textrow';
@@ -63,13 +64,45 @@ export class ActaParagraphColumn extends ActaElement {
         this._textRows = [];
     }
 
+    push(textChar: ActaTextChar) {
+        const paragraph = this.paragraph;
+        let currentRow = this.lastRow;
+        let newpara: boolean | undefined;
+
+        while (true) {
+            if (!currentRow) {
+                if (!this.availablePushTextChar(textChar)) return false;
+                if (newpara === undefined) {
+                    if (paragraph) {
+                        const textChars = paragraph.textChars;
+                        const lastTextChar = textChars[textChars.indexOf(textChar) - 1];
+                        newpara = lastTextChar ? (lastTextChar.type === CharType.RETURN ? true : false) : true;
+                    } else {
+                        newpara = false;
+                    }
+                }
+                currentRow = new ActaTextRow(this, newpara ? textChar.textStyle.indent : 0);
+            }
+            if (currentRow.push(textChar)) break;
+            currentRow = null;
+        }
+        if (paragraph && currentRow) {
+            if (paragraph.lastTextChar === textChar) currentRow.endLine = true;
+        }
+        return true;
+    }
+
     availablePushTextChar(textChar: ActaTextChar) {
-        const lastRow = this.textRows[this.textRows.length - 1];
+/*        const lastRow = this.textRows[this.textRows.length - 1];
         if (this.textRows.length > 0) {
             if (lastRow.availablePushTextChar(textChar)) return true;
-        }
+        }*/
         const rect = this.canvas.getBoundingClientRect();
         return (this.calcHeight + textChar.height <= (rect.height || 0)) ? true : false;
+    }
+
+    get paragraph() {
+        return this.parentElement ? this.parentElement as ActaParagraph : null;
     }
 
     get calcHeight() {
@@ -78,6 +111,24 @@ export class ActaParagraphColumn extends ActaElement {
             height += !textRows.fragment ? textRows.calcHeight : 0;
         });
         return height;
+    }
+
+    get firstRow() { return this._textRows.length > 0 ? this._textRows[0] : null; }
+    get lastRow() { return this._textRows.length > 0 ? this._textRows[this._textRows.length - 1] : null; }
+
+    get firstTextChar(): ActaTextChar | null {
+        let textChar = null;
+        this.textRows.some(textRow => textChar = textRow.firstTextChar);
+        return textChar;
+    }
+
+    get lastTextChar(): ActaTextChar | null {
+        let textChar = null;
+        for (let i = this.textRows.length; i > 0; i--) {
+            textChar = this.textRows[i - 1].lastTextChar;
+            if (textChar) break;
+        }
+        return textChar;
     }
 
     get textRows() { return this._textRows; }

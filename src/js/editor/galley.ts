@@ -89,7 +89,7 @@ export abstract class ActaGalley extends ActaElement {
         this._collisionList = [];
         this._changeSize$ = new Subject();
         this._collision$ = new Subject();
-        this._collision$.subscribe(_ => this.collision());
+        this._collision$.subscribe(_ => this._collision());
 
         if (x !== undefined) this.setAttribute('x', x.toString());
         if (y !== undefined) this.setAttribute('y', y.toString());
@@ -200,6 +200,6 @@ export abstract class ActaGalley extends ActaElement {
 
     protected abstract _focus(): void;
     protected abstract _blur(): void;
-    abstract collision(): void;
+    protected abstract _collision(): void;
     abstract get type(): string;
 };

@@ -183,6 +183,7 @@ class ActaTextStylePrivate {
     get xscale() { return this._xscale; }
     get letterSpacing() { return this._letterSpacing; }
     get lineHeight() { return this._lineHeight; }
+    get leading() { return this.textHeight * ((this.lineHeight || 1) - 1); }
     get textAlign() { return this._textAlign; }
     get underline() { return this._underline; }
     get strikeline() { return this._strikeline; }

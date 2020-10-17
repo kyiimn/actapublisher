@@ -81,17 +81,21 @@ export class ActaTextRow {
     }
 
     push(textChar: ActaTextChar) {
+        if (!this.availablePushTextChar(textChar)) return false;
+
         this.maxHeight = textChar.height;
         this.maxLeading = textChar.leading;
         this.textAlign = textChar.textStyle.textAlign;
 
-        if (this._items.length < 1 && [CharType.SPACE].indexOf(textChar.type) > -1) {
+        if (this._items.length === 0 && [CharType.SPACE].indexOf(textChar.type) > -1) {
             textChar.calcWidth = 0;
         }
         textChar.textRow = this;
         this._items.push(textChar);
 
         this._modified = true;
+
+        return true;
     }
 
     clear() {
@@ -158,14 +162,17 @@ export class ActaTextRow {
 
     get id() { return this._id; }
     get column() { return this._column; }
+    get paragraph() { return this._column.paragraph; }
     get items() { return this._items; }
-    get maxHeight() { return this._maxHeight; }
-    get maxLeading() { return this._maxLeading; }
     get textAlign() { return this._textAlign; }
     get indent() { return this._indent; }
     get paddingLeft() { return this._paddingLeft; }
     get paddingRight() { return this._paddingRight; }
     get fragment() { return this._fragment; }
+    get length() { return this._items.length; }
+    get firstTextChar() { return this.items[0]; }
+    get lastTextChar() { return this.items[this.length - 1]; }
+
     get endLine() {
         let lastIsReturn = false;
         if (this.length > 0) {
@@ -174,9 +181,29 @@ export class ActaTextRow {
         return lastIsReturn || this._endLine;
     }
 
-    get length() { return this._items.length; }
-    get firstTextChar() { return this.items[0]; }
-    get lastTextChar() { return this.items[this.length - 1]; }
+    get maxHeight() {
+        let height = this._maxHeight;
+        if (this.length === 0) {
+            if (this.paragraph) {
+                const lastTextChar = this.paragraph.visableLastTextChar;
+                const textStyle = (lastTextChar) ? lastTextChar.textStyle : this.paragraph.defaultTextStyle;
+                height = textStyle.textHeight;
+            }
+        }
+        return height;
+    }
+
+    get maxLeading() {
+        let leading = this._maxLeading;
+        if (this.length === 0) {
+            if (this.paragraph) {
+                const lastTextChar = this.paragraph.visableLastTextChar;
+                const textStyle = (lastTextChar) ? lastTextChar.textStyle : this.paragraph.defaultTextStyle;
+                leading = textStyle.leading;
+            }
+        }
+        return leading;
+    }
 
     get indexOfColumn() {
         const para = this.column.parentElement;

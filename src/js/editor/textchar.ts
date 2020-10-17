@@ -222,15 +222,17 @@ export class ActaTextChar {
     get indexOfLine() { return (this._textRow) ? this._textRow.indexOfLine : -1; }
     get indexOfNode() { return this._textNode.value.indexOf(this); }
     get width() { return this._width; }
-    get height() { return this.textStyle.textHeight; }
     get calcWidth() { return this._calcWidth; }
     get textNode() { return this._textNode; }
     get textRow() { return this._textRow || null; }
-    get textStyle() { return this.textNode.textStyle; }
     get visable() { return (this._textRow !== null) ? true : false; }
-    get leading() {
-        return (this.height || 0) * ((this.textStyle.lineHeight || 1) - 1);
-    }
+    get textStyle() { return this.textNode.textStyle; }
+    get height() { return this.textStyle.textHeight; }
+    get leading() { return this.textStyle.leading; }
+
+    get x() { return this._oldOffsetX !== undefined ? this._oldOffsetX : -1; }
+    get y() { return this._oldOffsetY !== undefined ? this._oldOffsetY : -1; }
+    get isInvalid() { return this._invalidChar; }
 
     get scaledWidth() {
         const xscale = this.textNode ? this.textNode.textStyle.xscale : 1;
@@ -247,10 +249,6 @@ export class ActaTextChar {
         }
         return offsetX;
     }
-
-    get x() { return this._oldOffsetX !== undefined ? this._oldOffsetX : -1; }
-    get y() { return this._oldOffsetY !== undefined ? this._oldOffsetY : -1; }
-    get isInvalid() { return this._invalidChar; }
 
     get modified() {
         if (!this.textRow) return false;

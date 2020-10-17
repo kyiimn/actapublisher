@@ -738,8 +738,7 @@ export class ActaParagraph extends ActaGalley {
     }
 
     private _computeDrawPointOfTextChars(): void {
-        let textRow: ActaTextRow | null = null;
-        let colIdx = 0, indent = true;
+        let colIdx = 0;
 
         this.columns.forEach(col => col.clear());
         this._overflow = false;
@@ -750,36 +749,19 @@ export class ActaParagraph extends ActaGalley {
             while (1) {
                 const col = this.columns[colIdx];
                 if (!col) break;
-                if (!textRow) {
-                    textRow = new ActaTextRow(col, indent ? textChar.textStyle.indent || 0 : 0);
-                    indent = false;
-                } else {
-                    if (!col.availablePushTextChar(textChar)) {
-                        textRow = null;
-                        if (!this.columns[++colIdx]) {
-                            this._overflow = true;
-                            break;
-                        }
-                        continue;
-                    } else if (!textRow.availablePushTextChar(textChar)) {
-                        textRow = null;
-                        continue;
-                    }
-                }
-                break;
-            }
-            if (textRow == null) continue;
 
-            textRow.push(textChar);
-            if (textRow.lastTextChar === this.lastTextChar) textRow.endLine = true;
-            if (textRow.lastTextChar.type === CharType.RETURN) indent = true;
+                if (col.push(textChar)) break;
+                if (!this.columns[++colIdx]) {
+                    this._overflow = true;
+                    textChar.textRow = null;
+                }
+            }
         }
         let lastCharIsNewline = false;
         if (this.lastTextChar !== null) {
             if (this.lastTextChar.type === CharType.RETURN) lastCharIsNewline = true;
         }
         if (this.textChars.length < 1 || lastCharIsNewline) {
-            let column: ActaParagraphColumn | undefined;
             let textStyle: ActaTextStyle | undefined;
             let indexOfColumn = 0;
             if (lastCharIsNewline && this.lastTextChar !== null) {
@@ -789,14 +771,8 @@ export class ActaParagraph extends ActaGalley {
             textStyle = this.defaultTextStyle;
             if (!textStyle || !textStyle.font || !textStyle.fontSize) return;
 
-            const textHeight = textStyle.textHeight;
-            const leading = (textHeight || 0) * ((textStyle.lineHeight || 1) - 1);
-
-            column = this.columns[indexOfColumn];
-            const newTextRow = new ActaTextRow(column, textStyle.indent || 0);
-            newTextRow.maxHeight = textHeight;
-            newTextRow.maxLeading = leading;
-            newTextRow.textAlign = textStyle.textAlign;
+            // tslint:disable-next-line: no-unused-expression
+            new ActaTextRow(this.columns[indexOfColumn], textStyle.indent || 0);
         }
     }
 
@@ -845,26 +821,19 @@ export class ActaParagraph extends ActaGalley {
         this._redrawCursor$.next(JSON.stringify(state));
     }
 
-    private get columns() {
-        const nodeList = this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col');
-        const ret = [];
-        for (let i = 0; i < nodeList.length; i++) {
-            ret.push(nodeList.item(i));
-        }
-        return ret
+    protected _collision() {
+        this._emitUpdate();
     }
 
-    private get lastTextChar() {
-        return this.textChars.length > 0 ? this.textChars[this.textChars.length - 1] : null;
+    private get columns(): ActaParagraphColumn[] {
+        return Array.prototype.slice.call(
+            this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col')
+        );
     }
 
-    private get textChars() {
-        return this._textStore ? this._textStore.toArray() : [];
-    }
-
-    private get canvas(): SVGElement[] {
-        const canvas = [];
-        for (const col of this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col')) canvas.push(col.canvas);
+    private get canvas() {
+        const canvas: SVGElement[] = [];
+        this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col').forEach(col => canvas.push(col.canvas));
         return canvas;
     }
 
@@ -1052,10 +1021,6 @@ export class ActaParagraph extends ActaGalley {
         return returnTextStyle;
     }
 
-    collision() {
-        console.log('collision');
-    }
-
     set text(text: string) {
         if (this._textStore) this._textStore.remove();
         this._textStore = ActaTextStore.import(this.defaultTextStyleName, text);
@@ -1099,6 +1064,50 @@ export class ActaParagraph extends ActaGalley {
     get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
     get defaultTextStyle() { return ActaTextStyleManager.in.get(this.defaultTextStyleName); }
     get editable() { return this._editable; }
+
+    get textChars() {
+        return this._textStore ? this._textStore.toArray() : [];
+    }
+
+    get firstTextChar() {
+        const textChars = this.textChars;
+        return textChars.length > 0 ? textChars[0] : null;
+    }
+
+    get lastTextChar() {
+        const textChars = this.textChars;
+        return textChars.length > 0 ? textChars[textChars.length - 1] : null;
+    }
+
+    get firstRow() {
+        let textRow = null;
+        this.columns.forEach(col => textRow = col.firstRow);
+        return textRow;
+    }
+
+    get lastRow() {
+        let textRow = null;
+        for (let i = this.columns.length; i > 0; i--) {
+            textRow = this.columns[i - 1].lastRow;
+            if (textRow) break;
+        }
+        return textRow;
+    }
+
+    get visableFirstTextChar() {
+        let textChar = null;
+        this.columns.some(col => textChar = col.firstTextChar);
+        return textChar;
+    }
+
+    get visableLastTextChar() {
+        let textChar = null;
+        for (let i = this.columns.length; i > 0; i--) {
+            textChar = this.columns[i - 1].lastTextChar;
+            if (textChar) break;
+        }
+        return textChar;
+    }
 
     get type() { return 'PARAGRAPH'; }
 };
