@@ -89,7 +89,7 @@ enum InputMethod {
 export class ActaParagraph extends ActaGalley {
     private _columnCount: number;
     private _innerMargin: string | number;
-    private _textStore: ActaTextStore | null;
+    private _textStore: ActaTextStore;
     private _defaultTextStyleName: string | null;
     private _selectionStart: number | null;
     private _cursorMode: CursorMode;
@@ -851,7 +851,7 @@ export class ActaParagraph extends ActaGalley {
 
         this._columnCount = 1;
         this._innerMargin = 0;
-        this._textStore = null;
+        this._textStore = new ActaTextStore();
         this._defaultTextStyleName = defaultTextStyleName;
 
         this._editable = true;

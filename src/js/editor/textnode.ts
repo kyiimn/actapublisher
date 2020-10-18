@@ -3,6 +3,7 @@ import { ActaTextStyleManager } from './textstylemgr';
 import { ActaTextStyle, ActaTextStyleInherit } from './textstyle';
 import { v4 as uuidv4 } from 'uuid';
 import { Subscription } from 'rxjs';
+import { ActaTextStore } from './textstore';
 
 export class ActaTextNode {
     private _id: string;
@@ -14,6 +15,13 @@ export class ActaTextNode {
     private _subscrptionChangeDefaultTextStyle: Subscription | null;
 
     private _modifiedTextStyle: ActaTextStyleInherit;
+
+    private _cacheTextChars?: ActaTextChar[];
+
+    protected _clearCache() {
+        if (this._parentNode) this._parentNode._clearCache();
+        this._cacheTextChars = undefined;
+    }
 
     constructor(tagname: string = 'x-style') {
         this._id = uuidv4();
@@ -47,6 +55,7 @@ export class ActaTextNode {
         for (const oval of arrVal) {
             this._value.push(oval);
         }
+        this._clearCache();
     }
 
     remove(idx?: number | ActaTextChar) {
@@ -63,6 +72,7 @@ export class ActaTextNode {
         for (const rVal of rVals) {
             rVal.remove();
         }
+        this._clearCache();
     }
 
     insert(idx: ActaTextChar | number, val: string | ActaTextNode) {
@@ -81,6 +91,7 @@ export class ActaTextNode {
         for (let i = 0; i < arrVal.length; i++) {
             this._value.splice(idx + i, 0, arrVal[i]);
         }
+        this._clearCache();
     }
 
     replace(idx: (ActaTextChar | ActaTextNode)[] | number, val: string | ActaTextNode) {
@@ -112,6 +123,7 @@ export class ActaTextNode {
             this._value[idx].remove();
             this._value[idx] = val;
         }
+        this._clearCache();
     }
 
     toString() {
@@ -122,16 +134,18 @@ export class ActaTextNode {
         return str;
     }
 
-    toArray() {
-        let returnArray: ActaTextChar[] = [];
-        for (const val of this._value) {
-            if (val instanceof ActaTextChar) {
-                returnArray.push(val);
-            } else {
-                returnArray = returnArray.concat(val.toArray());
+    toArray(): ActaTextChar[] {
+        if (!this._cacheTextChars) {
+            this._cacheTextChars = [];
+            for (const val of this._value) {
+                if (val instanceof ActaTextChar) {
+                    this._cacheTextChars.push(val);
+                } else {
+                    this._cacheTextChars = this._cacheTextChars.concat(val.toArray());
+                }
             }
         }
-        return returnArray;
+        return this._cacheTextChars;
     }
 
     set defaultTextStyle(textStyle: ActaTextStyle | null) {
