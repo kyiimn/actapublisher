@@ -95,6 +95,8 @@ export abstract class ActaGalley extends ActaElement {
         srcY2 += U.px(this.y);
 
         for (const dest of this._collisionList) {
+            if (this.order >= dest.order) continue;
+
             let destX1 = U.px(dest.x);
             let destY1 = U.px(dest.y);
             let destX2 = destX1 + U.px(dest.width);

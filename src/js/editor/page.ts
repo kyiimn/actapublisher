@@ -42,7 +42,6 @@ export class ActaPage extends ActaElement {
 
             for (const dest of childNodes) {
                 if (src === dest || !(dest instanceof ActaGalley)) continue;
-                if (src.order >= dest.order) continue;
 
                 const destX1 = U.px(dest.x);
                 const destY1 = U.px(dest.y);
