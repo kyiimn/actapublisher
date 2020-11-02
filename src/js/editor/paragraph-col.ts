@@ -93,10 +93,6 @@ export class ActaParagraphColumn extends ActaElement {
     }
 
     availablePushTextChar(textChar: ActaTextChar) {
-/*        const lastRow = this.textRows[this.textRows.length - 1];
-        if (this.textRows.length > 0) {
-            if (lastRow.availablePushTextChar(textChar)) return true;
-        }*/
         const rect = this.canvas.getBoundingClientRect();
         return (this.calcHeight + textChar.height <= (rect.height || 0)) ? true : false;
     }

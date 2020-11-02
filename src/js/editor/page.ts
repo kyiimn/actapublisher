@@ -30,16 +30,20 @@ export class ActaPage extends ActaElement {
     }
 
     private _refreshCollisionList() {
-        const childList = this.querySelectorAll<ActaGalley>('x-galley');
-        for (const src of childList) {
+        const childNodes = this.childNodes;
+        for (const src of childNodes) {
+            if (!(src instanceof ActaGalley)) continue;
+
             const srcX1 = U.px(src.x);
             const srcY1 = U.px(src.y);
             const srcX2 = srcX1 + U.px(src.width);
             const srcY2 = srcY1 + U.px(src.height);
             src.collisionList = [];
 
-            for (const dest of childList) {
-                if (src === dest) continue;
+            for (const dest of childNodes) {
+                if (src === dest || !(dest instanceof ActaGalley)) continue;
+                if (src.order >= dest.order) continue;
+
                 const destX1 = U.px(dest.x);
                 const destY1 = U.px(dest.y);
                 const destX2 = destX1 + U.px(dest.width);

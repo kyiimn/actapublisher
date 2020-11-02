@@ -83,6 +83,33 @@ export abstract class ActaGalley extends ActaElement {
 
     protected _emitChangeSize() { this._changeSize$.next(); }
 
+    protected _checkCollisionArea(srcX1: number, srcY1: number, srcX2?: number, srcY2?: number): number[][] {
+        const collisionArea = [];
+
+        if (srcX2 === undefined) srcX2 = srcX1;
+        if (srcY2 === undefined) srcY2 = srcY1;
+
+        srcX1 += U.px(this.x);
+        srcX2 += U.px(this.x);
+        srcY1 += U.px(this.y);
+        srcY2 += U.px(this.y);
+
+        for (const dest of this._collisionList) {
+            let destX1 = U.px(dest.x);
+            let destY1 = U.px(dest.y);
+            let destX2 = destX1 + U.px(dest.width);
+            let destY2 = destY1 + U.px(dest.height);
+            if (srcX1 < destX2 && srcX2 > destX1 && srcY1 < destY2 && srcY2 > destY1) {
+                destX1 = Math.max(0, destX1 - srcX1);
+                destY1 = Math.max(0, destY1 - srcY1);
+                destX2 = Math.min(srcX2 - srcX1, destX2 - srcX1);
+                destY2 = Math.min(srcY2 - srcY1, destY2 - srcY1);
+                collisionArea.push([destX1, destY1, destX2, destY2]);
+            }
+        }
+        return collisionArea;
+    }
+
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
 

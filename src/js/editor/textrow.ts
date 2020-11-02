@@ -228,7 +228,7 @@ export class ActaTextRow {
         return !this.fragment ? svgRect.width - this._paddingLeft - this._paddingRight : this._limitWidth;
     }
 
-    get offsetY() {
+    get offsetTop() {
         let offsetY = 0;
         let leadFragment;
         for (const otherRow of this.column.textRows) {

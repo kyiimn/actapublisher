@@ -639,7 +639,7 @@ export class ActaParagraph extends ActaGalley {
                     if (!textRow) return;
 
                     x = textRow.indent;
-                    y = textRow.offsetY || 0;
+                    y = textRow.offsetTop || 0;
                     height = textRow.maxHeight;
                 } else {
                     textChar = this._getNearestVisableTextChar(this.lastTextChar);
@@ -648,7 +648,7 @@ export class ActaParagraph extends ActaGalley {
 
                     currColumn = this.columns[textRow.indexOfColumn];
                     x = textChar.visable ? textChar.x + textChar.calcWidth : textRow.indent;
-                    y = textChar.visable ? textChar.y : textRow.offsetY;
+                    y = textChar.visable ? textChar.y : textRow.offsetTop;
                     height = textChar.visable ? textChar.height : textRow.maxHeight;
                 }
             } else {
@@ -659,12 +659,12 @@ export class ActaParagraph extends ActaGalley {
                 currColumn = this.columns[textRow.indexOfColumn];
                 if (textChar.type !== CharType.RETURN) {
                     x = textChar.visable ? textChar.x :textRow.indent;
-                    y = textChar.visable ? textChar.y : textRow.offsetY;
+                    y = textChar.visable ? textChar.y : textRow.offsetTop;
                     height = textRow.maxHeight;
                 } else {
                     textChar = this._getNearestVisableTextChar(textChar);
                     x = (textChar && textChar.visable) ? textChar.x + textChar.calcWidth : textRow.indent;
-                    y = (textChar && textChar.visable) ? textChar.y : textRow.offsetY;
+                    y = (textChar && textChar.visable) ? textChar.y : textRow.offsetTop;
                     height = textRow.maxHeight;
                 }
             }
@@ -703,10 +703,10 @@ export class ActaParagraph extends ActaGalley {
         if (!textChar) {
             const textRows: ActaTextRow[] = column.textRows;
             for (const textRow of textRows) {
-                if (textRow.offsetY === undefined) continue;
+                if (textRow.offsetTop === undefined) continue;
 
-                const itemY1 = textRow.offsetY;
-                const itemY2 = textRow.offsetY + textRow.maxHeight + textRow.maxLeading;
+                const itemY1 = textRow.offsetTop;
+                const itemY2 = textRow.offsetTop + textRow.maxHeight + textRow.maxLeading;
                 if (itemY1 < y && itemY2 > y) {
                     let maxWidth = 0;
                     for (const textChars of textRow.items) maxWidth += textChars.calcWidth;
@@ -750,6 +750,17 @@ export class ActaParagraph extends ActaGalley {
                 const col = this.columns[colIdx];
                 if (!col) break;
 
+                const lastRow = col.lastRow;
+                if (lastRow) {
+                    const broken = this._checkBrokenLineArea(lastRow, textChar.height);
+                    if (broken[0] < broken[1]) {
+                        if (lastRow.fragment) {
+                            // FIXME
+                        } else {
+                            lastRow.paddingRight = lastRow.column.offsetWidth - broken[0];
+                        }
+                    }
+                }
                 if (col.push(textChar)) break;
                 if (!this.columns[++colIdx]) {
                     this._overflow = true;
@@ -821,8 +832,20 @@ export class ActaParagraph extends ActaGalley {
         this._redrawCursor$.next(JSON.stringify(state));
     }
 
-    protected _collision() {
-        this._emitUpdate();
+    private _checkBrokenLineArea(textRow: ActaTextRow, height?: number) {
+        const x1 = textRow.column.offsetLeft;
+        const y1 = textRow.offsetTop;
+        const x2 = x1 + textRow.column.offsetWidth;
+        const y2 = y1 + Math.max((height ? height : 0), textRow.maxHeight);
+
+        let brokenX1 = x2;
+        let brokenX2 = x1;
+
+        for (const broken of super._checkCollisionArea(x1, y1, x2, y2)) {
+            brokenX1 = Math.min(broken[0], brokenX1);
+            brokenX2 = Math.max(broken[2], brokenX2);
+        }
+        return [brokenX1, brokenX2];
     }
 
     private get columns(): ActaParagraphColumn[] {
@@ -835,6 +858,10 @@ export class ActaParagraph extends ActaGalley {
         const canvas: SVGElement[] = [];
         this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col').forEach(col => canvas.push(col.canvas));
         return canvas;
+    }
+
+    protected _collision() {
+        this._emitUpdate();
     }
 
     constructor(

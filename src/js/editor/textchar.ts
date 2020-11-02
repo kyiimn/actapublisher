@@ -104,8 +104,8 @@ export class ActaTextChar {
         const textStyle = this.textNode.textStyle;
         if (!this.textRow || !this.modified) return;
 
-        this._oldOffsetX = this.offsetX;
-        this._oldOffsetY = this.textRow.offsetY;
+        this._oldOffsetX = this.offsetLeft;
+        this._oldOffsetY = this.textRow.offsetTop;
         this._oldMaxHeight = this.textRow.maxHeight;
         this._oldLetterSpacing = textStyle.letterSpacing;
 
@@ -239,7 +239,7 @@ export class ActaTextChar {
         return this.width * (xscale);
     }
 
-    get offsetX() {
+    get offsetLeft() {
         if (this.textRow === null) return 0;
 
         let offsetX = this.textRow.indent + this.textRow.paddingLeft;
@@ -253,7 +253,7 @@ export class ActaTextChar {
     get modified() {
         if (!this.textRow) return false;
         if (this._modified) return true;
-        if (this._oldOffsetX !== this.offsetX || this._oldOffsetY !== this.textRow.offsetY) return true;
+        if (this._oldOffsetX !== this.offsetLeft || this._oldOffsetY !== this.textRow.offsetTop) return true;
         if (this._oldMaxHeight !== this.textRow.maxHeight) return true;
         if (this._oldLetterSpacing !== this.textNode.textStyle.letterSpacing) return true;
 
