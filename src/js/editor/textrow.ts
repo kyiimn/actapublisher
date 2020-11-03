@@ -16,7 +16,6 @@ export class ActaTextRow {
     private _paddingLeft: number;
     private _paddingRight: number;
     private _fragment: boolean;
-    private _limitWidth: number;
     private _endLine: boolean;
 
     private _computePosition() {
@@ -64,7 +63,6 @@ export class ActaTextRow {
         this._paddingRight = 0;
 
         this._fragment = false;
-        this._limitWidth = 0;
 
         this._endLine = false;
         this._modified = true;
