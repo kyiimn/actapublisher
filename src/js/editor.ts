@@ -37,11 +37,18 @@ const main = async () => {
     const guide = new ActaGuide(5, '2mm');
     page.appendChild(guide);
 
-    const para = new ActaParagraph('5mm', '5mm', '143.25mm', '142mm', '본문3', 3, '2mm')
+    const para = new ActaParagraph('5mm', '5mm', '143.25mm', '142mm', '본문3', 3, '2mm');
     page.appendChild(para);
 
-    const para2 = new ActaParagraph('130mm', '130mm', '143.25mm', '142mm', '본문3', 3, '2mm')
+    const para2 = new ActaParagraph('130mm', '130mm', '143.25mm', '142mm', '본문3', 3, '2mm');
     page.appendChild(para2);
+
+    const para3 = new ActaParagraph('80mm', '20mm', '40mm', '40mm', '본문3', 2, '2mm');
+    //const para3 = new ActaParagraph('5mm', '20mm', '20mm', '40mm', '본문3', 3, '2mm');
+    page.appendChild(para3);
+
+    const para4 = new ActaParagraph('60mm', '60mm', '20mm', '40mm', '본문3', 1, '2mm');
+    page.appendChild(para4);
 
     const submitButton = document.querySelector('button#submit');
     const textarea = document.querySelector('textarea');

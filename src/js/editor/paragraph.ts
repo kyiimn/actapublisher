@@ -753,11 +753,19 @@ export class ActaParagraph extends ActaGalley {
                 const lastRow = col.lastRow;
                 if (lastRow) {
                     const broken = this._checkBrokenLineArea(lastRow, textChar.height);
-                    if (broken[0] < broken[1]) {
-                        if (lastRow.fragment) {
-                            // FIXME
+                    if (broken) {
+                        if (broken[0] <= 0) {
+                            lastRow.paddingLeft = broken[1];
+                        } else if (broken[1] >= lastRow.columnWidth) {
+                            lastRow.paddingRight = lastRow.columnWidth - broken[0];
                         } else {
-                            lastRow.paddingRight = lastRow.column.offsetWidth - broken[0];
+                            const upperRow = lastRow.indexOfLine > 0 ? lastRow.column.textRows[lastRow.indexOfLine - 1] : null;
+                            if (upperRow && upperRow.fragment) {
+                                lastRow.paddingLeft = broken[1];
+                            } else {
+                                lastRow.fragment = true;
+                                lastRow.paddingRight = lastRow.columnWidth - broken[0];
+                            }
                         }
                     }
                 }
@@ -835,13 +843,16 @@ export class ActaParagraph extends ActaGalley {
     private _checkBrokenLineArea(textRow: ActaTextRow, height?: number) {
         const x1 = textRow.column.offsetLeft;
         const y1 = textRow.offsetTop;
-        const x2 = x1 + textRow.column.offsetWidth;
+        const x2 = x1 + textRow.columnWidth;
         const y2 = y1 + Math.max((height ? height : 0), textRow.maxHeight);
 
-        let brokenX1 = x2;
-        let brokenX2 = x1;
+        const collisionArea = super._checkCollisionArea(x1, y1, x2, y2);
+        if (collisionArea.length < 1) return null;
 
-        for (const broken of super._checkCollisionArea(x1, y1, x2, y2)) {
+        let brokenX1 = collisionArea[0][0];
+        let brokenX2 = collisionArea[0][2];
+
+        for (const broken of collisionArea) {
             brokenX1 = Math.min(broken[0], brokenX1);
             brokenX2 = Math.max(broken[2], brokenX2);
         }

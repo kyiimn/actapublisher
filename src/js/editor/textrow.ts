@@ -154,9 +154,8 @@ export class ActaTextRow {
         this._modified = true;
     }
 
-    set limitWidth(width: number) {
-        this._fragment = true;
-        this._limitWidth = width;
+    set fragment(fragment: boolean) {
+        this._fragment = fragment;
         this._modified = true;
     }
 
@@ -225,18 +224,20 @@ export class ActaTextRow {
 
     get limitWidth() {
         const svgRect = this.column.canvas.getBoundingClientRect();
-        return !this.fragment ? svgRect.width - this._paddingLeft - this._paddingRight : this._limitWidth;
+        return svgRect.width - this._paddingLeft - this._paddingRight;
+    }
+
+    get columnWidth() {
+        const svgRect = this.column.canvas.getBoundingClientRect();
+        return svgRect.width;
     }
 
     get offsetTop() {
         let offsetY = 0;
-        let leadFragment;
         for (const otherRow of this.column.textRows) {
             if (otherRow === this) break;
-            if (!otherRow.fragment) leadFragment = otherRow;
             offsetY += !otherRow.fragment ? otherRow.calcHeight : 0;
         }
-        if (this.fragment && leadFragment) offsetY -= leadFragment.calcHeight;
         return offsetY;
     }
 
