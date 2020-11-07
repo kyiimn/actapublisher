@@ -2,8 +2,8 @@ import { ActaPage } from './editor/page';
 import { ActaGuide } from './editor/guide';
 import { ActaParagraph } from './editor/paragraph';
 import { ActaFontManager } from './editor/fontmgr';
-import { ActaTextStyleManager } from './editor/textstylemgr';
-import { ActaTextStyle, TextAlign } from './editor/textstyle';
+import { ActaTextStyleManager } from './editor/text/textstylemgr';
+import { ActaTextStyle, TextAlign } from './editor/text/textstyle';
 
 import '../css/element.scss';
 

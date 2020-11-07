@@ -1,7 +1,7 @@
 import { ActaParagraph } from "./paragraph";
 import { ActaElement } from "./element";
-import { ActaTextChar, CharType } from "./textchar";
-import { ActaTextRow } from './textrow';
+import { ActaTextChar, CharType } from "./text/textchar";
+import { ActaTextRow } from './text/textrow';
 import U from './units';
 
 export class ActaParagraphColumn extends ActaElement {

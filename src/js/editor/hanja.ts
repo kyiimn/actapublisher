@@ -1,4 +1,4 @@
-import { ActaTextChar } from './textchar';
+import { ActaTextChar } from './text/textchar';
 import getHanjaDic from './hanja-data';
 
 import { Subject, fromEvent } from 'rxjs';

@@ -1,13 +1,13 @@
 import { ActaGalley } from './galley';
+import { ActaClipboard } from '../clipboard';
 import { ActaParagraphColumn } from './paragraph-col';
 import { ActaParagraphMargin } from './paragraph-margin';
-import { ActaTextStyleManager } from './textstylemgr';
-import { ActaTextStore } from './textstore';
-import { ActaTextNode } from './textnode';
-import { ActaTextStyle, ActaTextStyleInherit, TextAlign } from './textstyle';
-import { ActaClipboard } from '../clipboard';
-import { ActaTextRow } from './textrow';
-import { ActaTextChar, CharType } from './textchar';
+import { ActaTextStyleManager } from './text/textstylemgr';
+import { ActaTextStore } from './text/textstore';
+import { ActaTextNode } from './text/textnode';
+import { ActaTextStyle, ActaTextStyleInherit, TextAlign } from './text/textstyle';
+import { ActaTextRow } from './text/textrow';
+import { ActaTextChar, CharType } from './text/textchar';
 
 import { Subject, fromEvent } from 'rxjs';
 import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';

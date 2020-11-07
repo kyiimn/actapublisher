@@ -1,4 +1,4 @@
-import { ActaParagraphColumn } from './paragraph-col';
+import { ActaParagraphColumn } from '../paragraph-col';
 import { ActaTextChar, CharType } from './textchar';
 import { TextAlign } from './textstyle';
 
