@@ -19,7 +19,7 @@ class ActaTextStylePrivate {
     private _strikeline: boolean | null;
     private _indent: number | null;
 
-    private _change$: Subject<string>;
+    private _CHANGE$: Subject<string>;
 
     constructor() {
         this._font = null;
@@ -33,7 +33,7 @@ class ActaTextStylePrivate {
         this._indent = null;
         this._color = null;
 
-        this._change$ = new Subject<string>();
+        this._CHANGE$ = new Subject<string>();
     }
 
     protected merge(textStyle: ActaTextStylePrivate) {
@@ -54,7 +54,7 @@ class ActaTextStylePrivate {
     }
 
     protected emitChange(styleName: string = '') {
-        this._change$.next(styleName);
+        this._CHANGE$.next(styleName);
     }
 
     copy(textStyle: ActaTextStylePrivate) {
@@ -95,7 +95,7 @@ class ActaTextStylePrivate {
     }
 
     subscribe(observable: any) {
-        return this._change$.subscribe(observable);
+        return this._CHANGE$.subscribe(observable);
     }
 
     set fontName(fontName: string) {

@@ -6,8 +6,8 @@ export abstract class ActaGalley extends ActaElement {
     private _subscriptionChangeFocus?: Subscription;
     private _collisionList: ActaGalley[];
 
-    protected _changeSize$: Subject<undefined>;
-    protected _collision$: Subject<ActaGalley>;
+    protected _CHANGE_SIZE$: Subject<undefined>;
+    protected _COLLISION$: Subject<ActaGalley>;
 
     static get observedAttributes() {
         return [
@@ -81,7 +81,7 @@ export abstract class ActaGalley extends ActaElement {
         this.style.zIndex = order;
     }
 
-    protected _emitChangeSize() { this._changeSize$.next(); }
+    protected _emitChangeSize() { this._CHANGE_SIZE$.next(); }
 
     protected _checkCollisionArea(srcX1: number, srcY1: number, srcX2?: number, srcY2?: number): number[][] {
         const collisionArea = [];
@@ -116,9 +116,9 @@ export abstract class ActaGalley extends ActaElement {
         super();
 
         this._collisionList = [];
-        this._changeSize$ = new Subject();
-        this._collision$ = new Subject();
-        this._collision$.subscribe(_ => this._collision());
+        this._CHANGE_SIZE$ = new Subject();
+        this._COLLISION$ = new Subject();
+        this._COLLISION$.subscribe(_ => this._collision());
 
         if (x !== undefined) this.setAttribute('x', x.toString());
         if (y !== undefined) this.setAttribute('y', y.toString());
@@ -224,7 +224,7 @@ export abstract class ActaGalley extends ActaElement {
     get paddingLeft() { return this.getAttribute('padding-left') || '0'; }
     get paddingRight() { return this.getAttribute('padding-right') || '0'; }
     get collisionList() { return this._collisionList; }
-    get collisionObservable() { return this._collision$; }
+    get collisionObservable() { return this._COLLISION$; }
     get order() { return parseInt(this.getAttribute('order') || '0', 10); }
 
     protected abstract _focus(): void;

@@ -6,11 +6,12 @@ import { filter, map } from 'rxjs/operators';
 import U from './units';
 
 export class ActaPage extends ActaElement {
-    private _changePageStyle$: Subject<string>;
-    private _changeGalleyStyle$: Subject<ActaGalley>;
-    private _changeFocus$: Subject<ActaGalley>;
-    private _mutationAddRemoveGuide$: MutationObserver;
-    private _mutationChangeGalleyStyle$: MutationObserver;
+    private _CHANGE_PAGE_STYLE$: Subject<string>;
+    private _CHANGE_GALLEY_STYLE$: Subject<ActaGalley>;
+    private _CHANGE_FOCUS$: Subject<ActaGalley>;
+
+    private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
+    private _OBSERVER_CHANGE_GALLEY_STYLE$: MutationObserver;
 
     static get observedAttributes() {
         return ['width', 'height', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'];
@@ -55,25 +56,25 @@ export class ActaPage extends ActaElement {
     constructor(width?: string | number, height?: string | number) {
         super();
 
-        this._changePageStyle$ = new Subject();
-        this._changeFocus$ = new Subject();
+        this._CHANGE_PAGE_STYLE$ = new Subject();
+        this._CHANGE_FOCUS$ = new Subject();
 
-        this._changeGalleyStyle$ = new Subject();
-        this._changeGalleyStyle$.subscribe(src => {
+        this._CHANGE_GALLEY_STYLE$ = new Subject();
+        this._CHANGE_GALLEY_STYLE$.subscribe(src => {
             for (const dest of src.collisionList) {
                 dest.collisionObservable.next(src);
             }
             src.collisionObservable.next(src);
         });
 
-        this._mutationChangeGalleyStyle$ = new MutationObserver(mutations => {
+        this._OBSERVER_CHANGE_GALLEY_STYLE$ = new MutationObserver(mutations => {
             if (mutations.length > 0) this._refreshCollisionList();
             mutations.forEach(m => {
-                this._changeGalleyStyle$.next(m.target as ActaGalley);
+                this._CHANGE_GALLEY_STYLE$.next(m.target as ActaGalley);
             });
         });
 
-        this._mutationAddRemoveGuide$ = new MutationObserver(mutations => {
+        this._OBSERVER_ADDREMOVE_GUIDE$ = new MutationObserver(mutations => {
             mutations.forEach(m => {
                 if (m.type !== 'childList') return;
                 for (let i = 0; i < m.removedNodes.length; i++) {
@@ -90,13 +91,13 @@ export class ActaPage extends ActaElement {
                     const addedNode = m.addedNodes.item(i);
                     if (addedNode instanceof ActaGuide) {
                         const node = addedNode as ActaGuide;
-                        node.subscribeChangePageSize(this._changePageStyle$);
+                        node.subscribeChangePageSize(this._CHANGE_PAGE_STYLE$);
                     } else if (addedNode instanceof ActaGalley) {
                         const node = addedNode as ActaGalley;
                         node.order = this.lastGalleyOrder + 1;
                         this._refreshCollisionList();
-                        this._changeGalleyStyle$.next(node);
-                        this._mutationChangeGalleyStyle$.observe(node, {
+                        this._CHANGE_GALLEY_STYLE$.next(node);
+                        this._OBSERVER_CHANGE_GALLEY_STYLE$.observe(node, {
                             attributes: true,
                             attributeFilter: ActaGalley.observedAttributes
                         });
@@ -106,14 +107,14 @@ export class ActaPage extends ActaElement {
                             e.preventDefault();
                             return e.target as ActaGalley;
                         })).subscribe(target => {
-                            this._changeFocus$.next(target);
+                            this._CHANGE_FOCUS$.next(target);
                         });
-                        node.subscribeChangeFocus(this._changeFocus$);
+                        node.subscribeChangeFocus(this._CHANGE_FOCUS$);
                     }
                 }
             });
         });
-        this._mutationAddRemoveGuide$.observe(this, { childList: true });
+        this._OBSERVER_ADDREMOVE_GUIDE$.observe(this, { childList: true });
 
         if (width !== undefined) this.setAttribute('width', width.toString());
         if (height !== undefined) this.setAttribute('height', height.toString());
@@ -129,7 +130,7 @@ export class ActaPage extends ActaElement {
         if (oldValue === newValue) return;
 
         this._applyAttribute(name, newValue);
-        this._changePageStyle$.next(name);
+        this._CHANGE_PAGE_STYLE$.next(name);
     }
 
     set width(width: string | number) { this.setAttribute('width', width.toString()); }
