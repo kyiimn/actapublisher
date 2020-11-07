@@ -19,7 +19,7 @@ export class ActaTextRow {
     private _endLine: boolean;
 
     private _computePosition() {
-        this.items.forEach(item => item.initWidth());
+        this.items.forEach(item => item.marginWidth = 0);
 
         const filledWidth = this.calcWidth;
         const limitWidth = this.limitWidth;
@@ -75,7 +75,6 @@ export class ActaTextRow {
         this._items.push(textChar);
 
         textChar.textRow = this;
-        if (lastChar && lastChar.calcWidth === 0) lastChar.initWidth();
 
         this._modified = true;
 
@@ -87,24 +86,18 @@ export class ActaTextRow {
     }
 
     availablePushTextChar(textChar: ActaTextChar) {
+        const blankCharType = [CharType.RETURN, CharType.SPACE];
         if (this.endLine) return false;
-        return this.calcWidth + textChar.calcWidth > this.limitWidth ? false : true;
 
-        // FIXME: 속도저하 포인트
+        if (blankCharType.indexOf(textChar.type) < 0) {
+            const lastChar = this.lastTextChar;
+            let calcWidth = this.calcWidth;
 
-        const lastChar = this.lastTextChar;
-        this._items.push(textChar);
+            if (lastChar && blankCharType.indexOf(lastChar.type) > -1) calcWidth += lastChar.realWidth;
 
-        textChar.textRow = this;
-        if (lastChar && lastChar.calcWidth === 0) lastChar.initWidth();
-
-        const testWidth = this.calcWidth;
-        this._items.pop();
-
-        textChar.textRow = null;
-        if (lastChar && lastChar.calcWidth === 0) lastChar.initWidth();
-
-        return (testWidth <= this.limitWidth) ? true : false;
+            return (calcWidth + textChar.realWidth) <= this.limitWidth ? true : false;
+        }
+        return true;
     }
 
     update() {

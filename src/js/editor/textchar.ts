@@ -23,6 +23,7 @@ export class ActaTextChar {
     private _drawOffsetX: number;
     private _drawOffsetY: number;
     private _width: number;
+    private _realWidth: number;
     private _calcWidth: number;
     private _marginWidth: number;
 
@@ -90,6 +91,7 @@ export class ActaTextChar {
         this._drawOffsetY = 0;
         this._width = 0;
         this._calcWidth = 0;
+        this._realWidth = 0;
         this._marginWidth = 0;
 
         this._drawable = true;
@@ -196,7 +198,8 @@ export class ActaTextChar {
         const textStyle = this.textStyle;
         const scaledWidth = textStyle.xscale * this.width;
 
-        this._calcWidth = this.isDrawable ? (scaledWidth + (textStyle.letterSpacing || 0)) : 0;
+        this._realWidth = scaledWidth + (textStyle.letterSpacing || 0);
+        this._calcWidth = this.isDrawable ? this._realWidth : 0;
         this._marginWidth = 0;
     }
 
@@ -220,7 +223,6 @@ export class ActaTextChar {
             }
             this._modified = true;
         }
-        this.initWidth();
     }
 
     set char(char: string) {
@@ -266,21 +268,21 @@ export class ActaTextChar {
     }
 
     get isDrawable() {
-        const blinkCharType = [CharType.SPACE, CharType.RETURN];
-        if (blinkCharType.indexOf(this.type) < 0) return true;
-        if (!this.textRow) return false;
+        const blankCharType = [CharType.SPACE, CharType.RETURN];
+        if (blankCharType.indexOf(this.type) < 0) return true;
+        if (!this.textRow) return true;
 
         const items = this.textRow.items;
         if (items.length < 1) return false;
 
         let check = false;
         for (let i = 0; i < items.indexOf(this); i++) {
-            if (blinkCharType.indexOf(items[i].type) < 0) check = true;
+            if (blankCharType.indexOf(items[i].type) < 0) check = true;
         }
         if (!check) return false;
 
         for (let i = items.indexOf(this); i < items.length; i++) {
-            if (blinkCharType.indexOf(items[i].type) < 0) return true;
+            if (blankCharType.indexOf(items[i].type) < 0) return true;
         }
     }
 
@@ -289,7 +291,11 @@ export class ActaTextChar {
     }
 
     get calcWidth() {
-        return this._calcWidth;
+        return this.isDrawable ? this._realWidth : 0;
+    }
+
+    get realWidth() {
+        return this._realWidth;
     }
 
     get offsetLeft() {
