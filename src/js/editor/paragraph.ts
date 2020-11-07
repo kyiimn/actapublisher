@@ -361,7 +361,7 @@ export class ActaParagraph extends ActaGalley {
         } else if (e.ctrlKey && e.key.toLowerCase() === 'a') {
             if (this.textChars.length < 1) return false;
             const textChars = this.textChars;
-            for (let i = 0; i < textChars.length && textChars[i].visable; i++) {
+            for (let i = 0; i < textChars.length && textChars[i].isVisable; i++) {
                 this._cursor = i + 1;
             }
             this._selectionStart = 0;
@@ -439,14 +439,14 @@ export class ActaParagraph extends ActaGalley {
 
     private _getNearestVisableTextChar(textChar: ActaTextChar | null) {
         if (!textChar) return null;
-        if (!textChar.visable) {
+        if (!textChar.isVisable) {
             if (!textChar.textRow) return null;
             let tmpIdx = textChar.textRow.indexOf(textChar);
             if (tmpIdx < 0) return null;
             else {
                 do {
                     if (--tmpIdx < 1) break;
-                    if (!textChar.textRow.get(tmpIdx).visable) continue;
+                    if (!textChar.textRow.get(tmpIdx).isVisable) continue;
                 } while (false);
             }
             textChar = textChar.textRow.get(Math.max(tmpIdx, 0));
@@ -458,7 +458,7 @@ export class ActaParagraph extends ActaGalley {
         if (!currChar) return null;
 
         let curOffsetX = 0;
-        if (!currChar.visable) {
+        if (!currChar.isVisable) {
             const tmpChar = this._getNearestVisableTextChar(currChar);
             if (tmpChar) curOffsetX = tmpChar.x + tmpChar.width;
         } else {
@@ -468,7 +468,7 @@ export class ActaParagraph extends ActaGalley {
         let prevOffsetX = 0;
 
         for (const targetChar of targetChars) {
-            if (targetChar.visable) {
+            if (targetChar.isVisable) {
                 prevOffsetX = Math.max(targetChar.x, prevOffsetX);
             }
             distance.push(Math.abs(prevOffsetX - curOffsetX));
@@ -512,7 +512,7 @@ export class ActaParagraph extends ActaGalley {
         if (textChar) {
             position = this.textChars.indexOf(textChar);
             if (textChar.textRow === null) return null;
-            if (x !== undefined && textChar.visable) {
+            if (x !== undefined && textChar.isVisable) {
                 if (textChar.calcWidth > 0) {
                     const offsetX = x - textChar.x;
                     if (textChar.calcWidth / 2 < offsetX) position++;
@@ -647,9 +647,9 @@ export class ActaParagraph extends ActaGalley {
                     if (!textChar || !textRow) return;
 
                     currColumn = this.columns[textRow.indexOfColumn];
-                    x = textChar.visable ? textChar.x + textChar.calcWidth : textRow.indent;
-                    y = textChar.visable ? textChar.y : textRow.offsetTop;
-                    height = textChar.visable ? textChar.height : textRow.maxHeight;
+                    x = textChar.isVisable ? textChar.x + textChar.calcWidth : textRow.indent;
+                    y = textChar.isVisable ? textChar.y : textRow.offsetTop;
+                    height = textChar.isVisable ? textChar.height : textRow.maxHeight;
                 }
             } else {
                 textChar = this._getTextCharAtCursor();
@@ -658,13 +658,13 @@ export class ActaParagraph extends ActaGalley {
 
                 currColumn = this.columns[textRow.indexOfColumn];
                 if (textChar.type !== CharType.RETURN) {
-                    x = textChar.visable ? textChar.x :textRow.indent;
-                    y = textChar.visable ? textChar.y : textRow.offsetTop;
+                    x = textChar.isVisable ? textChar.x :textRow.indent;
+                    y = textChar.isVisable ? textChar.y : textRow.offsetTop;
                     height = textRow.maxHeight;
                 } else {
                     textChar = this._getNearestVisableTextChar(textChar);
-                    x = (textChar && textChar.visable) ? textChar.x + textChar.calcWidth : textRow.indent;
-                    y = (textChar && textChar.visable) ? textChar.y : textRow.offsetTop;
+                    x = (textChar && textChar.isVisable) ? textChar.x + textChar.calcWidth : textRow.indent;
+                    y = (textChar && textChar.isVisable) ? textChar.y : textRow.offsetTop;
                     height = textRow.maxHeight;
                 }
             }
@@ -686,7 +686,7 @@ export class ActaParagraph extends ActaGalley {
         let textChar: ActaTextChar | undefined;
 
         for (const fTextChar of this.textChars) {
-            if (!fTextChar.visable || fTextChar.x < 0) continue;
+            if (!fTextChar.isVisable || fTextChar.x < 0) continue;
             if (!fTextChar.textRow) continue;
             if (fTextChar.textRow.column !== column) continue;
 
@@ -724,7 +724,7 @@ export class ActaParagraph extends ActaGalley {
         const y2 = y + height;
 
         for (const fTextChar of this.textChars) {
-            if (!fTextChar.visable || fTextChar.x < 0) continue;
+            if (!fTextChar.isVisable || fTextChar.x < 0) continue;
             if (!fTextChar.textRow) continue;
             if (fTextChar.textRow.column !== column) continue;
 
@@ -737,7 +737,7 @@ export class ActaParagraph extends ActaGalley {
         return textChars;
     }
 
-    private _computeDrawPointOfTextChars(): void {
+    private _computeDrawPointOfTextChars() {
         let colIdx = 0;
 
         this.columns.forEach(col => col.clear());
@@ -751,24 +751,8 @@ export class ActaParagraph extends ActaGalley {
                 if (!col) break;
 
                 const lastRow = col.lastRow;
-                if (lastRow) {
-                    const broken = this._checkBrokenLineArea(lastRow, textChar.height);
-                    if (broken) {
-                        if (broken[0] <= 0) {
-                            lastRow.paddingLeft = broken[1];
-                        } else if (broken[1] >= lastRow.columnWidth) {
-                            lastRow.paddingRight = lastRow.columnWidth - broken[0];
-                        } else {
-                            const upperRow = lastRow.indexOfLine > 0 ? lastRow.column.textRows[lastRow.indexOfLine - 1] : null;
-                            if (upperRow && upperRow.fragment) {
-                                lastRow.paddingLeft = broken[1];
-                            } else {
-                                lastRow.fragment = true;
-                                lastRow.paddingRight = lastRow.columnWidth - broken[0];
-                            }
-                        }
-                    }
-                }
+                if (lastRow) this.computeDrawableAreaOfTextRow(lastRow, textChar);
+
                 if (col.push(textChar)) break;
                 if (!this.columns[++colIdx]) {
                     this._overflow = true;
@@ -790,8 +774,8 @@ export class ActaParagraph extends ActaGalley {
             textStyle = this.defaultTextStyle;
             if (!textStyle || !textStyle.font || !textStyle.fontSize) return;
 
-            // tslint:disable-next-line: no-unused-expression
-            new ActaTextRow(this.columns[indexOfColumn], textStyle.indent || 0);
+            const dummyRow = new ActaTextRow(this.columns[indexOfColumn], textStyle.indent || 0);
+            this.computeDrawableAreaOfTextRow(dummyRow);
         }
     }
 
@@ -1027,6 +1011,26 @@ export class ActaParagraph extends ActaGalley {
         const selTextChars = this._getSelectionTextChars();
         this._applyTextStyle(selTextChars, textStyle);
         this._emitUpdate();
+    }
+
+    computeDrawableAreaOfTextRow(textRow: ActaTextRow, textChar?: ActaTextChar) {
+        const textHeight = textChar ? textChar.height : this.defaultTextStyle.textHeight;
+        const broken = this._checkBrokenLineArea(textRow, textHeight);
+        if (broken) {
+            if (broken[0] <= 0) {
+                textRow.paddingLeft = broken[1];
+            } else if (broken[1] >= textRow.columnWidth) {
+                textRow.paddingRight = textRow.columnWidth - broken[0];
+            } else {
+                const upperRow = textRow.indexOfLine > 0 ? textRow.column.textRows[textRow.indexOfLine - 1] : null;
+                if (upperRow && upperRow.fragment) {
+                    textRow.paddingLeft = broken[1];
+                } else {
+                    textRow.fragment = true;
+                    textRow.paddingRight = textRow.columnWidth - broken[0];
+                }
+            }
+        }
     }
 
     getCursorTextStyleIntersection() {

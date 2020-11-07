@@ -25,6 +25,7 @@ const main = async () => {
     s = new ActaTextStyle('중앙신문명조');
     s.fontSize = 12;
     s.indent = 8;
+    //s.textAlign = TextAlign.LEFT;
     ActaTextStyleManager.in.add('본문3', s);
 
     const page = new ActaPage('25cm', '30cm');

@@ -19,34 +19,18 @@ export class ActaTextRow {
     private _endLine: boolean;
 
     private _computePosition() {
-        this.items.forEach(item => {
-            item.calcWidth = item.scaledWidth;
-            item.calcWidth += (item.calcWidth > 0) ? (item.textStyle.letterSpacing || 0) : 0;
-        });
+        this.items.forEach(item => item.initWidth());
 
-        let filledWidth = this.calcWidth;
-        let itemcnt = this.length;
-        if (itemcnt < 1) return;
-
-        if ([CharType.SPACE].indexOf(this.firstTextChar.type) > -1) {
-            filledWidth -= this.firstTextChar.calcWidth;
-            itemcnt--;
-            this.firstTextChar.calcWidth = 0;
-        }
-        if ([CharType.SPACE].indexOf(this.lastTextChar.type) > -1) {
-            filledWidth -= this.lastTextChar.calcWidth;
-            itemcnt--;
-            this.lastTextChar.calcWidth = 0;
-        }
+        const filledWidth = this.calcWidth;
+        const limitWidth = this.limitWidth;
         if (this.textAlign === TextAlign.JUSTIFY) {
-            const diffWidth = (this.limitWidth - filledWidth) / itemcnt;
-            if (!this.endLine) {
-                this.items.forEach(item => item.calcWidth += (item.calcWidth > 0) ? diffWidth : 0);
-            }
+            const itemcnt = this.drawableCharCount || 1;
+            const diffWidth = (limitWidth - filledWidth) / itemcnt;
+            if (!this.endLine) this.items.forEach(item => item.marginWidth = diffWidth);
         } else if (this.textAlign === TextAlign.RIGHT) {
-            this.indent += this.limitWidth - filledWidth;
+            this.indent += limitWidth - filledWidth;
         } else if (this.textAlign === TextAlign.CENTER) {
-            this.indent += (this.limitWidth - filledWidth) / 2;
+            this.indent += (limitWidth - filledWidth) / 2;
         }
     }
 
@@ -81,15 +65,17 @@ export class ActaTextRow {
     push(textChar: ActaTextChar) {
         if (!this.availablePushTextChar(textChar)) return false;
 
-        this.maxHeight = textChar.height;
-        this.maxLeading = textChar.leading;
-        this.textAlign = textChar.textStyle.textAlign;
+        const textStyle = textChar.textStyle;
 
-        if (this._items.length === 0 && [CharType.SPACE].indexOf(textChar.type) > -1) {
-            textChar.calcWidth = 0;
-        }
-        textChar.textRow = this;
+        this.maxHeight = textStyle.textHeight;
+        this.maxLeading = textStyle.leading;
+        this.textAlign = textStyle.textAlign;
+
+        const lastChar = this.lastTextChar;
         this._items.push(textChar);
+
+        textChar.textRow = this;
+        if (lastChar && lastChar.calcWidth === 0) lastChar.initWidth();
 
         this._modified = true;
 
@@ -101,7 +87,24 @@ export class ActaTextRow {
     }
 
     availablePushTextChar(textChar: ActaTextChar) {
-        return !this.endLine && this.calcWidth + textChar.calcWidth <= this.limitWidth ? true : false;
+        if (this.endLine) return false;
+        return this.calcWidth + textChar.calcWidth > this.limitWidth ? false : true;
+
+        // FIXME: 속도저하 포인트
+
+        const lastChar = this.lastTextChar;
+        this._items.push(textChar);
+
+        textChar.textRow = this;
+        if (lastChar && lastChar.calcWidth === 0) lastChar.initWidth();
+
+        const testWidth = this.calcWidth;
+        this._items.pop();
+
+        textChar.textRow = null;
+        if (lastChar && lastChar.calcWidth === 0) lastChar.initWidth();
+
+        return (testWidth <= this.limitWidth) ? true : false;
     }
 
     update() {
@@ -170,6 +173,12 @@ export class ActaTextRow {
     get firstTextChar() { return this.items[0]; }
     get lastTextChar() { return this.items[this.length - 1]; }
 
+    get drawableCharCount() {
+        let cnt = 0;
+        this.items.forEach(item => cnt += item.isDrawable ? 1 : 0);
+        return cnt;
+    }
+
     get endLine() {
         let lastIsReturn = false;
         if (this.length > 0) {
@@ -216,7 +225,7 @@ export class ActaTextRow {
 
     get calcWidth() {
         let width = this.indent;
-        this.items.forEach(item => width += Math.max(item.width, 0));
+        this.items.forEach(item => width += item.calcWidth);
         return width;
     }
 
