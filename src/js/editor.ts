@@ -1,9 +1,11 @@
 import { ActaPage } from './editor/page';
 import { ActaGuide } from './editor/guide';
 import { ActaParagraph } from './editor/paragraph';
+import { ActaImage } from './editor/image';
 import { ActaFontManager } from './editor/fontmgr';
 import { ActaTextStyleManager } from './editor/text/textstylemgr';
 import { ActaTextStyle, TextAlign } from './editor/text/textstyle';
+import U from './editor/units';
 
 import '../css/element.scss';
 
@@ -13,17 +15,17 @@ const main = async () => {
 
     let s;
     s = new ActaTextStyle('중앙신문명조');
-    s.fontSize = 12;
+    s.fontSize = U.px('9pt');
     ActaTextStyleManager.in.add('본문1', s);
 
     s = new ActaTextStyle('중앙세고딕');
-    s.fontSize = 12;
+    s.fontSize = U.px('9pt');
     s.letterSpacing = 1;
     s.color = '#ff0000';
     ActaTextStyleManager.in.add('본문2', s);
 
     s = new ActaTextStyle('중앙신문명조');
-    s.fontSize = 12;
+    s.fontSize = U.px('9pt');
     s.indent = 8;
     ActaTextStyleManager.in.add('본문3', s);
 

@@ -1,6 +1,7 @@
 import { ActaTextNode } from './textnode';
 import { TextAlign } from './textstyle';
 import { Stack } from '../../utils';
+import U from '../units';
 
 export class ActaTextStore extends ActaTextNode {
     static import(textStyleName: string, markupText: string) {
@@ -53,10 +54,10 @@ export class ActaTextStore extends ActaTextNode {
                                     case 'underline': textStyle.underline = val === 'yes' ? true : false; break;
                                     case 'strikeline': textStyle.strikeline = val === 'yes' ? true : false; break;
                                     case 'xscale': textStyle.xscale = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
-                                    case 'letter-spacing': textStyle.letterSpacing = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
                                     case 'line-height': textStyle.lineHeight = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
-                                    case 'indent': textStyle.indent = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
-                                    case 'font-size': textStyle.fontSize = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'letter-spacing': textStyle.letterSpacing = U.px(val); break;
+                                    case 'indent': textStyle.indent = U.px(val); break;
+                                    case 'font-size': textStyle.fontSize = U.px(val); break;
                                     case 'font-name': textStyle.fontName = val; break;
                                     case 'text-align':
                                         textStyle.textAlign =

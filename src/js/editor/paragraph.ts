@@ -859,6 +859,15 @@ export class ActaParagraph extends ActaGalley {
         this._emitRepaint();
     }
 
+    protected _focus() {
+        this._emitRepaintCursor();
+    }
+
+    protected _blur() {
+        this._selectionStart = null;
+        this._removeCursor();
+    }
+
     constructor(
         x: string | number, y: string | number, width: string | number, height: string | number,
         defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []
@@ -981,15 +990,6 @@ export class ActaParagraph extends ActaGalley {
             e.preventDefault();
             e.stopPropagation();
         });
-    }
-
-    protected _focus() {
-        this._emitRepaintCursor();
-    }
-
-    protected _blur() {
-        this._selectionStart = null;
-        this._removeCursor();
     }
 
     columnWidth(idx: number, val: string | number) {
