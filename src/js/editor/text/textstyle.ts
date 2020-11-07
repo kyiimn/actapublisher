@@ -1,7 +1,7 @@
-import { ActaFontManager } from './fontmgr';
-import { ActaFont } from './font';
+import { ActaFontManager } from '../fontmgr';
+import { ActaFont } from '../font';
+
 import { Subject } from 'rxjs';
-import { distinctUntilChanged } from 'rxjs/operators';
 
 export enum TextAlign {
     JUSTIFY = 0, LEFT, RIGHT, CENTER

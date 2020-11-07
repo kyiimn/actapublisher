@@ -1,7 +1,6 @@
 import { ActaTextNode } from './textnode';
 import { TextAlign } from './textstyle';
-import { Stack } from '../utils';
-import { ActaTextChar } from './textchar';
+import { Stack } from '../../utils';
 
 export class ActaTextStore extends ActaTextNode {
     static import(textStyleName: string, markupText: string) {

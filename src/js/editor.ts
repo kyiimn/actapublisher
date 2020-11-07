@@ -25,7 +25,6 @@ const main = async () => {
     s = new ActaTextStyle('중앙신문명조');
     s.fontSize = 12;
     s.indent = 8;
-    //s.textAlign = TextAlign.LEFT;
     ActaTextStyleManager.in.add('본문3', s);
 
     const page = new ActaPage('25cm', '30cm');
@@ -45,7 +44,6 @@ const main = async () => {
     page.appendChild(para2);
 
     const para3 = new ActaParagraph('80mm', '20mm', '40mm', '40mm', '본문3', 2, '2mm');
-    //const para3 = new ActaParagraph('5mm', '20mm', '20mm', '40mm', '본문3', 3, '2mm');
     page.appendChild(para3);
 
     const para4 = new ActaParagraph('60mm', '60mm', '20mm', '40mm', '본문3', 1, '2mm');
