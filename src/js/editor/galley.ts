@@ -81,7 +81,7 @@ export abstract class ActaGalley extends ActaElement {
         this.style.zIndex = order;
     }
 
-    protected _emitChangeSize() { this._CHANGE_SIZE$.next(); }
+    protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(); }
 
     protected _checkCollisionArea(srcX1: number, srcY1: number, srcX2?: number, srcY2?: number): number[][] {
         const collisionArea = [];
@@ -153,26 +153,26 @@ export abstract class ActaGalley extends ActaElement {
             case 'x': this._applyX(); break;
             case 'y': this._applyY(); break;
 
-            case 'width': this._applyWidth(); this._emitChangeSize(); break;
-            case 'height': this._applyHeight(); this._emitChangeSize(); break;
+            case 'width': this._applyWidth(); this._EMIT_CHANGE_SIZE(); break;
+            case 'height': this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
 
-            case 'padding-top': this._applyPaddingTop(); this._emitChangeSize(); break;
-            case 'padding-bottom': this._applyPaddingBottom(); this._emitChangeSize(); break;
-            case 'padding-left': this._applyPaddingLeft(); this._emitChangeSize(); break;
-            case 'padding-right': this._applyPaddingRight(); this._emitChangeSize(); break;
-            case 'padding': this._applyPaddingTop(); this._applyPaddingBottom(); this._applyPaddingLeft(); this._applyPaddingRight(); this._emitChangeSize(); break;
+            case 'padding-top': this._applyPaddingTop(); this._EMIT_CHANGE_SIZE(); break;
+            case 'padding-bottom': this._applyPaddingBottom(); this._EMIT_CHANGE_SIZE(); break;
+            case 'padding-left': this._applyPaddingLeft(); this._EMIT_CHANGE_SIZE(); break;
+            case 'padding-right': this._applyPaddingRight(); this._EMIT_CHANGE_SIZE(); break;
+            case 'padding': this._applyPaddingTop(); this._applyPaddingBottom(); this._applyPaddingLeft(); this._applyPaddingRight(); this._EMIT_CHANGE_SIZE(); break;
 
-            case 'border-top': this._applyY(); this._applyBorderTop(); this._applyHeight(); this._emitChangeSize(); break;
-            case 'border-bottom': this._applyBorderBottom(); this._applyHeight(); this._emitChangeSize(); break;
-            case 'border-left': this._applyX(); this._applyBorderLeft(); this._applyWidth(); this._emitChangeSize(); break;
-            case 'border-right': this._applyBorderRight(); this._applyWidth(); this._emitChangeSize(); break;
+            case 'border-top': this._applyY(); this._applyBorderTop(); this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
+            case 'border-bottom': this._applyBorderBottom(); this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
+            case 'border-left': this._applyX(); this._applyBorderLeft(); this._applyWidth(); this._EMIT_CHANGE_SIZE(); break;
+            case 'border-right': this._applyBorderRight(); this._applyWidth(); this._EMIT_CHANGE_SIZE(); break;
             case 'border':
                 this._applyBorderTop(); this._applyBorderLeft(); this._applyBorderLeft(); this._applyBorderRight();
-                this._applyWidth(); this._applyHeight(); this._emitChangeSize(); break;
+                this._applyWidth(); this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
 
-            case 'border-color': this._applyBorderTop(); this._applyBorderLeft(); this._applyBorderLeft(); this._applyBorderRight(); this._emitChangeSize(); break;
+            case 'border-color': this._applyBorderTop(); this._applyBorderLeft(); this._applyBorderLeft(); this._applyBorderRight(); this._EMIT_CHANGE_SIZE(); break;
 
-            case 'order': this._applyOrder(); this._emitChangeSize(); break;
+            case 'order': this._applyOrder(); this._EMIT_CHANGE_SIZE(); break;
 
             default: break;
         }

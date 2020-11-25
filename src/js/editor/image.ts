@@ -6,7 +6,7 @@ import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
 
 export class ActaImage extends ActaGalley {
     protected _collision() {
-        //this._emitUpdate();
+        // this._emitUpdate();
     }
 
     protected _focus() {

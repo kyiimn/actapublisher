@@ -82,7 +82,7 @@ export class ActaParagraphColumn extends ActaElement {
                     }
                 }
                 currentRow = new ActaTextRow(this, newpara ? textChar.textStyle.indent : 0);
-                if (paragraph) paragraph.computeDrawableAreaOfTextRow(currentRow, textChar);
+                if (paragraph) paragraph.computeTextRowPaddingSize(currentRow, textChar);
             }
             if (currentRow.push(textChar)) break;
             currentRow = null;

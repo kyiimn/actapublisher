@@ -101,26 +101,26 @@ export class ActaParagraph extends ActaGalley {
     private _REPAINT$: Subject<undefined>;
     private _REPAINT_CURSOR$: Subject<string>;
 
-    private static _inputMethod:InputMethod = InputMethod.EN;
+    private static _INPUT_METHOD:InputMethod = InputMethod.EN;
     private static _CHNAGE_INPUT_METHOD$: Subject<InputMethod> = new Subject();
 
-    private static toggleInputMethod() {
-        ActaParagraph._inputMethod = ActaParagraph._inputMethod === InputMethod.KO ? InputMethod.EN : InputMethod.KO;
-        ActaParagraph._CHNAGE_INPUT_METHOD$.next(ActaParagraph._inputMethod);
+    private static TOGGLE_INPUT_METHOD() {
+        ActaParagraph._INPUT_METHOD = ActaParagraph._INPUT_METHOD === InputMethod.KO ? InputMethod.EN : InputMethod.KO;
+        ActaParagraph._CHNAGE_INPUT_METHOD$.next(ActaParagraph._INPUT_METHOD);
     }
 
-    private static get inputMethod() {
-        return ActaParagraph._inputMethod;
+    private static get INPUT_METHOD() {
+        return ActaParagraph._INPUT_METHOD;
     }
 
-    private static getChar(e: KeyboardEvent) {
+    private static GET_CHAR(e: KeyboardEvent) {
         let retChar: string | undefined;
-        if (KEYCODE_CHAR_MAP[e.key]) retChar = (ActaParagraph.inputMethod === InputMethod.KO) ? KEYCODE_CHAR_MAP[e.key][1] : KEYCODE_CHAR_MAP[e.key][0];
+        if (KEYCODE_CHAR_MAP[e.key]) retChar = (ActaParagraph.INPUT_METHOD === InputMethod.KO) ? KEYCODE_CHAR_MAP[e.key][1] : KEYCODE_CHAR_MAP[e.key][0];
         if (retChar === undefined && KEYCODE_SPECIALCHAR_MAP[e.key]) retChar = KEYCODE_SPECIALCHAR_MAP[e.key];
         return retChar;
     }
 
-    private static isCharType(e: KeyboardEvent) {
+    private static GET_CHAR_TYPE(e: KeyboardEvent) {
         if (KEYCODE_CHAR_MAP[e.key]) return InputCharType.TEXT;
         else if (KEYCODE_SPECIALCHAR_MAP[e.key]) return InputCharType.SPECIAL;
         return InputCharType.NONE;
@@ -147,14 +147,14 @@ export class ActaParagraph extends ActaGalley {
     }
 
     private _onCharKeyPress(e: KeyboardEvent) {
-        const char = ActaParagraph.getChar(e);
+        const char = ActaParagraph.GET_CHAR(e);
 
         if ([CursorMode.EDIT, CursorMode.SELECTION, CursorMode.INPUT].indexOf(this._cursorMode) < 0) return;
         if (this._cursor === null) { this._cursorMode = CursorMode.NONE; return; }
         if (char === undefined) { this._cursorMode = CursorMode.EDIT; return; }
 
         if (this._cursorMode === CursorMode.SELECTION) {
-            const selectionTextChars = this._getSelectionTextChars();
+            const selectionTextChars = this._getSelectedTextChars();
             this._cursor = this.textChars.indexOf(selectionTextChars[0]);
             this._removeTextChars(selectionTextChars);
             this._cursorMode = CursorMode.EDIT;
@@ -175,7 +175,7 @@ export class ActaParagraph extends ActaGalley {
             insertPos = textChar.indexOfNode;
             textNode = textChar.textNode;
         }
-        if (ActaParagraph.inputMethod === InputMethod.KO && ActaParagraph.isCharType(e) === InputCharType.TEXT) {
+        if (ActaParagraph.INPUT_METHOD === InputMethod.KO && ActaParagraph.GET_CHAR_TYPE(e) === InputCharType.TEXT) {
             if (this._cursorMode === CursorMode.INPUT) {
                 this._cursorMode = CursorMode.EDIT;
                 this._inputChar += char;
@@ -192,7 +192,7 @@ export class ActaParagraph extends ActaGalley {
             this._cursorMode = CursorMode.EDIT;
             this._cursor++;
         }
-        this._emitRepaint();
+        this._EMIT_REPAINT();
 
         return false;
     }
@@ -246,16 +246,16 @@ export class ActaParagraph extends ActaGalley {
                 if (textRow && textRow.length > 0) {
                     this._cursor = this.textChars.indexOf((e.keyCode === Keycode.HOME) ? textRow.firstTextChar : textRow.lastTextChar);
                     if (this._cursor === this.textChars.length - 1 && this.textChars[this._cursor].type !== CharType.RETURN) this._cursor++;
-                    this._emitRepaintCursor();
+                    this._EMIT_REPAINT_CURSOR();
                 }
                 return false;
             } else if ([Keycode.UP, Keycode.DOWN].indexOf(e.keyCode) > -1) {
-                const nearTextRow = (e.keyCode === Keycode.UP) ? this._getPrevTextRowAtCursor() : this._getCursorNextTextRow();
+                const nearTextRow = (e.keyCode === Keycode.UP) ? this._getUpsideTextRowAtCursor() : this._getDownsideTextRowAtCursor();
                 if (nearTextRow !== null) {
-                    const nearestItem = this._getNearestLineTextChar(this._getTextCharAtCursor(), nearTextRow.items);
+                    const nearestItem = this._getNearestVisableTextCharInTarget(this._getTextCharAtCursor(), nearTextRow.items);
                     if (nearestItem) {
                         this._cursor = this.textChars.indexOf(nearestItem);
-                        this._emitRepaintCursor();
+                        this._EMIT_REPAINT_CURSOR();
                         return false;
                     }
                 }
@@ -263,26 +263,26 @@ export class ActaParagraph extends ActaGalley {
                 return false;
             } else if ([Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
                 this._cursor = (e.keyCode === Keycode.LEFT) ? Math.max(this._cursor - 1, 0) : Math.min(this._cursor + 1, this.textChars.length);
-                this._emitRepaintCursor();
+                this._EMIT_REPAINT_CURSOR();
                 return false;
             }
         } else if ([Keycode.BACKSPACE, Keycode.DELETE].indexOf(e.keyCode) > -1) {
             if (this._cursorMode === CursorMode.SELECTION) {
-                const selTextChars = this._getSelectionTextChars();
+                const selTextChars = this._getSelectedTextChars();
                 if (selTextChars.length > 0) {
                     this._cursor = this.textChars.indexOf(selTextChars[0]);
                     this._removeTextChars(selTextChars);
                 } else return false;
             } else {
                 if (e.keyCode === Keycode.BACKSPACE) {
-                    if (ActaParagraph.inputMethod === InputMethod.KO && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
+                    if (ActaParagraph.INPUT_METHOD === InputMethod.KO && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
                         this._inputChar = this._inputChar.substr(0, this._inputChar.length - 1);
                         this._updateInputHangulChar();
                         if (this._inputChar === '') {
                             this._cursor--;
                             this._cursorMode = CursorMode.EDIT;
                         }
-                        this._emitRepaint();
+                        this._EMIT_REPAINT();
                         return false;
                     }
                     if (this._cursor === 0) return false;
@@ -291,48 +291,48 @@ export class ActaParagraph extends ActaGalley {
                 this._removeTextChars([this.textChars[this._cursor]]);
             }
             this._cursorMode = CursorMode.EDIT;
-            this._emitRepaintCursor();
+            this._EMIT_REPAINT_CURSOR();
             return false;
         } else if (e.keyCode === Keycode.HANGUL) {
-            ActaParagraph.toggleInputMethod();
+            ActaParagraph.TOGGLE_INPUT_METHOD();
             this._cursorMode = CursorMode.EDIT;
-            this._emitRepaintCursor();
+            this._EMIT_REPAINT_CURSOR();
             return false;
         } else if (e.keyCode === Keycode.HANJA) {
             const textChar = this.textChars[this._cursor - 1];
             if (textChar) {
                 this._selectionStart = this._cursor - 1;
                 this._cursorMode = CursorMode.SELECTION;
-                this._emitRepaintCursor();
+                this._EMIT_REPAINT_CURSOR();
 
                 const textCharPos = this._getBoundingClientRect(textChar);
                 SelectHanja(textChar, textCharPos.x, textCharPos.y + textCharPos.height).subscribe({
                     next: data => {
                         if (!data.hanjaChar) return;
                         textChar.char = data.hanjaChar;
-                        this._emitRepaint();
+                        this._EMIT_REPAINT();
                     },
                     complete: () => {
                         this.focus({ preventScroll: true });
 
                         this._cursorMode = CursorMode.EDIT;
-                        this._emitRepaintCursor();
+                        this._EMIT_REPAINT_CURSOR();
                     }
                 });
             } else {
                 this._cursorMode = CursorMode.EDIT;
-                this._emitRepaintCursor();
+                this._EMIT_REPAINT_CURSOR();
             }
             return false;
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'c') || (e.ctrlKey && e.keyCode === Keycode.INSERT)) {
-            const selTextChars = this._getSelectionTextChars();
+            const selTextChars = this._getSelectedTextChars();
             let selText = '';
             if (selTextChars.length < 1) return false;
             for (const textChar of selTextChars) selText += textChar.char || '';
             ActaClipboard.in.write(selText);
             return false;
         } else if (e.ctrlKey && e.key.toLowerCase() === 'x') {
-            const selTextChars = this._getSelectionTextChars();
+            const selTextChars = this._getSelectedTextChars();
             let selText = '';
             if (selTextChars.length < 1) return false;
             this._cursor = this.textChars.indexOf(selTextChars[0]);
@@ -340,22 +340,22 @@ export class ActaParagraph extends ActaGalley {
 
             for (const textChar of selTextChars) selText += textChar.char || '';
             this._removeTextChars(selTextChars);
-            this._emitRepaint();
+            this._EMIT_REPAINT();
             ActaClipboard.in.write(selText);
             return false;
         } else if ((e.ctrlKey && e.key.toLowerCase() === 'v') || (e.shiftKey && e.keyCode === Keycode.INSERT)) {
-            const selTextChars = this._getSelectionTextChars();
+            const selTextChars = this._getSelectedTextChars();
             if (selTextChars.length > 0) {
                 this._cursor = this.textChars.indexOf(selTextChars[0]);
                 this._removeTextChars(selTextChars);
             };
-            this._emitRepaint();
+            this._EMIT_REPAINT();
 
             ActaClipboard.in.read().then(v => {
                 if (!v) return;
                 if (this._cursor === null || typeof(v) !== 'string') return;
                 this._insertText(v);
-                this._emitRepaint();
+                this._EMIT_REPAINT();
             });
             return false;
         } else if (e.ctrlKey && e.key.toLowerCase() === 'a') {
@@ -366,21 +366,21 @@ export class ActaParagraph extends ActaGalley {
             }
             this._selectionStart = 0;
             this._cursorMode = CursorMode.SELECTION;
-            this._emitRepaintCursor();
+            this._EMIT_REPAINT_CURSOR();
             return false;
         } else if (e.altKey && e.key === 'd') {
             const aa = new ActaTextStyleInherit();
             aa.fontSize = 15;
-            this.applyCursorTextStyle(aa);
+            this.setTextStyleAtCursor(aa);
             return false;
         } else if (e.altKey && e.key === 'c') {
-            this.applyCursorDefinedTextStyle('본문2');
+            this.setPredefineTextStyleAtCursor('본문2');
             return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
     }
 
-    private _getTextCharBlocks(textChars: ActaTextChar[]) {
+    private _toTextNodes(textChars: ActaTextChar[]) {
         const returnTextBlocks: ActaTextNode[] = [];
         for (let i = textChars.length; i > 0; i--) {
             const endChar = textChars[i - 1];
@@ -413,9 +413,9 @@ export class ActaParagraph extends ActaGalley {
         return returnTextBlocks.reverse();
     }
 
-    private _applyDefinedTextStyle(textChars: ActaTextChar[], textStyleName: string) {
+    private _setPredefineTextStyle(textChars: ActaTextChar[], textStyleName: string) {
         if (!ActaTextStyleManager.in.get(textStyleName)) return;
-        const textNodes = this._getTextCharBlocks(textChars);
+        const textNodes = this._toTextNodes(textChars);
         for (const textNode of textNodes) {
             textNode.defaultTextStyleName = textStyleName;
             textNode.modifiedTextStyle = new ActaTextStyleInherit();
@@ -425,8 +425,8 @@ export class ActaParagraph extends ActaGalley {
         }
     }
 
-    private _applyTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
-        const textNodes = this._getTextCharBlocks(textChars);
+    private _setTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
+        const textNodes = this._toTextNodes(textChars);
         for (const textNode of textNodes) {
             textNode.modifiedTextStyle.merge(textStyle);
         }
@@ -434,27 +434,27 @@ export class ActaParagraph extends ActaGalley {
 
     private _removeTextChars(textChars: ActaTextChar[]) {
         for (const textChar of textChars) textChar.remove();
-        this._emitRepaint();
+        this._EMIT_REPAINT();
     }
 
-    private _getNearestVisableTextChar(textChar: ActaTextChar | null) {
-        if (!textChar) return null;
-        if (!textChar.isVisable) {
-            if (!textChar.textRow) return null;
-            let tmpIdx = textChar.textRow.indexOf(textChar);
+    private _getNearestVisableTextChar(currChar: ActaTextChar | null) {
+        if (!currChar) return null;
+        if (!currChar.isVisable) {
+            if (!currChar.textRow) return null;
+            let tmpIdx = currChar.textRow.indexOf(currChar);
             if (tmpIdx < 0) return null;
             else {
                 do {
                     if (--tmpIdx < 1) break;
-                    if (!textChar.textRow.get(tmpIdx).isVisable) continue;
+                    if (!currChar.textRow.get(tmpIdx).isVisable) continue;
                 } while (false);
             }
-            textChar = textChar.textRow.get(Math.max(tmpIdx, 0));
+            currChar = currChar.textRow.get(Math.max(tmpIdx, 0));
         }
-        return textChar;
+        return currChar;
     }
 
-    private _getNearestLineTextChar(currChar: ActaTextChar | null, targetChars: ActaTextChar[]) {
+    private _getNearestVisableTextCharInTarget(currChar: ActaTextChar | null, targetChars: ActaTextChar[]) {
         if (!currChar) return null;
 
         let curOffsetX = 0;
@@ -487,7 +487,7 @@ export class ActaParagraph extends ActaGalley {
         return (textChar) ? (textChar.textRow || null) : null;
     }
 
-    private _getPrevTextRowAtCursor() {
+    private _getUpsideTextRowAtCursor() {
         const currTextRow = this._getTextRowAtCursor();
         if (!currTextRow) return null;
 
@@ -497,7 +497,7 @@ export class ActaParagraph extends ActaGalley {
         return this.textChars[firstTextCharIdx - 1].textRow;
     }
 
-    private _getCursorNextTextRow() {
+    private _getDownsideTextRowAtCursor() {
         const currTextRow = this._getTextRowAtCursor();
         if (!currTextRow) return null;
 
@@ -526,7 +526,7 @@ export class ActaParagraph extends ActaGalley {
         return this._cursor;
     };
 
-    private _getSelectionTextChars() {
+    private _getSelectedTextChars() {
         const textChars: ActaTextChar[] = [];
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1) {
             if (this._selectionStart !== null && this._cursor !== null) {
@@ -544,7 +544,7 @@ export class ActaParagraph extends ActaGalley {
         return textChars;
     }
 
-    private _removeCursor() {
+    private _hideCursor() {
         for (const svg of this.canvas) {
             for (const cursor of svg.querySelectorAll('.cursor')) {
                 svg.removeChild(cursor);
@@ -553,7 +553,7 @@ export class ActaParagraph extends ActaGalley {
     }
 
     private _repaintCursor() {
-        this._removeCursor();
+        this._hideCursor();
         if (this._cursor === null) return;
 
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this._cursor !== this._selectionStart) {
@@ -561,7 +561,7 @@ export class ActaParagraph extends ActaGalley {
             let currLine = -1, startx = 0;
             let selBlock;
 
-            const selTextChars = this._getSelectionTextChars();
+            const selTextChars = this._getSelectedTextChars();
             for (const textChar of selTextChars) {
                 if (!textChar.textRow) continue;
                 if (textChar.x < 0) continue;
@@ -592,7 +592,7 @@ export class ActaParagraph extends ActaGalley {
                     selBlock.setAttribute('width', (endx - startx).toString());
                 }
             }
-        } else if (ActaParagraph.inputMethod !== InputMethod.EN && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
+        } else if (ActaParagraph.INPUT_METHOD !== InputMethod.EN && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
             const textChar = this._getNearestVisableTextChar(this.textChars[this._cursor - 1]);
             if (!textChar || !textChar.textRow) return;
 
@@ -718,26 +718,7 @@ export class ActaParagraph extends ActaGalley {
         return textChar;
     }
 
-    private _getTextCharsAtArea(column: ActaParagraphColumn, x: number, y: number, width: number = 1, height: number = 1) {
-        const textChars: ActaTextChar[] = [];
-        const x2 = x + width;
-        const y2 = y + height;
-
-        for (const fTextChar of this.textChars) {
-            if (!fTextChar.isVisable || fTextChar.x < 0) continue;
-            if (!fTextChar.textRow) continue;
-            if (fTextChar.textRow.column !== column) continue;
-
-            const itemX1 = fTextChar.x;
-            const itemX2 = fTextChar.x + fTextChar.calcWidth;
-            const itemY1 = fTextChar.y;
-            const itemY2 = fTextChar.y + fTextChar.height + fTextChar.textRow.maxLeading;
-            if (itemX1 < x2 && itemX2 > x && itemY1 < y2 && itemY2 > y) textChars.push(fTextChar);
-        }
-        return textChars;
-    }
-
-    private _computeDrawPointOfTextChars() {
+    private _computTextCharPosition() {
         let colIdx = 0;
 
         this.columns.forEach(col => col.clear());
@@ -751,7 +732,7 @@ export class ActaParagraph extends ActaGalley {
                 if (!col) break;
 
                 const lastRow = col.lastRow;
-                if (lastRow) this.computeDrawableAreaOfTextRow(lastRow, textChar);
+                if (lastRow) this.computeTextRowPaddingSize(lastRow, textChar);
 
                 if (col.push(textChar)) break;
                 if (!this.columns[++colIdx]) {
@@ -775,7 +756,7 @@ export class ActaParagraph extends ActaGalley {
             if (!textStyle || !textStyle.font || !textStyle.fontSize) return;
 
             const dummyRow = new ActaTextRow(this.columns[indexOfColumn], textStyle.indent || 0);
-            this.computeDrawableAreaOfTextRow(dummyRow);
+            this.computeTextRowPaddingSize(dummyRow);
         }
     }
 
@@ -802,16 +783,16 @@ export class ActaParagraph extends ActaGalley {
     }
 
     private _repaint() {
-        this._computeDrawPointOfTextChars();
+        this._computTextCharPosition();
         this._drawTextChars();
-        this._emitRepaintCursor(true);
+        this._EMIT_REPAINT_CURSOR(true);
     }
 
-    private _emitRepaint() {
+    private _EMIT_REPAINT() {
         this._REPAINT$.next();
     }
 
-    private _emitRepaintCursor(force: boolean = false) {
+    private _EMIT_REPAINT_CURSOR(force: boolean = false) {
         const textChars = this.textChars;
         const state = {
             cursorMode: this._cursorMode,
@@ -824,7 +805,7 @@ export class ActaParagraph extends ActaGalley {
         this._REPAINT_CURSOR$.next(JSON.stringify(state));
     }
 
-    private _checkBrokenLineArea(textRow: ActaTextRow, height?: number) {
+    private _getCollisionPositionAtTextRow(textRow: ActaTextRow, height?: number) {
         const x1 = textRow.column.offsetLeft;
         const y1 = textRow.offsetTop;
         const x2 = x1 + textRow.columnWidth;
@@ -856,16 +837,16 @@ export class ActaParagraph extends ActaGalley {
     }
 
     protected _collision() {
-        this._emitRepaint();
+        this._EMIT_REPAINT();
     }
 
     protected _focus() {
-        this._emitRepaintCursor();
+        this._EMIT_REPAINT_CURSOR();
     }
 
     protected _blur() {
         this._selectionStart = null;
-        this._removeCursor();
+        this._hideCursor();
     }
 
     constructor(
@@ -901,7 +882,7 @@ export class ActaParagraph extends ActaGalley {
         this.text = '';
 
         this._CHANGE_SIZE$.subscribe(_ => {
-            this._emitRepaint();
+            this._EMIT_REPAINT();
         });
         fromEvent<KeyboardEvent>(this, 'keydown').subscribe(e => {
             if (this._onKeyPress(e) !== false) return;
@@ -938,13 +919,13 @@ export class ActaParagraph extends ActaGalley {
                     this._cursor = i + 1;
                 }
                 this._cursorMode = CursorMode.SELECTION;
-                this._emitRepaintCursor();
+                this._EMIT_REPAINT_CURSOR();
             } else {
                 const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
                 this._cursorMode = CursorMode.SELECTIONSTART;
                 this._cursor = null;
                 this._selectionStart = this._setCursor(textChar, e.offsetX);
-                this._emitRepaintCursor();
+                this._EMIT_REPAINT_CURSOR();
             }
             this.focus({ preventScroll: true });
 
@@ -962,7 +943,7 @@ export class ActaParagraph extends ActaGalley {
             const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
-                this._emitRepaintCursor();
+                this._EMIT_REPAINT_CURSOR();
             }
             e.preventDefault();
             e.stopPropagation();
@@ -977,7 +958,7 @@ export class ActaParagraph extends ActaGalley {
             const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
             if (this._selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
-                this._emitRepaintCursor();
+                this._EMIT_REPAINT_CURSOR();
             }
             if (this._cursor === null) {
                 this._cursorMode = CursorMode.NONE;
@@ -995,27 +976,27 @@ export class ActaParagraph extends ActaGalley {
     columnWidth(idx: number, val: string | number) {
         if (arguments.length > 1) {
             this.columns[idx].setAttribute('width', (val || 0).toString());
-            this._emitChangeSize();
+            this._EMIT_CHANGE_SIZE();
         } else {
             return this.columns[idx].getAttribute('width') || false;
         }
     }
 
-    applyCursorDefinedTextStyle(textStyleName: string) {
-        const selTextChars = this._getSelectionTextChars();
-        this._applyDefinedTextStyle(selTextChars, textStyleName);
-        this._emitRepaint();
+    setPredefineTextStyleAtCursor(textStyleName: string) {
+        const selTextChars = this._getSelectedTextChars();
+        this._setPredefineTextStyle(selTextChars, textStyleName);
+        this._EMIT_REPAINT();
     }
 
-    applyCursorTextStyle(textStyle: ActaTextStyleInherit) {
-        const selTextChars = this._getSelectionTextChars();
-        this._applyTextStyle(selTextChars, textStyle);
-        this._emitRepaint();
+    setTextStyleAtCursor(textStyle: ActaTextStyleInherit) {
+        const selTextChars = this._getSelectedTextChars();
+        this._setTextStyle(selTextChars, textStyle);
+        this._EMIT_REPAINT();
     }
 
-    computeDrawableAreaOfTextRow(textRow: ActaTextRow, textChar?: ActaTextChar) {
+    computeTextRowPaddingSize(textRow: ActaTextRow, textChar?: ActaTextChar) {
         const textHeight = textChar ? textChar.height : this.defaultTextStyle.textHeight;
-        const broken = this._checkBrokenLineArea(textRow, textHeight);
+        const broken = this._getCollisionPositionAtTextRow(textRow, textHeight);
         if (broken) {
             if (broken[0] <= 0) {
                 textRow.paddingLeft = broken[1];
@@ -1033,15 +1014,15 @@ export class ActaParagraph extends ActaGalley {
         }
     }
 
-    getCursorTextStyleIntersection() {
+    getTextStyleAtCursor() {
         const returnTextStyle = new ActaTextStyleInherit();
 
-        let selTextChars = this._getSelectionTextChars();
+        let selTextChars = this._getSelectedTextChars();
         if (selTextChars.length < 1) {
             const cursorTextChar = this._getTextCharAtCursor();
             if (cursorTextChar) selTextChars = [cursorTextChar];
         }
-        const textNodes = this._getTextCharBlocks(selTextChars);
+        const textNodes = this._toTextNodes(selTextChars);
         if (textNodes.length < 1) {
             returnTextStyle.copy(this.defaultTextStyle);
             return returnTextStyle;
@@ -1067,7 +1048,7 @@ export class ActaParagraph extends ActaGalley {
         if (this._textStore) this._textStore.remove();
         this._textStore = ActaTextStore.import(this.defaultTextStyleName, text);
         this._cursor = null;
-        this._emitRepaint();
+        this._EMIT_REPAINT();
     }
 
     set columnCount(count: number) {
@@ -1084,7 +1065,7 @@ export class ActaParagraph extends ActaGalley {
             margin.setAttribute('width', this.innerMargin.toString());
             this.appendChild(margin);
         }
-        this._emitChangeSize();
+        this._EMIT_CHANGE_SIZE();
     }
 
     set innerMargin(innerMargin) {
@@ -1092,7 +1073,7 @@ export class ActaParagraph extends ActaGalley {
         for (const margin of this.querySelectorAll('x-paragraph-margin')) {
             margin.setAttribute('width', innerMargin.toString());
         }
-        this._emitChangeSize();
+        this._EMIT_CHANGE_SIZE();
     }
     set defaultTextStyleName(styleName: string) {
         this._defaultTextStyleName = styleName;
