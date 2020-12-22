@@ -118,7 +118,7 @@ export abstract class ActaGalley extends ActaElement {
         this._collisionList = [];
         this._CHANGE_SIZE$ = new Subject();
         this._COLLISION$ = new Subject();
-        this._COLLISION$.subscribe(_ => this._collision());
+        this._COLLISION$.subscribe(_ => this._onCollision());
 
         if (x !== undefined) this.setAttribute('x', x.toString());
         if (y !== undefined) this.setAttribute('y', y.toString());
@@ -183,10 +183,10 @@ export abstract class ActaGalley extends ActaElement {
             if (src === this) {
                 if (this.classList.contains('focus')) return;
                 this.classList.add('focus');
-                this._focus();
+                this._onFocus();
             } else {
                 this.classList.remove('focus');
-                this._blur();
+                this._onBlur();
             }
         });
     }
@@ -227,8 +227,8 @@ export abstract class ActaGalley extends ActaElement {
     get collisionObservable() { return this._COLLISION$; }
     get order() { return parseInt(this.getAttribute('order') || '0', 10); }
 
-    protected abstract _focus(): void;
-    protected abstract _blur(): void;
-    protected abstract _collision(): void;
+    protected abstract _onFocus(): void;
+    protected abstract _onBlur(): void;
+    protected abstract _onCollision(): void;
     abstract get type(): string;
 };

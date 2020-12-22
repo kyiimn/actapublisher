@@ -126,7 +126,7 @@ export class ActaParagraph extends ActaGalley {
         return InputCharType.NONE;
     }
 
-    private _updateInputHangulChar() {
+    private _onKeyPressInputHangulChar() {
         if (!this._cursor) return;
 
         const textChar = this.textChars[this._cursor - 1];
@@ -146,7 +146,7 @@ export class ActaParagraph extends ActaGalley {
         this._inputChar = Hangul.d(hangulText).join('');
     }
 
-    private _onCharKeyPress(e: KeyboardEvent) {
+    private _onKeyPressInputChar(e: KeyboardEvent) {
         const char = ActaParagraph.GET_CHAR(e);
 
         if ([CursorMode.EDIT, CursorMode.SELECTION, CursorMode.INPUT].indexOf(this._cursorMode) < 0) return;
@@ -179,7 +179,7 @@ export class ActaParagraph extends ActaGalley {
             if (this._cursorMode === CursorMode.INPUT) {
                 this._cursorMode = CursorMode.EDIT;
                 this._inputChar += char;
-                this._updateInputHangulChar();
+                this._onKeyPressInputHangulChar();
             } else {
                 this._inputChar = char;
                 this._cursor++;
@@ -277,7 +277,7 @@ export class ActaParagraph extends ActaGalley {
                 if (e.keyCode === Keycode.BACKSPACE) {
                     if (ActaParagraph.INPUT_METHOD === InputMethod.KO && this._cursorMode === CursorMode.INPUT && this._inputChar !== '') {
                         this._inputChar = this._inputChar.substr(0, this._inputChar.length - 1);
-                        this._updateInputHangulChar();
+                        this._onKeyPressInputHangulChar();
                         if (this._inputChar === '') {
                             this._cursor--;
                             this._cursorMode = CursorMode.EDIT;
@@ -377,11 +377,11 @@ export class ActaParagraph extends ActaGalley {
             this.setPredefineTextStyleAtCursor('본문2');
             return false;
         }
-        return (!e.ctrlKey && !e.altKey) ? this._onCharKeyPress(e) : undefined;
+        return (!e.ctrlKey && !e.altKey) ? this._onKeyPressInputChar(e) : undefined;
     }
 
     private _toTextNodes(textChars: ActaTextChar[]) {
-        const returnTextBlocks: ActaTextNode[] = [];
+        const retTextNodes: ActaTextNode[] = [];
         for (let i = textChars.length; i > 0; i--) {
             const endChar = textChars[i - 1];
             const textNode = endChar.textNode;
@@ -401,16 +401,16 @@ export class ActaParagraph extends ActaGalley {
                 str += textChars[j].toString();
             }
             if (startChar.indexOfNode === 0 && endChar.indexOfNode === textNode.length - 1) {
-                returnTextBlocks.push(textNode);
+                retTextNodes.push(textNode);
             } else {
                 const newNode = new ActaTextNode();
                 textNode.replace(orgTextChars, newNode);
                 newNode.push(str);
-                returnTextBlocks.push(newNode);
+                retTextNodes.push(newNode);
             }
             if (textChars.indexOf(startChar) === 0) break;
         }
-        return returnTextBlocks.reverse();
+        return retTextNodes.reverse();
     }
 
     private _setPredefineTextStyle(textChars: ActaTextChar[], textStyleName: string) {
@@ -836,15 +836,15 @@ export class ActaParagraph extends ActaGalley {
         return canvas;
     }
 
-    protected _collision() {
+    protected _onCollision() {
         this._EMIT_REPAINT();
     }
 
-    protected _focus() {
+    protected _onFocus() {
         this._EMIT_REPAINT_CURSOR();
     }
 
-    protected _blur() {
+    protected _onBlur() {
         this._selectionStart = null;
         this._hideCursor();
     }

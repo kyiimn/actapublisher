@@ -5,15 +5,15 @@ import { Subject, fromEvent } from 'rxjs';
 import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
 
 export class ActaImage extends ActaGalley {
-    protected _collision() {
+    protected _onCollision() {
         // this._emitUpdate();
     }
 
-    protected _focus() {
+    protected _onFocus() {
         // this._emitRedrawCursor();
     }
 
-    protected _blur() {
+    protected _onBlur() {
         // this._selectionStart = null;
         // this._removeCursor();
     }
