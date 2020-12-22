@@ -252,7 +252,7 @@ export class ActaParagraph extends ActaGalley {
             } else if ([Keycode.UP, Keycode.DOWN].indexOf(e.keyCode) > -1) {
                 const nearTextRow = (e.keyCode === Keycode.UP) ? this._getUpsideTextRowAtCursor() : this._getDownsideTextRowAtCursor();
                 if (nearTextRow !== null) {
-                    const nearestItem = this._getNearestVisableTextCharInTarget(this._getTextCharAtCursor(), nearTextRow.items);
+                    const nearestItem = this._getNearestVisableTextChar(this._getTextCharAtCursor(), nearTextRow.items);
                     if (nearestItem) {
                         this._cursor = this.textChars.indexOf(nearestItem);
                         this._EMIT_REPAINT_CURSOR();
@@ -437,43 +437,41 @@ export class ActaParagraph extends ActaGalley {
         this._EMIT_REPAINT();
     }
 
-    private _getNearestVisableTextChar(currChar: ActaTextChar | null) {
+    private _getNearestVisableTextChar(currChar: ActaTextChar | null, targetChars: ActaTextChar[] | null = null) {
         if (!currChar) return null;
-        if (!currChar.isVisable) {
-            if (!currChar.textRow) return null;
-            let tmpIdx = currChar.textRow.indexOf(currChar);
-            if (tmpIdx < 0) return null;
-            else {
-                do {
-                    if (--tmpIdx < 1) break;
-                    if (!currChar.textRow.get(tmpIdx).isVisable) continue;
-                } while (false);
+        if (targetChars === null) {
+            if (!currChar.isVisable) {
+                if (!currChar.textRow) return null;
+                let tmpIdx = currChar.textRow.indexOf(currChar);
+                if (tmpIdx < 0) return null;
+                else {
+                    do {
+                        if (--tmpIdx < 1) break;
+                        if (!currChar.textRow.get(tmpIdx).isVisable) continue;
+                    } while (false);
+                }
+                currChar = currChar.textRow.get(Math.max(tmpIdx, 0));
             }
-            currChar = currChar.textRow.get(Math.max(tmpIdx, 0));
-        }
-        return currChar;
-    }
-
-    private _getNearestVisableTextCharInTarget(currChar: ActaTextChar | null, targetChars: ActaTextChar[]) {
-        if (!currChar) return null;
-
-        let curOffsetX = 0;
-        if (!currChar.isVisable) {
-            const tmpChar = this._getNearestVisableTextChar(currChar);
-            if (tmpChar) curOffsetX = tmpChar.x + tmpChar.width;
+            return currChar;
         } else {
-            curOffsetX = currChar.x;
-        }
-        const distance: number[] = [];
-        let prevOffsetX = 0;
-
-        for (const targetChar of targetChars) {
-            if (targetChar.isVisable) {
-                prevOffsetX = Math.max(targetChar.x, prevOffsetX);
+            let curOffsetX = 0;
+            if (!currChar.isVisable) {
+                const tmpChar = this._getNearestVisableTextChar(currChar);
+                if (tmpChar) curOffsetX = tmpChar.x + tmpChar.width;
+            } else {
+                curOffsetX = currChar.x;
             }
-            distance.push(Math.abs(prevOffsetX - curOffsetX));
+            const distance: number[] = [];
+            let prevOffsetX = 0;
+
+            for (const targetChar of targetChars) {
+                if (targetChar.isVisable) {
+                    prevOffsetX = Math.max(targetChar.x, prevOffsetX);
+                }
+                distance.push(Math.abs(prevOffsetX - curOffsetX));
+            }
+            return targetChars[distance.indexOf(Math.min(...distance))];
         }
-        return targetChars[distance.indexOf(Math.min(...distance))];
     }
 
     private _getTextCharAtCursor() {
