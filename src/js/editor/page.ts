@@ -13,6 +13,8 @@ export class ActaPage extends ActaElement {
     private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
     private _OBSERVER_CHANGE_GALLEY_STYLE$: MutationObserver;
 
+    private _guide: ActaGuide | undefined;
+
     static get observedAttributes() {
         return ['width', 'height', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'];
     }
@@ -140,12 +142,19 @@ export class ActaPage extends ActaElement {
     set paddingLeft(padding: string | number) { this.setAttribute('padding-left', padding.toString()); }
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
 
+    set guide(guide: ActaGuide | undefined) {
+        if (this._guide !== undefined) this.removeChild(this._guide);
+        this._guide = guide;
+        if (this._guide) this.prepend(this._guide);
+    }
+
     get width() { return this.getAttribute('width') || ''; }
     get height() { return this.getAttribute('height') || ''; }
     get paddingTop() { return this.getAttribute('padding-top') || ''; }
     get paddingBottom() { return this.getAttribute('padding-bottom') || ''; }
     get paddingLeft() { return this.getAttribute('padding-left') || ''; }
     get paddingRight() { return this.getAttribute('padding-right') || ''; }
+    get guide() { return this._guide; }
 
     get lastGalleyOrder() {
         let lastOrder = 0;

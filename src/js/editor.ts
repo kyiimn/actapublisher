@@ -37,7 +37,7 @@ const main = async () => {
     document.body.appendChild(page);
 
     const guide = new ActaGuide(5, '2mm');
-    page.appendChild(guide);
+    page.guide = guide;
 
     const para = new ActaParagraph('5mm', '5mm', '143.25mm', '142mm', '본문3', 3, '2mm');
     page.appendChild(para);
@@ -45,8 +45,10 @@ const main = async () => {
     const para2 = new ActaParagraph('130mm', '130mm', '143.25mm', '142mm', '본문3', 3, '2mm');
     page.appendChild(para2);
 
-    const para3 = new ActaParagraph('80mm', '20mm', '40mm', '40mm', '본문3', 2, '2mm');
+    const para3 = new ActaImage('80mm', '20mm', '40mm', '40mm');// , '본문3', 2, '2mm');
     page.appendChild(para3);
+
+    para3.src = 'test/bigsur.eps';
 
     const para4 = new ActaParagraph('60mm', '60mm', '20mm', '40mm', '본문3', 1, '2mm');
     page.appendChild(para4);
@@ -56,11 +58,11 @@ const main = async () => {
     if (submitButton) submitButton.addEventListener('click', _ => {
         let tt = textarea ? textarea.value : '';
         tt = tt.substring(0, tt.length);
-        para.text = tt;
+        para.value = tt;
     });
     const getButton = document.querySelector('button#get');
     if (getButton) getButton.addEventListener('click', _ => {
-        if (textarea) textarea.value = para.text;
+        if (textarea) textarea.value = para.value;
     });
     const chColButton = document.querySelector('button#column');
     if (chColButton) chColButton.addEventListener('click', _ => {

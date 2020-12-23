@@ -1,4 +1,5 @@
 import { ActaGalley } from './galley';
+import { ActaGuide } from './guide';
 import { ActaClipboard } from '../clipboard';
 import { ActaParagraphColumn } from './paragraph-col';
 import { ActaParagraphMargin } from './paragraph-margin';
@@ -88,15 +89,15 @@ enum InputMethod {
 
 export class ActaParagraph extends ActaGalley {
     private _columnCount: number;
-    private _innerMargin: string | number;
-    private _textStore: ActaTextStore;
-    private _defaultTextStyleName: string | null;
-    private _selectionStart: number | null;
-    private _cursorMode: CursorMode;
     private _cursor: number | null;
+    private _cursorMode: CursorMode;
+    private _defaultTextStyleName: string | null;
     private _editable: boolean;
     private _inputChar: string;
+    private _innerMargin: string | number;
     private _overflow: boolean;
+    private _selectionStart: number | null;
+    private _textStore: ActaTextStore;
 
     private _REPAINT$: Subject<undefined>;
     private _REPAINT_CURSOR$: Subject<string>;
@@ -877,7 +878,7 @@ export class ActaParagraph extends ActaGalley {
         }
         this.innerMargin = innerMargin;
 
-        this.text = '';
+        this.value = '';
 
         this._CHANGE_SIZE$.subscribe(_ => {
             this._EMIT_REPAINT();
@@ -1042,7 +1043,7 @@ export class ActaParagraph extends ActaGalley {
         return returnTextStyle;
     }
 
-    set text(text: string) {
+    set value(text: string) {
         if (this._textStore) this._textStore.remove();
         this._textStore = ActaTextStore.import(this.defaultTextStyleName, text);
         this._cursor = null;
@@ -1073,15 +1074,19 @@ export class ActaParagraph extends ActaGalley {
         }
         this._EMIT_CHANGE_SIZE();
     }
+
     set defaultTextStyleName(styleName: string) {
         this._defaultTextStyleName = styleName;
         if (this._textStore) this._textStore.defaultTextStyleName = styleName;
     }
-    set editable(val: boolean) { this._editable = val; }
+
+    set editable(val: boolean) {
+        this._editable = val;
+    }
 
     get columnCount() { return this._columnCount; }
     get innerMargin() { return this._innerMargin; }
-    get text() { return this._textStore ? this._textStore.markupText : ''; }
+    get value() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
     get defaultTextStyle() { return ActaTextStyleManager.in.get(this.defaultTextStyleName); }
     get editable() { return this._editable; }
