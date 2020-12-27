@@ -1,33 +1,28 @@
-import { ActaGalley } from './galley';
-import { ActaClipboard } from '../clipboard';
+import { IActaFrame } from './iframe';
+import U from './units';
 
-import { Subject, fromEvent } from 'rxjs';
-import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
+export enum ImageFitType {
+    NONE,
+    FILL_FRAME,     // 프레임 채우기(비율X)
+    FIT_CONTENT,    // 프레임 채우기(비율)
+    FIT_FRAME,      // 프레임 맞추기(비율)
+    CENTER          // 가운데
+};
 
-export class ActaImage extends ActaGalley {
-    private _originalImage: OffscreenCanvas;
+export class ActaImage extends IActaFrame {
     private _displayWidth: number | string;
     private _displayHeight: number | string;
     private _displayLeft: number | string;
     private _displayTop: number | string;
+    private _displayCanvas: HTMLCanvasElement;
+    private _margin: number | string;
 
+    private _fitType: ImageFitType;
+
+    private _originalImage: OffscreenCanvas;
     private _src: string;
 
-    private _REPAINT$: Subject<undefined>;
-
-    /* override */
-    static get observedAttributes() {
-        return super.observedAttributes.concat(['src']);
-    }
-
-    /* override */
-    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-        super.attributeChangedCallback(name, oldValue, newValue);
-        if (oldValue === newValue) return;
-        if (name === 'src') this.src = newValue;
-    }
-
-    protected _onCollision() {
+    protected _onOverlap() {
         // this._emitUpdate();
     }
 
@@ -40,12 +35,66 @@ export class ActaImage extends ActaGalley {
         // this._removeCursor();
     }
 
-    private _EMIT_REPAINT() {
-        this._REPAINT$.next();
+    private _repaint() {
+        const ctx = this._displayCanvas.getContext('2d');
+        if (!ctx) return;
+
+        this._displayCanvas.width = U.px(this._displayWidth);
+        this._displayCanvas.height = U.px(this._displayHeight);
+        this._displayCanvas.style.left = U.px(this._displayLeft) + 'px';
+        this._displayCanvas.style.top = U.px(this._displayTop) + 'px';
+
+        ctx.drawImage(
+            this._originalImage,
+            0, 0, this._originalImage.width, this._originalImage.height,
+            0, 0, U.px(this._displayWidth), U.px(this._displayHeight)
+        );
     }
 
-    private _repaint() {
+    private _resize() {
+        const orgWidth = this._originalImage.width;
+        const orgHeight = this._originalImage.height;
+        const computeStyle = window.getComputedStyle(this);
 
+        if (this._fitType === ImageFitType.CENTER) {
+            this._displayWidth = orgWidth;
+            this._displayHeight = orgHeight;
+            this._displayLeft = ((orgWidth - parseInt(computeStyle.width, 10)) / 2) * -1;
+            this._displayTop = ((orgHeight - parseInt(computeStyle.height, 10)) / 2) * -1;
+        } else if (this._fitType === ImageFitType.FILL_FRAME) {
+            this._displayWidth = computeStyle.width;
+            this._displayHeight = computeStyle.height;
+            this._displayLeft = 0;
+            this._displayTop = 0;
+        } else if (this._fitType === ImageFitType.FIT_CONTENT) {
+            let ratio = parseInt(computeStyle.width, 10) / orgWidth;
+            if (orgHeight * ratio > parseInt(computeStyle.height, 10)) {
+                ratio = parseInt(computeStyle.height, 10) / orgHeight;
+                this._displayWidth = orgWidth * ratio;
+                this._displayHeight = orgHeight * ratio;
+                this._displayLeft = (parseInt(computeStyle.width, 10) - this._displayWidth) / 2;
+                this._displayTop = 0;
+            } else {
+                this._displayWidth = orgWidth * ratio;
+                this._displayHeight = orgHeight * ratio;
+                this._displayLeft = 0;
+                this._displayTop = (parseInt(computeStyle.height, 10) - this._displayHeight) / 2;
+            }
+        } else if (this._fitType === ImageFitType.FIT_FRAME) {
+            let ratio = parseInt(computeStyle.width, 10) / orgWidth;
+            if (orgHeight * ratio < parseInt(computeStyle.height, 10)) {
+                ratio = parseInt(computeStyle.height, 10) / orgHeight;
+                this._displayWidth = orgWidth * ratio;
+                this._displayHeight = orgHeight * ratio;
+                this._displayLeft = (parseInt(computeStyle.width, 10) - this._displayWidth) / 2;
+                this._displayTop = 0;
+            } else {
+                this._displayWidth = orgWidth * ratio;
+                this._displayHeight = orgHeight * ratio;
+                this._displayLeft = 0;
+                this._displayTop = (parseInt(computeStyle.height, 10) - this._displayHeight) / 2;
+            }
+        }
     }
 
     private _loadImage() {
@@ -57,12 +106,12 @@ export class ActaImage extends ActaGalley {
                     const img = new Image();
                     img.src = name + '.jpg';
                     img.onload = _e => {
-                        const tmpCanvas = new OffscreenCanvas(1, 1);
+                        const tmpCanvas = new OffscreenCanvas(img.width, img.height);
                         const tmpCtx = tmpCanvas.getContext('2d');
                         const realCtx = this._originalImage.getContext('2d');
                         if (tmpCtx && realCtx) {
-                            this._originalImage.width = tmpCanvas.width = img.width;
-                            this._originalImage.height = tmpCanvas.height = img.height;
+                            this._originalImage.width = tmpCanvas.width;
+                            this._originalImage.height = tmpCanvas.height;
                             tmpCtx.drawImage(img, 0, 0);
 
                             const maskImg = new Image();
@@ -100,8 +149,9 @@ export class ActaImage extends ActaGalley {
                     };
                     img.onerror = _e => reject;
                 }
+            } else {
+                resolve(this.src);
             }
-            resolve(this.src);
         });
     }
 
@@ -113,24 +163,76 @@ export class ActaImage extends ActaGalley {
         this._displayHeight = 0;
         this._displayLeft = 0;
         this._displayTop = 0;
+        this._margin = 0;
         this._src = '';
 
-        this._REPAINT$ = new Subject();
-        this._REPAINT$.pipe(debounceTime(.005)).subscribe(() => this._repaint());
+        this._fitType = ImageFitType.CENTER;
+
+        this._displayCanvas = document.createElement('canvas');
+        this._displayCanvas.style.position = 'absolute';
+        this.append(this._displayCanvas);
 
         this._CHANGE_SIZE$.subscribe(_ => {
-            this._EMIT_REPAINT();
+            this._resize();
+            this._repaint();
         });
+    }
+
+    preflight() {
+        // do implement
+    }
+
+    set displayWidth(width) {
+        if (this._fitType !== ImageFitType.NONE) return;
+        this._displayWidth = width;
+        this._repaint();
+    }
+
+    set displayHeight(height) {
+        if (this._fitType !== ImageFitType.NONE) return;
+        this._displayHeight = height;
+        this._repaint();
+    }
+
+    set displayLeft(left) {
+        if (this._fitType !== ImageFitType.NONE) return;
+        this._displayLeft = left;
+        this._repaint();
+    }
+
+    set displayTop(top) {
+        if (this._fitType !== ImageFitType.NONE) return;
+        this._displayTop = top;
+        this._repaint();
+    }
+
+    set fitType(fitType: ImageFitType) {
+        this._fitType = fitType;
+        if (this._fitType !== ImageFitType.NONE) {
+            this._resize();
+            this._repaint();
+        }
+    }
+
+    set margin(margin: number | string) {
+        this._margin = margin;
+        this._EMIT_CHANGE_SIZE();
     }
 
     set src(src: string) {
         this._src = src;
-        this._loadImage().then(_ => this._EMIT_REPAINT);
+        this._loadImage().then(_ => {
+            this._resize();
+            this._repaint();
+        });
     }
 
-    get src() {
-        return this._src;
-    }
+    get displayWidth() { return this._displayWidth; }
+    get displayHeight() { return this._displayHeight; }
+    get displayLeft() { return this._displayLeft; }
+    get displayTop() { return this._displayTop; }
+    get fitType() { return this._fitType; }
+    get src() { return this._src; }
 
     get type() { return 'IMAGE'; }
 };

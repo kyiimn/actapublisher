@@ -1,4 +1,4 @@
-import { ActaGalley } from './galley';
+import { IActaFrame, IActaPreflightProfile } from './iframe';
 import { ActaGuide } from './guide';
 import { ActaClipboard } from '../clipboard';
 import { ActaParagraphColumn } from './paragraph-col';
@@ -15,6 +15,7 @@ import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
 
 import Hangul from 'hangul-js';
 import SelectHanja from './hanja';
+import U from './units';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
     'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
@@ -87,7 +88,33 @@ enum InputMethod {
     EN, KO
 };
 
-export class ActaParagraph extends ActaGalley {
+class ActaParagraphOverflow extends IActaPreflightProfile {
+    constructor(target: ActaParagraph, detailMessage: string) {
+        super();
+
+        this._targetFrame = target;
+        this._detailMessage = detailMessage;
+    }
+    get message() {
+        return "Content Overflow";
+    }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+class ActaParagraphEmpty extends IActaPreflightProfile {
+    constructor(target: ActaParagraph, detailMessage: string) {
+        super();
+
+        this._targetFrame = target;
+        this._detailMessage = detailMessage;
+    }
+    get message() {
+        return "Content Empty";
+    }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaParagraph extends IActaFrame {
     private _columnCount: number;
     private _cursor: number | null;
     private _cursorMode: CursorMode;
@@ -761,12 +788,6 @@ export class ActaParagraph extends ActaGalley {
 
     private _drawTextChars() {
         this.columns.forEach(col => col.update());
-
-        if (this._overflow) {
-            this.classList.add('overflow');
-        } else {
-            this.classList.remove('overflow');
-        }
     }
 
     private _getBoundingClientRect(textChar: ActaTextChar) {
@@ -804,23 +825,28 @@ export class ActaParagraph extends ActaGalley {
         this._REPAINT_CURSOR$.next(JSON.stringify(state));
     }
 
-    private _getCollisionPositionAtTextRow(textRow: ActaTextRow, height?: number) {
-        const x1 = textRow.column.offsetLeft;
-        const y1 = textRow.offsetTop;
+    private _getOverlappingAreaByTextRow(textRow: ActaTextRow, height?: number) {
+        const x1 = U.px(this.x) + textRow.column.offsetLeft;
+        const y1 = U.px(this.y) + textRow.offsetTop;
         const x2 = x1 + textRow.columnWidth;
         const y2 = y1 + Math.max((height ? height : 0), textRow.maxHeight);
 
-        const collisionArea = super._checkCollisionArea(x1, y1, x2, y2);
-        if (collisionArea.length < 1) return null;
-
-        let brokenX1 = collisionArea[0][0];
-        let brokenX2 = collisionArea[0][2];
-
-        for (const broken of collisionArea) {
-            brokenX1 = Math.min(broken[0], brokenX1);
-            brokenX2 = Math.max(broken[2], brokenX2);
+        const overlapAreas: number[][] = [];
+        for (const frame of this.overlapFrames) {
+            if (this.order >= frame.order) continue;
+            const area = frame.findOverlappingArea(x1, y1, x2, y2);
+            if (area) overlapAreas.push(area);
         }
-        return [brokenX1, brokenX2];
+        if (overlapAreas.length < 1) return null;
+
+        let overlapX1 = overlapAreas[0][0];
+        let overlapX2 = overlapAreas[0][2];
+
+        for (const overlapArea of overlapAreas) {
+            overlapX1 = Math.min(overlapArea[0], overlapX1);
+            overlapX2 = Math.max(overlapArea[2], overlapX2);
+        }
+        return [overlapX1, overlapX2];
     }
 
     private get columns(): ActaParagraphColumn[] {
@@ -835,7 +861,7 @@ export class ActaParagraph extends ActaGalley {
         return canvas;
     }
 
-    protected _onCollision() {
+    protected _onOverlap() {
         this._EMIT_REPAINT();
     }
 
@@ -995,15 +1021,15 @@ export class ActaParagraph extends ActaGalley {
 
     computeTextRowPaddingSize(textRow: ActaTextRow, textChar?: ActaTextChar) {
         const textHeight = textChar ? textChar.height : this.defaultTextStyle.textHeight;
-        const broken = this._getCollisionPositionAtTextRow(textRow, textHeight);
+        const broken = this._getOverlappingAreaByTextRow(textRow, textHeight);
         if (broken) {
             if (broken[0] <= 0) {
                 textRow.paddingLeft = broken[1];
             } else if (broken[1] >= textRow.columnWidth) {
                 textRow.paddingRight = textRow.columnWidth - broken[0];
             } else {
-                const upperRow = textRow.indexOfLine > 0 ? textRow.column.textRows[textRow.indexOfLine - 1] : null;
-                if (upperRow && upperRow.fragment) {
+                const upsideRow = textRow.indexOfLine > 0 ? textRow.column.textRows[textRow.indexOfLine - 1] : null;
+                if (upsideRow && upsideRow.fragment) {
                     textRow.paddingLeft = broken[1];
                 } else {
                     textRow.fragment = true;
@@ -1041,6 +1067,15 @@ export class ActaParagraph extends ActaGalley {
             if (returnTextStyle.color !== textStyle.color) returnTextStyle.color = null;
         }
         return returnTextStyle;
+    }
+
+    preflight() {
+        this._preflightProfiles = [];
+        if (this._overflow) {
+            this._preflightProfiles.push(new ActaParagraphOverflow(this, ""));
+        } else if (this.value === '') {
+            this._preflightProfiles.push(new ActaParagraphEmpty(this, ""));
+        }
     }
 
     set value(text: string) {

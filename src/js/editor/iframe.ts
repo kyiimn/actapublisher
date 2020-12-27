@@ -1,13 +1,29 @@
-import { ActaElement } from "./element";
+import { IActaElement } from "./ielement";
 import { Subject, Subscription } from 'rxjs';
 import U from './units';
 
-export abstract class ActaGalley extends ActaElement {
+export abstract class IActaPreflightProfile {
+    protected _detailMessage: string | null = null;
+    protected _targetFrame: IActaFrame | null = null;
+
+    get detailMessage() {
+        return this._detailMessage;
+    }
+    get targetFrame() {
+        return this._targetFrame;
+    }
+    abstract get message(): string;
+};
+
+// tslint:disable-next-line: max-classes-per-file
+export abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
-    private _collisionList: ActaGalley[];
+    private _overlapFrames: IActaFrame[];
+
+    protected _preflightProfiles: IActaPreflightProfile[];
 
     protected _CHANGE_SIZE$: Subject<undefined>;
-    protected _COLLISION$: Subject<ActaGalley>;
+    protected _OVERLAP$: Subject<IActaFrame>;
 
     static get observedAttributes() {
         return [
@@ -83,42 +99,15 @@ export abstract class ActaGalley extends ActaElement {
 
     protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(); }
 
-    protected _checkCollisionArea(srcX1: number, srcY1: number, srcX2?: number, srcY2?: number): number[][] {
-        const collisionArea = [];
-
-        if (srcX2 === undefined) srcX2 = srcX1;
-        if (srcY2 === undefined) srcY2 = srcY1;
-
-        srcX1 += U.px(this.x);
-        srcX2 += U.px(this.x);
-        srcY1 += U.px(this.y);
-        srcY2 += U.px(this.y);
-
-        for (const dest of this._collisionList) {
-            if (this.order >= dest.order) continue;
-
-            let destX1 = U.px(dest.x);
-            let destY1 = U.px(dest.y);
-            let destX2 = destX1 + U.px(dest.width);
-            let destY2 = destY1 + U.px(dest.height);
-            if (srcX1 < destX2 && srcX2 > destX1 && srcY1 < destY2 && srcY2 > destY1) {
-                destX1 = Math.max(0, destX1 - srcX1);
-                destY1 = Math.max(0, destY1 - srcY1);
-                destX2 = Math.min(srcX2 - srcX1, destX2 - srcX1);
-                destY2 = Math.min(srcY2 - srcY1, destY2 - srcY1);
-                collisionArea.push([destX1, destY1, destX2, destY2]);
-            }
-        }
-        return collisionArea;
-    }
-
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
 
-        this._collisionList = [];
+        this._overlapFrames = [];
+        this._preflightProfiles = [];
+
         this._CHANGE_SIZE$ = new Subject();
-        this._COLLISION$ = new Subject();
-        this._COLLISION$.subscribe(_ => this._onCollision());
+        this._OVERLAP$ = new Subject();
+        this._OVERLAP$.subscribe(_ => this._onOverlap());
 
         if (x !== undefined) this.setAttribute('x', x.toString());
         if (y !== undefined) this.setAttribute('y', y.toString());
@@ -144,7 +133,7 @@ export abstract class ActaGalley extends ActaElement {
         this._applyOrder();
 
         if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
-        this.classList.add('galley');
+        this.classList.add('frame');
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -178,7 +167,7 @@ export abstract class ActaGalley extends ActaElement {
         }
     }
 
-    subscribeChangeFocus(observer: Subject<ActaGalley>) {
+    subscribeChangeFocus(observer: Subject<IActaFrame>) {
         this._subscriptionChangeFocus = observer.subscribe(src => {
             if (src === this) {
                 if (this.classList.contains('focus')) return;
@@ -196,6 +185,22 @@ export abstract class ActaGalley extends ActaElement {
         this._subscriptionChangeFocus = undefined;
     }
 
+    findOverlappingArea(x1: number, y1: number, x2: number, y2: number): number[] | undefined {
+        let thisX1 = U.px(this.x);
+        let thisY1 = U.px(this.y);
+        let thisX2 = thisX1 + U.px(this.width);
+        let thisY2 = thisY1 + U.px(this.height);
+
+        if (x1 < thisX2 && x2 > thisX1 && y1 < thisY2 && y2 > thisY1) {
+            thisX1 = Math.max(0, thisX1 - x1);
+            thisY1 = Math.max(0, thisY1 - y1);
+            thisX2 = Math.min(x2 - x1, thisX2 - x1);
+            thisY2 = Math.min(y2 - y1, thisY2 - y1);
+            return [thisX1, thisY1, thisX2, thisY2];
+        }
+        return undefined;
+    }
+
     set x(x: string | number) { this.setAttribute('x', x.toString()); }
     set y(y: string | number) { this.setAttribute('y', y.toString()); }
     set width(width: string | number) { this.setAttribute('width', width.toString()); }
@@ -208,8 +213,8 @@ export abstract class ActaGalley extends ActaElement {
     set paddingBottom(padding: string | number) { this.setAttribute('padding-bottom', padding.toString()); }
     set paddingLeft(padding: string | number) { this.setAttribute('padding-left', padding.toString()); }
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
-    set collisionList(list: ActaGalley[]) { this._collisionList = list; }
     set order(order: number) { this.setAttribute('order', order.toString()); }
+    set overlapFrames(list: IActaFrame[]) { this._overlapFrames = list; }
 
     get x() { return this.getAttribute('x') || '0'; }
     get y() { return this.getAttribute('y') || '0'; }
@@ -223,12 +228,14 @@ export abstract class ActaGalley extends ActaElement {
     get paddingBottom() { return this.getAttribute('padding-bottom') || '0'; }
     get paddingLeft() { return this.getAttribute('padding-left') || '0'; }
     get paddingRight() { return this.getAttribute('padding-right') || '0'; }
-    get collisionList() { return this._collisionList; }
-    get collisionObservable() { return this._COLLISION$; }
     get order() { return parseInt(this.getAttribute('order') || '0', 10); }
+    get overlapFrames() { return this._overlapFrames; }
+    get overlapObservable() { return this._OVERLAP$; }
+    get preflightProfiles() { return this._preflightProfiles; }
 
     protected abstract _onFocus(): void;
     protected abstract _onBlur(): void;
-    protected abstract _onCollision(): void;
+    protected abstract _onOverlap(): void;
     abstract get type(): string;
+    abstract preflight(): void;
 };

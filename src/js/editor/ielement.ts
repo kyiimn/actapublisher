@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export class ActaElement extends HTMLElement {
+export abstract class IActaElement extends HTMLElement {
     protected _id: string;
 
     constructor() {

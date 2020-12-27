@@ -1,10 +1,10 @@
 import { ActaParagraph } from "./paragraph";
-import { ActaElement } from "./element";
+import { IActaElement } from "./ielement";
 import { ActaTextChar, CharType } from "./text/textchar";
 import { ActaTextRow } from './text/textrow';
 import U from './units';
 
-export class ActaParagraphColumn extends ActaElement {
+export class ActaParagraphColumn extends IActaElement {
     private _root: ShadowRoot;
     private _canvas: SVGElement;
     private _textRows: ActaTextRow[];

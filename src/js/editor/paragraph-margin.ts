@@ -1,7 +1,7 @@
-import { ActaElement } from "./element";
+import { IActaElement } from "./ielement";
 import U from './units';
 
-export class ActaParagraphMargin extends ActaElement {
+export class ActaParagraphMargin extends IActaElement {
     static get observedAttributes() {
         return ['width'];
     }

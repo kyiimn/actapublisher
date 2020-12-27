@@ -1,17 +1,17 @@
 import { ActaGuide } from './guide';
-import { ActaGalley } from './galley';
-import { ActaElement } from './element';
+import { IActaFrame } from './iframe';
+import { IActaElement } from './ielement';
 import { fromEvent, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import U from './units';
 
-export class ActaPage extends ActaElement {
+export class ActaPage extends IActaElement {
     private _CHANGE_PAGE_STYLE$: Subject<string>;
-    private _CHANGE_GALLEY_STYLE$: Subject<ActaGalley>;
-    private _CHANGE_FOCUS$: Subject<ActaGalley>;
+    private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;
+    private _CHANGE_FOCUS$: Subject<IActaFrame>;
 
     private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
-    private _OBSERVER_CHANGE_GALLEY_STYLE$: MutationObserver;
+    private _OBSERVER_CHANGE_FRAME_STYLE$: MutationObserver;
 
     private _guide: ActaGuide | undefined;
 
@@ -32,27 +32,33 @@ export class ActaPage extends ActaElement {
         }
     }
 
-    private _refreshCollisionList() {
+    private _updateOverlapFrameList() {
         const childNodes = this.childNodes;
         for (const src of childNodes) {
-            if (!(src instanceof ActaGalley)) continue;
+            if (!(src instanceof IActaFrame)) continue;
 
             const srcX1 = U.px(src.x);
             const srcY1 = U.px(src.y);
             const srcX2 = srcX1 + U.px(src.width);
             const srcY2 = srcY1 + U.px(src.height);
-            src.collisionList = [];
+            src.overlapFrames = [];
 
             for (const dest of childNodes) {
-                if (src === dest || !(dest instanceof ActaGalley)) continue;
+                if (src === dest || !(dest instanceof IActaFrame)) continue;
 
                 const destX1 = U.px(dest.x);
                 const destY1 = U.px(dest.y);
                 const destX2 = destX1 + U.px(dest.width);
                 const destY2 = destY1 + U.px(dest.height);
-                if (srcX1 < destX2 && srcX2 > destX1 && srcY1 < destY2 && srcY2 > destY1) src.collisionList.push(dest);
+                if (srcX1 < destX2 && srcX2 > destX1 && srcY1 < destY2 && srcY2 > destY1) src.overlapFrames.push(dest);
             }
         }
+    }
+
+    private get lastFrameOrder() {
+        let lastOrder = 0;
+        for (const f of this.frames) lastOrder = Math.max(lastOrder, f.order);
+        return lastOrder;
     }
 
     constructor(width?: string | number, height?: string | number) {
@@ -61,18 +67,18 @@ export class ActaPage extends ActaElement {
         this._CHANGE_PAGE_STYLE$ = new Subject();
         this._CHANGE_FOCUS$ = new Subject();
 
-        this._CHANGE_GALLEY_STYLE$ = new Subject();
-        this._CHANGE_GALLEY_STYLE$.subscribe(src => {
-            for (const dest of src.collisionList) {
-                dest.collisionObservable.next(src);
+        this._CHANGE_FRAME_STYLE$ = new Subject();
+        this._CHANGE_FRAME_STYLE$.subscribe(src => {
+            for (const dest of src.overlapFrames) {
+                dest.overlapObservable.next(src);
             }
-            src.collisionObservable.next(src);
+            src.overlapObservable.next(src);
         });
 
-        this._OBSERVER_CHANGE_GALLEY_STYLE$ = new MutationObserver(mutations => {
-            if (mutations.length > 0) this._refreshCollisionList();
+        this._OBSERVER_CHANGE_FRAME_STYLE$ = new MutationObserver(mutations => {
+            if (mutations.length > 0) this._updateOverlapFrameList();
             mutations.forEach(m => {
-                this._CHANGE_GALLEY_STYLE$.next(m.target as ActaGalley);
+                this._CHANGE_FRAME_STYLE$.next(m.target as IActaFrame);
             });
         });
 
@@ -84,8 +90,8 @@ export class ActaPage extends ActaElement {
                     if (removedNode instanceof ActaGuide) {
                         const node = removedNode as ActaGuide;
                         node.unsubscribeChangePageSize();
-                    } else if (removedNode instanceof ActaGalley) {
-                        const node = removedNode as ActaGalley;
+                    } else if (removedNode instanceof IActaFrame) {
+                        const node = removedNode as IActaFrame;
                         node.unsubscribeChangeFocus();
                     }
                 }
@@ -94,20 +100,20 @@ export class ActaPage extends ActaElement {
                     if (addedNode instanceof ActaGuide) {
                         const node = addedNode as ActaGuide;
                         node.subscribeChangePageSize(this._CHANGE_PAGE_STYLE$);
-                    } else if (addedNode instanceof ActaGalley) {
-                        const node = addedNode as ActaGalley;
-                        node.order = this.lastGalleyOrder + 1;
-                        this._refreshCollisionList();
-                        this._CHANGE_GALLEY_STYLE$.next(node);
-                        this._OBSERVER_CHANGE_GALLEY_STYLE$.observe(node, {
+                    } else if (addedNode instanceof IActaFrame) {
+                        const node = addedNode as IActaFrame;
+                        node.order = this.lastFrameOrder + 1;
+                        this._updateOverlapFrameList();
+                        this._CHANGE_FRAME_STYLE$.next(node);
+                        this._OBSERVER_CHANGE_FRAME_STYLE$.observe(node, {
                             attributes: true,
-                            attributeFilter: ActaGalley.observedAttributes
+                            attributeFilter: IActaFrame.observedAttributes
                         });
                         fromEvent(node, 'focus').pipe(filter(e => {
                             return e.target ? true : false;
                         }), map(e => {
                             e.preventDefault();
-                            return e.target as ActaGalley;
+                            return e.target as IActaFrame;
                         })).subscribe(target => {
                             this._CHANGE_FOCUS$.next(target);
                         });
@@ -156,19 +162,13 @@ export class ActaPage extends ActaElement {
     get paddingRight() { return this.getAttribute('padding-right') || ''; }
     get guide() { return this._guide; }
 
-    get lastGalleyOrder() {
-        let lastOrder = 0;
-        for (const g of this.galley) lastOrder = Math.max(lastOrder, g.order);
-        return lastOrder;
-    }
-
-    get galley() {
-        const galley: ActaGalley[] = [];
+    get frames() {
+        const frames: IActaFrame[] = [];
         this.childNodes.forEach(child => {
-            if (child instanceof ActaGalley) galley.push(child);
+            if (child instanceof IActaFrame) frames.push(child);
         });
-        galley.sort((x, y) => ((x.order < y.order) ? -1 : ((x.order > y.order) ? 1 : 0)));
-        return galley;
+        frames.sort((x, y) => ((x.order < y.order) ? -1 : ((x.order > y.order) ? 1 : 0)));
+        return frames;
     }
 };
 customElements.define('x-page', ActaPage);

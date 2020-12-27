@@ -1,8 +1,8 @@
-import { ActaElement } from "./element";
+import { IActaElement } from "./ielement";
 import { Subject, Subscription } from 'rxjs';
 import U from './units';
 
-export class ActaGuide extends ActaElement {
+export class ActaGuide extends IActaElement {
     private _subscriptionChangePageSize?: Subscription;
 
     static get observedAttributes() {
@@ -108,7 +108,7 @@ export class ActaGuide extends ActaElement {
 customElements.define('x-guide', ActaGuide);
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaGuideColumn extends ActaElement {
+export class ActaGuideColumn extends IActaElement {
     static get observedAttributes() {
         return ['width'];
     }
