@@ -46,9 +46,8 @@ const main = async () => {
     page.appendChild(para2);
 
     const para3 = new ActaImage('80mm', '20mm', '40mm', '40mm');// , '본문3', 2, '2mm');
-    page.appendChild(para3);
-
     para3.src = 'test/bigsur.eps';
+    page.appendChild(para3);
 
     const para4 = new ActaParagraph('60mm', '60mm', '20mm', '40mm', '본문3', 1, '2mm');
     page.appendChild(para4);

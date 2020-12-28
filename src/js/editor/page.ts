@@ -46,10 +46,10 @@ export class ActaPage extends IActaElement {
             for (const dest of childNodes) {
                 if (src === dest || !(dest instanceof IActaFrame)) continue;
 
-                const destX1 = U.px(dest.x);
-                const destY1 = U.px(dest.y);
-                const destX2 = destX1 + U.px(dest.width);
-                const destY2 = destY1 + U.px(dest.height);
+                const destX1 = U.px(dest.x) - U.px(dest.margin);
+                const destY1 = U.px(dest.y) - U.px(dest.margin);
+                const destX2 = destX1 + U.px(dest.width) + (U.px(dest.margin) * 2);
+                const destY2 = destY1 + U.px(dest.height) + (U.px(dest.margin) * 2);
                 if (srcX1 < destX2 && srcX2 > destX1 && srcY1 < destY2 && srcY2 > destY1) src.overlapFrames.push(dest);
             }
         }

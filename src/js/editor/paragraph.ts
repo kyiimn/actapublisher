@@ -825,7 +825,7 @@ export class ActaParagraph extends IActaFrame {
         this._REPAINT_CURSOR$.next(JSON.stringify(state));
     }
 
-    private _getOverlappingAreaByTextRow(textRow: ActaTextRow, height?: number) {
+    private _getOverlapAreaWithOtherFrames(textRow: ActaTextRow, height?: number) {
         const x1 = U.px(this.x) + textRow.column.offsetLeft;
         const y1 = U.px(this.y) + textRow.offsetTop;
         const x2 = x1 + textRow.columnWidth;
@@ -834,7 +834,7 @@ export class ActaParagraph extends IActaFrame {
         const overlapAreas: number[][] = [];
         for (const frame of this.overlapFrames) {
             if (this.order >= frame.order) continue;
-            const area = frame.findOverlappingArea(x1, y1, x2, y2);
+            const area = frame.computeOverlapArea(x1, y1, x2, y2);
             if (area) overlapAreas.push(area);
         }
         if (overlapAreas.length < 1) return null;
@@ -906,9 +906,8 @@ export class ActaParagraph extends IActaFrame {
 
         this.value = '';
 
-        this._CHANGE_SIZE$.subscribe(_ => {
-            this._EMIT_REPAINT();
-        });
+        this._CHANGE_SIZE$.subscribe(() => this._EMIT_REPAINT());
+
         fromEvent<KeyboardEvent>(this, 'keydown').subscribe(e => {
             if (this._onKeyPress(e) !== false) return;
             e.preventDefault();
@@ -1021,7 +1020,7 @@ export class ActaParagraph extends IActaFrame {
 
     computeTextRowPaddingSize(textRow: ActaTextRow, textChar?: ActaTextChar) {
         const textHeight = textChar ? textChar.height : this.defaultTextStyle.textHeight;
-        const broken = this._getOverlappingAreaByTextRow(textRow, textHeight);
+        const broken = this._getOverlapAreaWithOtherFrames(textRow, textHeight);
         if (broken) {
             if (broken[0] <= 0) {
                 textRow.paddingLeft = broken[1];

@@ -19,6 +19,7 @@ export abstract class IActaPreflightProfile {
 export abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
     private _overlapFrames: IActaFrame[];
+    private _margin: number | string;
 
     protected _preflightProfiles: IActaPreflightProfile[];
 
@@ -97,6 +98,14 @@ export abstract class IActaFrame extends IActaElement {
         this.style.zIndex = order;
     }
 
+    protected _onFocus() { return; }
+    protected _onBlur() { return; }
+    protected _onOverlap() { return; }
+
+    protected _onConnected() {
+        this._EMIT_CHANGE_SIZE();
+    }
+
     protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(); }
 
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
@@ -104,6 +113,7 @@ export abstract class IActaFrame extends IActaElement {
 
         this._overlapFrames = [];
         this._preflightProfiles = [];
+        this._margin = 0;
 
         this._CHANGE_SIZE$ = new Subject();
         this._OVERLAP$ = new Subject();
@@ -134,6 +144,8 @@ export abstract class IActaFrame extends IActaElement {
 
         if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
         this.classList.add('frame');
+
+        this._onConnected();
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -185,11 +197,11 @@ export abstract class IActaFrame extends IActaElement {
         this._subscriptionChangeFocus = undefined;
     }
 
-    findOverlappingArea(x1: number, y1: number, x2: number, y2: number): number[] | undefined {
-        let thisX1 = U.px(this.x);
-        let thisY1 = U.px(this.y);
-        let thisX2 = thisX1 + U.px(this.width);
-        let thisY2 = thisY1 + U.px(this.height);
+    computeOverlapArea(x1: number, y1: number, x2: number, y2: number) {
+        let thisX1 = U.px(this.x) - U.px(this.margin);
+        let thisY1 = U.px(this.y) - U.px(this.margin);
+        let thisX2 = thisX1 + U.px(this.width) + (U.px(this.margin) * 2);
+        let thisY2 = thisY1 + U.px(this.height) + (U.px(this.margin) * 2);
 
         if (x1 < thisX2 && x2 > thisX1 && y1 < thisY2 && y2 > thisY1) {
             thisX1 = Math.max(0, thisX1 - x1);
@@ -198,7 +210,7 @@ export abstract class IActaFrame extends IActaElement {
             thisY2 = Math.min(y2 - y1, thisY2 - y1);
             return [thisX1, thisY1, thisX2, thisY2];
         }
-        return undefined;
+        return null;
     }
 
     set x(x: string | number) { this.setAttribute('x', x.toString()); }
@@ -215,6 +227,12 @@ export abstract class IActaFrame extends IActaElement {
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
     set order(order: number) { this.setAttribute('order', order.toString()); }
     set overlapFrames(list: IActaFrame[]) { this._overlapFrames = list; }
+    set margin(margin: number | string) {
+        let changed = false;
+        if (U.px(this._margin) !== U.px(margin)) changed = true;
+        this._margin = margin;
+        if (changed) this._EMIT_CHANGE_SIZE();
+    }
 
     get x() { return this.getAttribute('x') || '0'; }
     get y() { return this.getAttribute('y') || '0'; }
@@ -232,10 +250,8 @@ export abstract class IActaFrame extends IActaElement {
     get overlapFrames() { return this._overlapFrames; }
     get overlapObservable() { return this._OVERLAP$; }
     get preflightProfiles() { return this._preflightProfiles; }
+    get margin() { return this._margin; }
 
-    protected abstract _onFocus(): void;
-    protected abstract _onBlur(): void;
-    protected abstract _onOverlap(): void;
-    abstract get type(): string;
     abstract preflight(): void;
+    abstract get type(): string;
 };
