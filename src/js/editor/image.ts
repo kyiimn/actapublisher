@@ -203,8 +203,14 @@ export class ActaImage extends IActaFrame {
 
         const area = [thisX1, thisY1, thisX2, thisY2];
         if (this._originalCanvas) {
-            if (x1 < thisX1) {
-            } else if (x1 > thisX2) {
+            if (this._mask) {
+                const ctx = this._displayCanvas.getContext('2d');
+                if (!ctx) return area;
+                if (x1 < thisX1) {
+                } else if (x1 > thisX2) {
+                }
+            } else {
+                return area;
             }
         } else {
             return (this.overlapMethod === ImageOverlapMethod.FRAMEBOX) ? area : null;
