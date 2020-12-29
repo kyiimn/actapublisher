@@ -71,7 +71,6 @@ export class ActaImage extends IActaFrame {
         } else {
             ctx.clearRect(0, 0, U.px(this._displayWidth), U.px(this._displayHeight));
         }
-        console.log('a');
     }
 
     private _resize() {
@@ -241,18 +240,21 @@ export class ActaImage extends IActaFrame {
     }
 
     computeOverlapArea(x1: number, y1: number, x2: number, y2: number): IActaFrameOverlapArea | null {
-        let thisX1 = U.px(this.x) - U.px(this.margin);
-        let thisY1 = U.px(this.y) - U.px(this.margin);
-        let thisX2 = thisX1 + U.px(this.width) + (U.px(this.margin) * 2);
-        let thisY2 = thisY1 + U.px(this.height) + (U.px(this.margin) * 2);
+        let thisX1 = U.px(this.x) + U.px(this._displayLeft);
+        let thisY1 = U.px(this.y) + U.px(this._displayTop);
+        let thisX2 = thisX1 + U.px(this._displayWidth);
+        let thisY2 = thisY1 + U.px(this._displayHeight);
 
         if (x1 >= thisX2 || x2 <= thisX1 || y1 >= thisY2 || y2 <= thisY1) return null;
+
+        x1 = Math.floor(x1); x2 = Math.ceil(x2);
+        y1 = Math.floor(y1); y2 = Math.ceil(y2);
 
         const cacheKey = this._getCacheKey(x1, y1, x2, y2);
         if (this._rememberOverlapCalc[cacheKey] !== undefined) return this._rememberOverlapCalc[cacheKey];
 
-        thisX1 = Math.round(thisX1); thisX2 = Math.round(thisX2); thisY1 = Math.round(thisY1); thisY2 = Math.round(thisY2);
-        x1 = Math.round(x1); x2 = Math.round(x2); y1 = Math.round(y1); y2 = Math.round(y2);
+        thisX1 = Math.floor(thisX1); thisX2 = Math.ceil(thisX2);
+        thisY1 = Math.floor(thisY1); thisY2 = Math.ceil(thisY2);
 
         let area: IActaFrameOverlapArea | null = {
             x: [Math.max(0, thisX1 - x1), Math.min(x2 - x1, thisX2 - x1)],
@@ -264,6 +266,7 @@ export class ActaImage extends IActaFrame {
                     x: [Math.max(0, x1 - thisX1), Math.min(thisX2 - thisX1, x2 - thisX1)],
                     y: [Math.max(0, y1 - thisY1), Math.min(thisY2 - thisY1, y2 - thisY1)]
                 };
+                console.log(cacheKey, area);
 
                 let hasYPx = false;
                 for (let y = 0; y < this._maskDataY.length; y++) {
@@ -285,7 +288,8 @@ export class ActaImage extends IActaFrame {
                     if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
                     else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[1]--;
                 }
-                if (area.x[0] === area.x[1] || area.y[0] === area.y[1]) area = null;
+                if (Math.abs(area.x[0] - area.x[1]) <= 1 || Math.abs(area.y[0] - area.y[1]) <= 1) area = null;
+                
                 this._rememberOverlapCalc[cacheKey] = area;
             }
         } else {

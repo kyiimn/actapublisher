@@ -49,7 +49,7 @@ const main = async () => {
     page.appendChild(para3);
 
     para3.src = 'test/bigsur.eps';
-    para3.fitType = ImageFitType.FILL_FRAME;
+    para3.fitType = ImageFitType.FIT_FRAME;
     para3.overlapMethod = ImageOverlapMethod.SHAPE;
 
     const para4 = new ActaParagraph('60mm', '60mm', '20mm', '40mm', '본문3', 1, '2mm');
