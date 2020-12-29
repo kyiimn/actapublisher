@@ -1,4 +1,4 @@
-import { IActaFrame } from './iframe';
+import { IActaFrame, IActaFrameOverlapArea } from './iframe';
 import U from './units';
 
 export enum ImageFitType {
@@ -22,13 +22,19 @@ export class ActaImage extends IActaFrame {
     private _displayLeft: number | string;
     private _displayTop: number | string;
     private _displayCanvas: HTMLCanvasElement;
-    private _mask: boolean;
+    private _hasMask: boolean;
+    private _maskDataX: number[][] | null;
+    private _maskDataY: number[][] | null;
 
     private _fitType: ImageFitType;
     private _overlapMethod: ImageOverlapMethod;
 
-    private _originalCanvas: OffscreenCanvas | null;
+    private _originalCanvas: OffscreenCanvas | HTMLCanvasElement | null;
     private _src: string;
+
+    private _rememberOverlapCalc: {
+        [pos: string]: IActaFrameOverlapArea | null
+    };
 
     private _repaint() {
         const ctx = this._displayCanvas.getContext('2d');
@@ -38,6 +44,8 @@ export class ActaImage extends IActaFrame {
         this._displayCanvas.height = U.px(this._displayHeight);
         this._displayCanvas.style.left = U.px(this._displayLeft) + 'px';
         this._displayCanvas.style.top = U.px(this._displayTop) + 'px';
+        this._maskDataX = null;
+        this._maskDataY = null;
 
         if (this._originalCanvas) {
             ctx.drawImage(
@@ -45,9 +53,25 @@ export class ActaImage extends IActaFrame {
                 0, 0, this._originalCanvas.width, this._originalCanvas.height,
                 0, 0, U.px(this._displayWidth), U.px(this._displayHeight)
             );
+            if (this._hasMask) {
+                const imagedata = ctx.getImageData(0, 0, U.px(this._displayWidth), U.px(this._displayHeight));
+                this._maskDataX = [];
+                this._maskDataY = [];
+                for (let i = 3; i < imagedata.data.length; i += 4) {
+                    const x = Math.floor((i / 4) % imagedata.width);
+                    const y = Math.floor((i / 4) / imagedata.width);
+
+                    this._maskDataX[x] = this._maskDataX[x] || [];
+                    this._maskDataX[x][y] = imagedata.data[i] === 0 ? 0 : 1;
+
+                    this._maskDataY[y] = this._maskDataY[y] || [];
+                    this._maskDataY[y][x] = imagedata.data[i] === 0 ? 0 : 1;
+                }
+            }
         } else {
             ctx.clearRect(0, 0, U.px(this._displayWidth), U.px(this._displayHeight));
         }
+        console.log('a');
     }
 
     private _resize() {
@@ -95,6 +119,7 @@ export class ActaImage extends IActaFrame {
                     this._displayTop = (parseInt(computeStyle.height, 10) - this._displayHeight) / 2;
                 }
             }
+            this._rememberOverlapCalc = {};
         } else {
             this._displayWidth = 0;
             this._displayHeight = 0;
@@ -105,7 +130,7 @@ export class ActaImage extends IActaFrame {
 
     private _loadImage() {
         return new Promise((resolve, reject) => {
-            this._mask = false;
+            this._hasMask = false;
             this._originalCanvas = null;
             if (this.src !== '') {
                 const name = (this.src.lastIndexOf('.') > 0) ? this.src.substr(0, this.src.lastIndexOf('.')) : this.src;
@@ -114,9 +139,21 @@ export class ActaImage extends IActaFrame {
                     const img = new Image();
                     img.src = name + '.jpg';
                     img.onload = _e => {
-                        this._originalCanvas = new OffscreenCanvas(img.width, img.height);
-
-                        const tmpCanvas = new OffscreenCanvas(img.width, img.height);
+                        if (window.OffscreenCanvas) {
+                            this._originalCanvas = new OffscreenCanvas(img.width, img.height);
+                        } else {
+                            this._originalCanvas = document.createElement('canvas');
+                            this._originalCanvas.setAttribute('width', img.width.toString());
+                            this._originalCanvas.setAttribute('height', img.height.toString());
+                        }
+                        let tmpCanvas: OffscreenCanvas | HTMLCanvasElement;
+                        if (window.OffscreenCanvas) {
+                            tmpCanvas = new OffscreenCanvas(img.width, img.height);
+                        } else {
+                            tmpCanvas = document.createElement('canvas');
+                            tmpCanvas.setAttribute('width', img.width.toString());
+                            tmpCanvas.setAttribute('height', img.height.toString());
+                        }
                         const tmpCtx = tmpCanvas.getContext('2d');
                         const realCtx = this._originalCanvas.getContext('2d');
                         if (tmpCtx && realCtx) {
@@ -130,7 +167,7 @@ export class ActaImage extends IActaFrame {
                                 tmpCtx.globalCompositeOperation = "none";
 
                                 realCtx.drawImage(tmpCanvas, 0, 0);
-                                this._mask = true;
+                                this._hasMask = true;
                                 resolve(this.src);
                             };
                             maskImg.onerror = _me => {
@@ -147,7 +184,13 @@ export class ActaImage extends IActaFrame {
                     const img = new Image();
                     img.src = this.src;
                     img.onload = _e => {
-                        this._originalCanvas = new OffscreenCanvas(img.width, img.height);
+                        if (window.OffscreenCanvas) {
+                            this._originalCanvas = new OffscreenCanvas(img.width, img.height);
+                        } else {
+                            this._originalCanvas = document.createElement('canvas');
+                            this._originalCanvas.setAttribute('width', img.width.toString());
+                            this._originalCanvas.setAttribute('height', img.height.toString());
+                        }
                         const ctx = this._originalCanvas.getContext('2d');
                         if (ctx) {
                             ctx.drawImage(img, 0, 0);
@@ -173,7 +216,9 @@ export class ActaImage extends IActaFrame {
         this._displayHeight = 0;
         this._displayLeft = 0;
         this._displayTop = 0;
-        this._mask = false;
+        this._hasMask = false;
+        this._maskDataX = null;
+        this._maskDataY = null;
         this._src = '';
 
         this._fitType = ImageFitType.CENTER;
@@ -183,34 +228,65 @@ export class ActaImage extends IActaFrame {
         this._displayCanvas.style.position = 'absolute';
         this.append(this._displayCanvas);
 
+        this._rememberOverlapCalc = {};
+
         this._CHANGE_SIZE$.subscribe(() => {
             this._resize();
             this._repaint();
         });
     }
 
-    computeOverlapArea(x1: number, y1: number, x2: number, y2: number) {
+    private _getCacheKey(x1: number, y1: number, x2: number, y2: number) {
+        return `${x1}_${y1}_${x2}_${y2}`;
+    }
+
+    computeOverlapArea(x1: number, y1: number, x2: number, y2: number): IActaFrameOverlapArea | null {
         let thisX1 = U.px(this.x) - U.px(this.margin);
         let thisY1 = U.px(this.y) - U.px(this.margin);
         let thisX2 = thisX1 + U.px(this.width) + (U.px(this.margin) * 2);
         let thisY2 = thisY1 + U.px(this.height) + (U.px(this.margin) * 2);
 
         if (x1 >= thisX2 || x2 <= thisX1 || y1 >= thisY2 || y2 <= thisY1) return null;
-        thisX1 = Math.max(0, thisX1 - x1);
-        thisY1 = Math.max(0, thisY1 - y1);
-        thisX2 = Math.min(x2 - x1, thisX2 - x1);
-        thisY2 = Math.min(y2 - y1, thisY2 - y1);
 
-        const area = [thisX1, thisY1, thisX2, thisY2];
+        const cacheKey = this._getCacheKey(x1, y1, x2, y2);
+        if (this._rememberOverlapCalc[cacheKey] !== undefined) return this._rememberOverlapCalc[cacheKey];
+
+        thisX1 = Math.round(thisX1); thisX2 = Math.round(thisX2); thisY1 = Math.round(thisY1); thisY2 = Math.round(thisY2);
+        x1 = Math.round(x1); x2 = Math.round(x2); y1 = Math.round(y1); y2 = Math.round(y2);
+
+        let area: IActaFrameOverlapArea | null = {
+            x: [Math.max(0, thisX1 - x1), Math.min(x2 - x1, thisX2 - x1)],
+            y: [Math.max(0, thisY1 - y1), Math.min(y2 - y1, thisY2 - y1)]
+        };
         if (this._originalCanvas) {
-            if (this._mask) {
-                const ctx = this._displayCanvas.getContext('2d');
-                if (!ctx) return area;
-                if (x1 < thisX1) {
-                } else if (x1 > thisX2) {
+            if (this._hasMask && this._maskDataX !== null && this._maskDataY !== null) {
+                const inArea: IActaFrameOverlapArea = {
+                    x: [Math.max(0, x1 - thisX1), Math.min(thisX2 - thisX1, x2 - thisX1)],
+                    y: [Math.max(0, y1 - thisY1), Math.min(thisY2 - thisY1, y2 - thisY1)]
+                };
+
+                let hasYPx = false;
+                for (let y = 0; y < this._maskDataY.length; y++) {
+                    if (Math.max(...this._maskDataY[y].slice(inArea.x[0], inArea.x[1])) > 0) hasYPx = true;
+                    else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[0]++;
                 }
-            } else {
-                return area;
+                hasYPx = false;
+                for (let y = this._maskDataY.length - 1; y >= 0; y--) {
+                    if (Math.max(...this._maskDataY[y].slice(inArea.x[0], inArea.x[1])) > 0) hasYPx = true;
+                    else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[1]--;
+                }
+                let hasXPx = false;
+                for (let x = 0; x < this._maskDataX.length; x++) {
+                    if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
+                    else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[0]++;
+                }
+                hasXPx = false;
+                for (let x = this._maskDataX.length - 1; x >= 0; x--) {
+                    if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
+                    else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[1]--;
+                }
+                if (area.x[0] === area.x[1] || area.y[0] === area.y[1]) area = null;
+                this._rememberOverlapCalc[cacheKey] = area;
             }
         } else {
             return (this.overlapMethod === ImageOverlapMethod.FRAMEBOX) ? area : null;

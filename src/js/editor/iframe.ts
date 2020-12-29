@@ -2,6 +2,10 @@ import { IActaElement } from "./ielement";
 import { Subject, Subscription } from 'rxjs';
 import U from './units';
 
+export interface IActaFrameOverlapArea {
+    x: number[],
+    y: number[]
+}
 export abstract class IActaPreflightProfile {
     protected _detailMessage: string | null = null;
     protected _targetFrame: IActaFrame | null = null;
@@ -197,7 +201,7 @@ export abstract class IActaFrame extends IActaElement {
         this._subscriptionChangeFocus = undefined;
     }
 
-    computeOverlapArea(x1: number, y1: number, x2: number, y2: number) {
+    computeOverlapArea(x1: number, y1: number, x2: number, y2: number): IActaFrameOverlapArea | null {
         let thisX1 = U.px(this.x) - U.px(this.margin);
         let thisY1 = U.px(this.y) - U.px(this.margin);
         let thisX2 = thisX1 + U.px(this.width) + (U.px(this.margin) * 2);
@@ -208,7 +212,10 @@ export abstract class IActaFrame extends IActaElement {
             thisY1 = Math.max(0, thisY1 - y1);
             thisX2 = Math.min(x2 - x1, thisX2 - x1);
             thisY2 = Math.min(y2 - y1, thisY2 - y1);
-            return [thisX1, thisY1, thisX2, thisY2];
+            return {
+                x: [thisX1, thisX2],
+                y: [thisY1, thisY2]
+            };
         }
         return null;
     }

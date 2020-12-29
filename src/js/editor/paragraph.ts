@@ -1,4 +1,4 @@
-import { IActaFrame, IActaPreflightProfile } from './iframe';
+import { IActaFrame, IActaPreflightProfile, IActaFrameOverlapArea } from './iframe';
 import { ActaGuide } from './guide';
 import { ActaClipboard } from '../clipboard';
 import { ActaParagraphColumn } from './paragraph-col';
@@ -831,7 +831,7 @@ export class ActaParagraph extends IActaFrame {
         const x2 = x1 + textRow.columnWidth;
         const y2 = y1 + Math.max((height ? height : 0), textRow.maxHeight);
 
-        const overlapAreas: number[][] = [];
+        const overlapAreas: IActaFrameOverlapArea[] = [];
         for (const frame of this.overlapFrames) {
             if (this.order >= frame.order) continue;
             const area = frame.computeOverlapArea(x1, y1, x2, y2);
@@ -839,12 +839,12 @@ export class ActaParagraph extends IActaFrame {
         }
         if (overlapAreas.length < 1) return null;
 
-        let overlapX1 = overlapAreas[0][0];
-        let overlapX2 = overlapAreas[0][2];
+        let overlapX1 = overlapAreas[0].x[0];
+        let overlapX2 = overlapAreas[0].x[1];
 
         for (const overlapArea of overlapAreas) {
-            overlapX1 = Math.min(overlapArea[0], overlapX1);
-            overlapX2 = Math.max(overlapArea[2], overlapX2);
+            overlapX1 = Math.min(overlapArea.x[0], overlapX1);
+            overlapX2 = Math.max(overlapArea.x[1], overlapX2);
         }
         return [overlapX1, overlapX2];
     }
