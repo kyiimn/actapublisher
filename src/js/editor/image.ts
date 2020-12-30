@@ -40,10 +40,17 @@ export class ActaImage extends IActaFrame {
         const ctx = this._displayCanvas.getContext('2d');
         if (!ctx) return;
 
-        this._displayCanvas.width = U.px(this._displayWidth);
-        this._displayCanvas.height = U.px(this._displayHeight);
-        this._displayCanvas.style.left = U.px(this._displayLeft) + 'px';
-        this._displayCanvas.style.top = U.px(this._displayTop) + 'px';
+        const left = Math.floor(U.px(this._displayLeft));
+        const top = Math.floor(U.px(this._displayTop));
+        const width = Math.ceil(U.px(this._displayWidth));
+        const height = Math.ceil(U.px(this._displayHeight));
+        const frameWidth = Math.ceil(U.px(this.width));
+        const frameHeight = Math.ceil(U.px(this.height));
+
+        this._displayCanvas.width = width;
+        this._displayCanvas.height = height;
+        this._displayCanvas.style.left = `${left}px`;
+        this._displayCanvas.style.top = `${top}px`;
         this._maskDataX = null;
         this._maskDataY = null;
 
@@ -54,18 +61,30 @@ export class ActaImage extends IActaFrame {
                 0, 0, U.px(this._displayWidth), U.px(this._displayHeight)
             );
             if (this._hasMask) {
-                const imagedata = ctx.getImageData(0, 0, U.px(this._displayWidth), U.px(this._displayHeight));
                 this._maskDataX = [];
                 this._maskDataY = [];
+                for (let x = 0; x < frameWidth; x++) {
+                    for (let y = 0; y < frameHeight; y++) {
+                        this._maskDataX[x] = this._maskDataX[x] || [];
+                        this._maskDataX[x][y] = 0;
+
+                        this._maskDataY[y] = this._maskDataY[y] || [];
+                        this._maskDataY[y][x] = 0;
+                    }
+                }
+
+                const imagedata = ctx.getImageData(
+                    Math.max(left * -1, 0), Math.max(top * -1, 0),
+                    Math.min(width + left, frameWidth), Math.min(height + top, frameHeight)
+                );
                 for (let i = 3; i < imagedata.data.length; i += 4) {
-                    const x = Math.floor((i / 4) % imagedata.width);
-                    const y = Math.floor((i / 4) / imagedata.width);
+                    const x = Math.floor((i / 4) % imagedata.width) + Math.max(0, left);
+                    const y = Math.floor((i / 4) / imagedata.width) + Math.max(0, top);
 
-                    this._maskDataX[x] = this._maskDataX[x] || [];
-                    this._maskDataX[x][y] = imagedata.data[i] === 0 ? 0 : 1;
-
-                    this._maskDataY[y] = this._maskDataY[y] || [];
-                    this._maskDataY[y][x] = imagedata.data[i] === 0 ? 0 : 1;
+                    if (this._maskDataX[x] !== undefined && this._maskDataX[x][y] !== undefined) this._maskDataX[x][y] = imagedata.data[i] === 0 ? 0 : 1;
+                    if (this._maskDataY[y] !== undefined && this._maskDataY[y][x] !== undefined) {
+                        this._maskDataY[y][x] = imagedata.data[i] === 0 ? 0 : 1;
+                    }
                 }
             }
         } else {
@@ -118,13 +137,13 @@ export class ActaImage extends IActaFrame {
                     this._displayTop = (parseInt(computeStyle.height, 10) - this._displayHeight) / 2;
                 }
             }
-            this._rememberOverlapCalc = {};
         } else {
             this._displayWidth = 0;
             this._displayHeight = 0;
             this._displayLeft = 0;
             this._displayTop = 0;
         }
+        this._rememberOverlapCalc = {};
     }
 
     private _loadImage() {
@@ -240,10 +259,16 @@ export class ActaImage extends IActaFrame {
     }
 
     computeOverlapArea(x1: number, y1: number, x2: number, y2: number): IActaFrameOverlapArea | null {
-        let thisX1 = U.px(this.x) + U.px(this._displayLeft);
-        let thisY1 = U.px(this.y) + U.px(this._displayTop);
-        let thisX2 = thisX1 + U.px(this._displayWidth);
-        let thisY2 = thisY1 + U.px(this._displayHeight);
+        if (this._overlapMethod === ImageOverlapMethod.OVERLAP) {
+            return null;
+        } else if (this._overlapMethod === ImageOverlapMethod.FRAMEBOX || !this._originalCanvas || (!this._hasMask || this._maskDataX === null || this._maskDataY === null)) {
+            // 이미지가 배치되지 않았거나, 마스크정보가 없으면 프레임박스와 동일하게 처리
+            return super.computeOverlapArea(x1, y1, x2, y2);
+        }
+        let thisX1 = U.px(this.x);
+        let thisY1 = U.px(this.y);
+        let thisX2 = thisX1 + U.px(this.width);
+        let thisY2 = thisY1 + U.px(this.height);
 
         if (x1 >= thisX2 || x2 <= thisX1 || y1 >= thisY2 || y2 <= thisY1) return null;
 
@@ -260,41 +285,48 @@ export class ActaImage extends IActaFrame {
             x: [Math.max(0, thisX1 - x1), Math.min(x2 - x1, thisX2 - x1)],
             y: [Math.max(0, thisY1 - y1), Math.min(y2 - y1, thisY2 - y1)]
         };
-        if (this._originalCanvas) {
-            if (this._hasMask && this._maskDataX !== null && this._maskDataY !== null) {
-                const inArea: IActaFrameOverlapArea = {
-                    x: [Math.max(0, x1 - thisX1), Math.min(thisX2 - thisX1, x2 - thisX1)],
-                    y: [Math.max(0, y1 - thisY1), Math.min(thisY2 - thisY1, y2 - thisY1)]
-                };
-                console.log(cacheKey, area);
+        const inArea: IActaFrameOverlapArea = {
+            x: [Math.max(0, x1 - thisX1), Math.min(thisX2 - thisX1, x2 - thisX1)],
+            y: [Math.max(0, y1 - thisY1), Math.min(thisY2 - thisY1, y2 - thisY1)]
+        };
 
-                let hasYPx = false;
-                for (let y = 0; y < this._maskDataY.length; y++) {
-                    if (Math.max(...this._maskDataY[y].slice(inArea.x[0], inArea.x[1])) > 0) hasYPx = true;
-                    else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[0]++;
-                }
-                hasYPx = false;
-                for (let y = this._maskDataY.length - 1; y >= 0; y--) {
-                    if (Math.max(...this._maskDataY[y].slice(inArea.x[0], inArea.x[1])) > 0) hasYPx = true;
-                    else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[1]--;
-                }
-                let hasXPx = false;
-                for (let x = 0; x < this._maskDataX.length; x++) {
-                    if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
-                    else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[0]++;
-                }
-                hasXPx = false;
-                for (let x = this._maskDataX.length - 1; x >= 0; x--) {
-                    if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
-                    else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[1]--;
-                }
-                if (Math.abs(area.x[0] - area.x[1]) <= 1 || Math.abs(area.y[0] - area.y[1]) <= 1) area = null;
-                
-                this._rememberOverlapCalc[cacheKey] = area;
+        if (this._overlapMethod === ImageOverlapMethod.SHAPE) {
+            let hasYPx = false;
+            for (let y = 0; y < this._maskDataY.length; y++) {
+                if (Math.max(...this._maskDataY[y].slice(inArea.x[0], inArea.x[1])) > 0) hasYPx = true;
+                else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[0]++;
             }
-        } else {
-            return (this.overlapMethod === ImageOverlapMethod.FRAMEBOX) ? area : null;
+            hasYPx = false;
+            for (let y = this._maskDataY.length - 1; y >= 0; y--) {
+                if (Math.max(...this._maskDataY[y].slice(inArea.x[0], inArea.x[1])) > 0) hasYPx = true;
+                else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[1]--;
+            }
+            let hasXPx = false;
+            for (let x = 0; x < this._maskDataX.length; x++) {
+                if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
+                else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[0]++;
+            }
+            hasXPx = false;
+            for (let x = this._maskDataX.length - 1; x >= 0; x--) {
+                if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
+                else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[1]--;
+            }
+        } else if (this._overlapMethod === ImageOverlapMethod.JUMP) {
+            let hasYPx = false;
+            for (let y = 0; y < this._maskDataY.length; y++) {
+                if (Math.max(...this._maskDataY[y]) > 0) hasYPx = true;
+                else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[0]++;
+            }
+            hasYPx = false;
+            for (let y = this._maskDataY.length - 1; y >= 0; y--) {
+                if (Math.max(...this._maskDataY[y]) > 0) hasYPx = true;
+                else if (!hasYPx && y >= inArea.y[0] && y < inArea.y[1]) area.y[1]--;
+            }
         }
+        if (Math.abs(area.x[0] - area.x[1]) <= 1 || Math.abs(area.y[0] - area.y[1]) <= 1) area = null;
+
+        this._rememberOverlapCalc[cacheKey] = area;
+
         return area;
     }
 
