@@ -85,12 +85,20 @@ export class ActaImage extends IActaFrame {
                     if (this._maskDataX[x] !== undefined && this._maskDataX[x][y] !== undefined) {
                         if (imagedata.data[i] !== 0) {
                             this._maskDataX[x][y] = 1;
-                            for (let m = 1; m <= Math.ceil(margin); m++) {
-                                if (this._maskDataX[x - m] !== undefined && this._maskDataX[x - m][y] !== undefined && this._maskDataX[x - m][y] !== 1) this._maskDataX[x - m][y] = 2;
-                                if (this._maskDataX[x + m] !== undefined && this._maskDataX[x + m][y] !== undefined && this._maskDataX[x + m][y] !== 1) this._maskDataX[x + m][y] = 2;
-                                if (this._maskDataX[x] !== undefined) {
-                                    if (this._maskDataX[x][y - m] !== undefined && this._maskDataX[x][y - m] !== 1) this._maskDataX[x][y - m] = 2;
-                                    if (this._maskDataX[x][y + m] !== undefined && this._maskDataX[x][y + m] !== 1) this._maskDataX[x][y + m] = 2;
+                            for (let m1 = 1; m1 <= Math.ceil(margin); m1++) {
+                                for (let m2 = Math.ceil(margin) - m1; m2 > 0; m2--) {
+                                    if (this._maskDataX[x - m1] !== undefined && this._maskDataX[x - m1][y - m2] !== undefined && this._maskDataX[x - m1][y - m2] !== 1) this._maskDataX[x - m1][y - m2] = 2;
+                                    if (this._maskDataX[x - m1] !== undefined && this._maskDataX[x - m1][y + m2] !== undefined && this._maskDataX[x - m1][y + m2] !== 1) this._maskDataX[x - m1][y + m2] = 2;
+                                    if (this._maskDataX[x + m1] !== undefined && this._maskDataX[x + m1][y - m2] !== undefined && this._maskDataX[x + m1][y - m2] !== 1) this._maskDataX[x + m1][y - m2] = 2;
+                                    if (this._maskDataX[x + m1] !== undefined && this._maskDataX[x + m1][y + m2] !== undefined && this._maskDataX[x + m1][y + m2] !== 1) this._maskDataX[x + m1][y + m2] = 2;
+                                    if (this._maskDataX[x - m2] !== undefined) {
+                                        if (this._maskDataX[x - m2][y - m1] !== undefined && this._maskDataX[x - m2][y - m1] !== 1) this._maskDataX[x - m2][y - m1] = 2;
+                                        if (this._maskDataX[x - m2][y + m1] !== undefined && this._maskDataX[x - m2][y + m1] !== 1) this._maskDataX[x - m2][y + m1] = 2;
+                                    }
+                                    if (this._maskDataX[x + m2] !== undefined) {
+                                        if (this._maskDataX[x + m2][y - m1] !== undefined && this._maskDataX[x + m2][y - m1] !== 1) this._maskDataX[x + m2][y - m1] = 2;
+                                        if (this._maskDataX[x + m2][y + m1] !== undefined && this._maskDataX[x + m2][y + m1] !== 1) this._maskDataX[x + m2][y + m1] = 2;
+                                    }
                                 }
                             }
                         }
@@ -98,12 +106,20 @@ export class ActaImage extends IActaFrame {
                     if (this._maskDataY[y] !== undefined && this._maskDataY[y][x] !== undefined) {
                         if (imagedata.data[i] !== 0) {
                             this._maskDataY[y][x] = 1;
-                            for (let m = 1; m <= Math.ceil(margin); m++) {
-                                if (this._maskDataY[y - m] !== undefined && this._maskDataY[y - m][x] !== undefined && this._maskDataY[y - m][x] !== 1) this._maskDataY[y - m][x] = 2;
-                                if (this._maskDataY[y + m] !== undefined && this._maskDataY[y + m][x] !== undefined && this._maskDataY[y + m][x] !== 1) this._maskDataY[y + m][x] = 2;
-                                if (this._maskDataY[y] !== undefined) {
-                                    if (this._maskDataY[y][x - m] !== undefined && this._maskDataY[y][x - m] !== 1) this._maskDataY[y][x - m] = 2;
-                                    if (this._maskDataY[y][x + m] !== undefined && this._maskDataY[y][x + m] !== 1) this._maskDataY[y][x + m] = 2;
+                            for (let m1 = 1; m1 <= Math.ceil(margin); m1++) {
+                                for (let m2 = Math.ceil(margin) - m1; m2 > 0; m2--) {
+                                    if (this._maskDataY[y - m1] !== undefined && this._maskDataY[y - m1][x - m2] !== undefined && this._maskDataY[y - m1][x - m2] !== 1) this._maskDataY[y - m1][x - m2] = 2;
+                                    if (this._maskDataY[y - m1] !== undefined && this._maskDataY[y - m1][x + m2] !== undefined && this._maskDataY[y - m1][x + m2] !== 1) this._maskDataY[y - m1][x + m2] = 2;
+                                    if (this._maskDataY[y + m1] !== undefined && this._maskDataY[y + m1][x - m2] !== undefined && this._maskDataY[y + m1][x - m2] !== 1) this._maskDataY[y + m1][x - m2] = 2;
+                                    if (this._maskDataY[y + m1] !== undefined && this._maskDataY[y + m1][x + m2] !== undefined && this._maskDataY[y + m1][x + m2] !== 1) this._maskDataY[y + m1][x + m2] = 2;
+                                    if (this._maskDataY[y - m2] !== undefined) {
+                                        if (this._maskDataY[y - m2][x - m1] !== undefined && this._maskDataY[y - m2][x - m1] !== 1) this._maskDataY[y - m2][x - m1] = 2;
+                                        if (this._maskDataY[y - m2][x + m1] !== undefined && this._maskDataY[y - m2][x + m1] !== 1) this._maskDataY[y - m2][x + m1] = 2;
+                                    }
+                                    if (this._maskDataY[y + m2] !== undefined) {
+                                        if (this._maskDataY[y + m2][x - m1] !== undefined && this._maskDataY[y + m2][x - m1] !== 1) this._maskDataY[y + m2][x - m1] = 2;
+                                        if (this._maskDataY[y + m2][x + m1] !== undefined && this._maskDataY[y + m2][x + m1] !== 1) this._maskDataY[y + m2][x + m1] = 2;
+                                    }
                                 }
                             }
                         }
