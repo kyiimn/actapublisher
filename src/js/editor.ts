@@ -49,8 +49,17 @@ const main = async () => {
     page.appendChild(para3);
 
     para3.src = 'test/bigsur.eps';
-    para3.fitType = ImageFitType.FIT_CONTENT;
+    para3.fitType = ImageFitType.FIT_FRAME;
     para3.overlapMethod = ImageOverlapMethod.SHAPE;
+    para3.margin = 10;
+
+    const para5 = new ActaImage('90mm', '25mm', '40mm', '40mm');// , '본문3', 2, '2mm');
+    page.appendChild(para5);
+
+    para5.src = 'test/bigsur.eps';
+    para5.fitType = ImageFitType.FIT_FRAME;
+    para5.overlapMethod = ImageOverlapMethod.SHAPE;
+    para5.margin = 10;
 
     const para4 = new ActaParagraph('60mm', '60mm', '20mm', '40mm', '본문3', 1, '2mm');
     page.appendChild(para4);

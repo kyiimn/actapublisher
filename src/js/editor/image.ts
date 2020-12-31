@@ -46,6 +46,7 @@ export class ActaImage extends IActaFrame {
         const height = Math.ceil(U.px(this._displayHeight));
         const frameWidth = Math.ceil(U.px(this.width));
         const frameHeight = Math.ceil(U.px(this.height));
+        const margin = U.px(this.margin);
 
         this._displayCanvas.width = width;
         this._displayCanvas.height = height;
@@ -63,8 +64,8 @@ export class ActaImage extends IActaFrame {
             if (this._hasMask) {
                 this._maskDataX = [];
                 this._maskDataY = [];
-                for (let x = 0; x < frameWidth; x++) {
-                    for (let y = 0; y < frameHeight; y++) {
+                for (let x = 0; x < frameWidth + Math.ceil(margin * 2); x++) {
+                    for (let y = 0; y < frameHeight + Math.ceil(margin * 2); y++) {
                         this._maskDataX[x] = this._maskDataX[x] || [];
                         this._maskDataX[x][y] = 0;
 
@@ -78,12 +79,34 @@ export class ActaImage extends IActaFrame {
                     Math.min(width + left, frameWidth), Math.min(height + top, frameHeight)
                 );
                 for (let i = 3; i < imagedata.data.length; i += 4) {
-                    const x = Math.floor((i / 4) % imagedata.width) + Math.max(0, left);
-                    const y = Math.floor((i / 4) / imagedata.width) + Math.max(0, top);
+                    const x = Math.floor((i / 4) % imagedata.width) + Math.max(0, left) + Math.ceil(margin);
+                    const y = Math.floor((i / 4) / imagedata.width) + Math.max(0, top) + Math.ceil(margin);
 
-                    if (this._maskDataX[x] !== undefined && this._maskDataX[x][y] !== undefined) this._maskDataX[x][y] = imagedata.data[i] === 0 ? 0 : 1;
+                    if (this._maskDataX[x] !== undefined && this._maskDataX[x][y] !== undefined) {
+                        if (imagedata.data[i] !== 0) {
+                            this._maskDataX[x][y] = 1;
+                            for (let m = 1; m <= Math.ceil(margin); m++) {
+                                if (this._maskDataX[x - m] !== undefined && this._maskDataX[x - m][y] !== undefined && this._maskDataX[x - m][y] !== 1) this._maskDataX[x - m][y] = 2;
+                                if (this._maskDataX[x + m] !== undefined && this._maskDataX[x + m][y] !== undefined && this._maskDataX[x + m][y] !== 1) this._maskDataX[x + m][y] = 2;
+                                if (this._maskDataX[x] !== undefined) {
+                                    if (this._maskDataX[x][y - m] !== undefined && this._maskDataX[x][y - m] !== 1) this._maskDataX[x][y - m] = 2;
+                                    if (this._maskDataX[x][y + m] !== undefined && this._maskDataX[x][y + m] !== 1) this._maskDataX[x][y + m] = 2;
+                                }
+                            }
+                        }
+                    }
                     if (this._maskDataY[y] !== undefined && this._maskDataY[y][x] !== undefined) {
-                        this._maskDataY[y][x] = imagedata.data[i] === 0 ? 0 : 1;
+                        if (imagedata.data[i] !== 0) {
+                            this._maskDataY[y][x] = 1;
+                            for (let m = 1; m <= Math.ceil(margin); m++) {
+                                if (this._maskDataY[y - m] !== undefined && this._maskDataY[y - m][x] !== undefined && this._maskDataY[y - m][x] !== 1) this._maskDataY[y - m][x] = 2;
+                                if (this._maskDataY[y + m] !== undefined && this._maskDataY[y + m][x] !== undefined && this._maskDataY[y + m][x] !== 1) this._maskDataY[y + m][x] = 2;
+                                if (this._maskDataY[y] !== undefined) {
+                                    if (this._maskDataY[y][x - m] !== undefined && this._maskDataY[y][x - m] !== 1) this._maskDataY[y][x - m] = 2;
+                                    if (this._maskDataY[y][x + m] !== undefined && this._maskDataY[y][x + m] !== 1) this._maskDataY[y][x + m] = 2;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -265,10 +288,10 @@ export class ActaImage extends IActaFrame {
             // 이미지가 배치되지 않았거나, 마스크정보가 없으면 프레임박스와 동일하게 처리
             return super.computeOverlapArea(x1, y1, x2, y2);
         }
-        let thisX1 = U.px(this.x);
-        let thisY1 = U.px(this.y);
-        let thisX2 = thisX1 + U.px(this.width);
-        let thisY2 = thisY1 + U.px(this.height);
+        let thisX1 = U.px(this.x) - U.px(this.margin);
+        let thisY1 = U.px(this.y) - U.px(this.margin);
+        let thisX2 = thisX1 + U.px(this.width) + (U.px(this.margin) * 2);
+        let thisY2 = thisY1 + U.px(this.height) + (U.px(this.margin) * 2);
 
         if (x1 >= thisX2 || x2 <= thisX1 || y1 >= thisY2 || y2 <= thisY1) return null;
 
