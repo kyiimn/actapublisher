@@ -52,13 +52,13 @@ CREATE TABLE t_config_section_def (
     CONSTRAINT unique_config_section_def UNIQUE (code, media_id)
 ) WITH (OIDS = FALSE);
 
--- DROP TABLE t_config_adver_area_def;
-CREATE TABLE t_config_adver_area_def (
+-- DROP TABLE t_config_adver_size_def;
+CREATE TABLE t_config_adver_size_def (
     id bigint NOT NULL,
     name character varying(1024) NOT NULL,
     media_id bigint NOT NULL,
     use integer NOT NULL,
-    CONSTRAINT pk_config_adver_area_def_id PRIMARY KEY (id)
+    CONSTRAINT pk_config_adver_size_def_id PRIMARY KEY (id)
 ) WITH (OIDS = FALSE);
 
 -- DROP TABLE t_config_adver_local_def;
