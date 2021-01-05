@@ -1,21 +1,40 @@
 export default class Unit {
+    private static _LINESPACING_SIZE: string | number = '10pt';
+    private static _LINESPACING_RATIO: number = 92.0;
     private static _INCH = 96;
 
     private static get _POINT() { return Unit._INCH / 72; }
     private static get _CM() { return Unit._INCH / 2.54; }
     private static get _MM() { return Unit._INCH / 25.4; }
     private static get _GUB() { return Unit._MM / 4; } // 급
-    private static get _BAE() { return Unit._POINT * 9.2; } // 배
+    // private static get _BAE() { return Unit._POINT * 9.2; } // 배
+    private static get _BAE() { return (this.px(this._LINESPACING_SIZE) || 1) * (this._LINESPACING_RATIO / 100); } // 배
+
+    static set LINESPACING_SIZE(size: string | number) {
+        this._LINESPACING_SIZE = size;
+    }
+
+    static get LINESPACING_SIZE() {
+        return this._LINESPACING_SIZE;
+    }
+
+    static set LINESPACING_RATIO(ratio: number) {
+        this._LINESPACING_RATIO = ratio;
+    }
+
+    static get LINESPACING_RATIO() {
+        return this._LINESPACING_RATIO;
+    }
 
     static set DPI(dpi: number) {
-        Unit._INCH = dpi;
+        this._INCH = dpi;
     }
 
     static get DPI() {
-        return Unit._INCH;
+        return this._INCH;
     }
 
-    static px(value: string | number | null | undefined) {
+    static px(value: string | number | null | undefined): number {
         if (value === undefined || value === null) return NaN;
         if (typeof(value) === 'number') {
             return value;
@@ -49,32 +68,32 @@ export default class Unit {
         }
     }
 
-    static pt(value: string | number | null | undefined) {
+    static pt(value: string | number | null | undefined): number {
         const px = this.px(value);
         return isNaN(px) ? NaN : px / this._POINT;
     }
 
-    static in(value: string | number | null | undefined) {
+    static in(value: string | number | null | undefined): number {
         const px = this.px(value);
         return isNaN(px) ? NaN : px / this._INCH;
     }
 
-    static cm(value: string | number | null | undefined) {
+    static cm(value: string | number | null | undefined): number {
         const px = this.px(value);
         return isNaN(px) ? NaN : px / this._CM;
     }
 
-    static mm(value: string | number | null | undefined) {
+    static mm(value: string | number | null | undefined): number {
         const px = this.px(value);
         return isNaN(px) ? NaN : px / this._MM;
     }
 
-    static gu(value: string | number | null | undefined) {
+    static gu(value: string | number | null | undefined): number {
         const px = this.px(value);
         return isNaN(px) ? NaN : px / this._GUB;
     }
 
-    static ba(value: string | number | null | undefined) {
+    static ba(value: string | number | null | undefined): number {
         const px = this.px(value);
         return isNaN(px) ? NaN : px / this._BAE;
     }
