@@ -1,11 +1,11 @@
-import { ActaPage } from './editor/page';
-import { ActaGuide } from './editor/guide';
-import { ActaParagraph } from './editor/paragraph';
-import { ActaImage, ImageFitType, ImageOverlapMethod } from './editor/image';
-import { ActaFontManager } from './editor/fontmgr';
-import { ActaTextStyleManager } from './editor/text/textstylemgr';
-import { ActaTextStyle, TextAlign } from './editor/text/textstyle';
-import U from './editor/units';
+import { ActaPage } from './pageobject/page';
+import { ActaGuide } from './pageobject/guide';
+import { ActaParagraph } from './pageobject/paragraph';
+import { ActaImage, ImageFitType, ImageOverlapMethod } from './pageobject/image';
+import { ActaFontManager } from './pageobject/fontmgr';
+import { ActaTextStyleManager } from './pageobject/text/textstylemgr';
+import { ActaTextStyle, TextAlign } from './pageobject/text/textstyle';
+import U from './pageobject/units';
 
 import '../css/element.scss';
 
