@@ -1,4 +1,4 @@
-import { supportedFeatures } from './utils';
+import { supportedFeatures } from '../utils';
 
 export enum ClipboardDataType {
     NONE, TEXT, OBJECT

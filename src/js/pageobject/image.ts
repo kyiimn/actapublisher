@@ -1,5 +1,5 @@
 import { IActaFrame, IActaFrameOverlapArea } from './iframe';
-import U from './units';
+import U from '../util/units';
 
 export enum ImageFitType {
     NONE,

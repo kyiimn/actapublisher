@@ -2,7 +2,7 @@ import { ActaParagraph } from "./paragraph";
 import { IActaElement } from "./ielement";
 import { ActaTextChar, CharType } from "./text/textchar";
 import { ActaTextRow } from './text/textrow';
-import U from './units';
+import U from '../util/units';
 
 export class ActaParagraphColumn extends IActaElement {
     private _root: ShadowRoot;

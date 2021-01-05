@@ -5,7 +5,7 @@ import { ActaImage, ImageFitType, ImageOverlapMethod } from './pageobject/image'
 import { ActaFontManager } from './pageobject/fontmgr';
 import { ActaTextStyleManager } from './pageobject/text/textstylemgr';
 import { ActaTextStyle, TextAlign } from './pageobject/text/textstyle';
-import U from './pageobject/units';
+import U from './util/units';
 
 import '../css/element.scss';
 

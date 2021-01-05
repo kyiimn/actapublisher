@@ -1,5 +1,5 @@
 import { IActaElement } from "./ielement";
-import U from './units';
+import U from '../util/units';
 
 export class ActaParagraphMargin extends IActaElement {
     static get observedAttributes() {

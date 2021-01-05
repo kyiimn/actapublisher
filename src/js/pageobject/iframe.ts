@@ -1,6 +1,6 @@
 import { IActaElement } from "./ielement";
 import { Subject, Subscription } from 'rxjs';
-import U from './units';
+import U from '../util/units';
 
 export interface IActaFrameOverlapArea {
     x: number[],

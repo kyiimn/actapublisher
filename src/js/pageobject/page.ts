@@ -3,7 +3,7 @@ import { IActaFrame } from './iframe';
 import { IActaElement } from './ielement';
 import { fromEvent, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
-import U from './units';
+import U from '../util/units';
 
 export class ActaPage extends IActaElement {
     private _CHANGE_PAGE_STYLE$: Subject<string>;

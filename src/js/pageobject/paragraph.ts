@@ -1,6 +1,6 @@
 import { IActaFrame, IActaPreflightProfile, IActaFrameOverlapArea } from './iframe';
 import { ActaGuide } from './guide';
-import { ActaClipboard } from '../clipboard';
+import { ActaClipboard } from '../util/clipboard';
 import { ActaParagraphColumn } from './paragraph-col';
 import { ActaParagraphMargin } from './paragraph-margin';
 import { ActaTextStyleManager } from './text/textstylemgr';
@@ -15,7 +15,7 @@ import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
 
 import Hangul from 'hangul-js';
 import SelectHanja from './hanja';
-import U from './units';
+import U from '../util/units';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
     'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
