@@ -8,7 +8,10 @@ const isProd = process.env.NODE_ENV == 'production';
 module.exports = {
     entry: {
         login: './src/js/login.ts',
-        editor: './src/js/editor.ts'
+        admin: './src/js/admin.ts',
+        designer: './src/js/designer.ts',
+        editor: './src/js/editor.ts',
+        planner: './src/js/planner.ts'
     },
     module: {
         rules: [{
@@ -47,14 +50,29 @@ module.exports = {
     },
     plugins: [
         new HtmlWebPackPlugin({
+            template: 'src/html/login.html',
+            filename: '../login.html',
+            chunks : ['login']
+        }),
+        new HtmlWebPackPlugin({
+            template: 'src/html/admin.html',
+            filename: '../admin.html',
+            chunks : ['admin']
+        }),
+        new HtmlWebPackPlugin({
+            template: 'src/html/designer.html',
+            filename: '../designer.html',
+            chunks : ['designer']
+        }),
+        new HtmlWebPackPlugin({
             template: 'src/html/editor.html',
             filename: '../editor.html',
             chunks : ['editor']
         }),
         new HtmlWebPackPlugin({
-            template: 'src/html/login.html',
-            filename: '../login.html',
-            chunks : ['login']
+            template: 'src/html/planner.html',
+            filename: '../planner.html',
+            chunks : ['planner']
         }),
         new MiniCssExtractPlugin({
             filename: '[name].css'
