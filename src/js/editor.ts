@@ -8,7 +8,7 @@ import ActaTextStyleManager from './pageobject/textstyle/textstylemgr';
 import ActaTextStyle from './pageobject/textstyle/textstyle';
 import U from './util/units';
 
-import '../css/element.scss';
+import '../css/pageobject.scss';
 
 const main = async () => {
     await ActaFontManager.in.add('fonts/jabml.ttf');

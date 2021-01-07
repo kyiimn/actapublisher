@@ -1,7 +1,7 @@
 import ActaTextChar from './textchar';
-import ActaTextStyleManager from './textstylemgr';
-import ActaTextStyle from './textstyle';
-import ActaTextStyleInherit from './textstyle-inherit';
+import ActaTextStyleManager from '../textstyle/textstylemgr';
+import ActaTextStyle from '../textstyle/textstyle';
+import ActaTextStyleInherit from '../textstyle/textstyle-inherit';
 
 import { v4 as uuidv4 } from 'uuid';
 import { Subscription } from 'rxjs';

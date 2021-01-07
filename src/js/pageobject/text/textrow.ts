@@ -1,7 +1,7 @@
 import ActaParagraphColumn from '../paragraph-col';
 import ActaTextChar from './textchar';
 import { CharType } from './textchar';
-import { TextAlign } from './textstyle';
+import { TextAlign } from '../textstyle/textstyle';
 
 import { v4 as uuidv4 } from 'uuid';
 

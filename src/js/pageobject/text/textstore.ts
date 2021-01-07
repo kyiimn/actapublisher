@@ -1,5 +1,5 @@
 import ActaTextNode from './textnode';
-import { TextAlign } from './textstyle';
+import { TextAlign } from '../textstyle/textstyle';
 import Stack from '../../util/stack';
 import U from '../../util/units';
 
