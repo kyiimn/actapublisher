@@ -1,10 +1,10 @@
-import { ActaTextStyle } from './textstyle';
+import ActaTextStyle from './textstyle';
 
 interface IActaTextStyleList {
     [styleName: string] : ActaTextStyle
 };
 
-export class ActaTextStyleManager {
+export default class ActaTextStyleManager {
     private static _instance: ActaTextStyleManager;
     static getInstance() {
         if (!ActaTextStyleManager._instance) ActaTextStyleManager._instance = new ActaTextStyleManager();

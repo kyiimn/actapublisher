@@ -1,8 +1,9 @@
-import { IActaElement } from "./ielement";
-import { Subject, Subscription } from 'rxjs';
+import IActaElement from "./interface/element";
 import U from '../util/units';
 
-export class ActaGuide extends IActaElement {
+import { Subject, Subscription } from 'rxjs';
+
+export default class ActaGuide extends IActaElement {
     private _subscriptionChangePageSize?: Subscription;
 
     static get observedAttributes() {
@@ -108,7 +109,7 @@ export class ActaGuide extends IActaElement {
 customElements.define('x-guide', ActaGuide);
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaGuideColumn extends IActaElement {
+class ActaGuideColumn extends IActaElement {
     static get observedAttributes() {
         return ['width'];
     }
@@ -154,5 +155,5 @@ export class ActaGuideColumn extends IActaElement {
 customElements.define('x-guide-col', ActaGuideColumn);
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaGuideMargin extends ActaGuideColumn {};
+class ActaGuideMargin extends ActaGuideColumn {};
 customElements.define('x-guide-margin', ActaGuideMargin);

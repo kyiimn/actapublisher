@@ -1,26 +1,11 @@
-import { IActaElement } from "./ielement";
+import IActaElement from './element';
+import IActaFrameOverlapArea from './frame-overlap-area';
+import IActaPreflightProfile from './preflight-profile';
+import U from '../../util/units';
+
 import { Subject, Subscription } from 'rxjs';
-import U from '../util/units';
 
-export interface IActaFrameOverlapArea {
-    x: number[],
-    y: number[]
-}
-export abstract class IActaPreflightProfile {
-    protected _detailMessage: string | null = null;
-    protected _targetFrame: IActaFrame | null = null;
-
-    get detailMessage() {
-        return this._detailMessage;
-    }
-    get targetFrame() {
-        return this._targetFrame;
-    }
-    abstract get message(): string;
-};
-
-// tslint:disable-next-line: max-classes-per-file
-export abstract class IActaFrame extends IActaElement {
+export default abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
     private _overlapFrames: IActaFrame[];
     private _margin: number | string;

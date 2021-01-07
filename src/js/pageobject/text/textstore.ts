@@ -1,9 +1,9 @@
-import { ActaTextNode } from './textnode';
+import ActaTextNode from './textnode';
 import { TextAlign } from './textstyle';
-import { Stack } from '../../util/utils';
+import Stack from '../../util/stack';
 import U from '../../util/units';
 
-export class ActaTextStore extends ActaTextNode {
+export default class ActaTextStore extends ActaTextNode {
     static import(textStyleName: string, markupText: string) {
         const node = new Stack();
         const rootnode = new ActaTextStore();

@@ -1,11 +1,12 @@
-import { ActaGuide } from './guide';
-import { IActaFrame } from './iframe';
-import { IActaElement } from './ielement';
-import { fromEvent, Subject } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import ActaGuide from './guide';
+import IActaFrame from './interface/frame';
+import IActaElement from './interface/element';
 import U from '../util/units';
 
-export class ActaPage extends IActaElement {
+import { fromEvent, Subject } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+
+export default class ActaPage extends IActaElement {
     private _CHANGE_PAGE_STYLE$: Subject<string>;
     private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;
     private _CHANGE_FOCUS$: Subject<IActaFrame>;

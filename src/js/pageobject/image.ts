@@ -1,4 +1,5 @@
-import { IActaFrame, IActaFrameOverlapArea } from './iframe';
+import IActaFrame from './interface/frame';
+import IActaFrameOverlapArea from './interface/frame-overlap-area';
 import U from '../util/units';
 
 export enum ImageFitType {
@@ -16,7 +17,7 @@ export enum ImageOverlapMethod {
     JUMP            // 라인점프
 };
 
-export class ActaImage extends IActaFrame {
+export default class ActaImage extends IActaFrame {
     private _displayWidth: number | string;
     private _displayHeight: number | string;
     private _displayLeft: number | string;

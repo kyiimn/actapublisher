@@ -1,6 +1,6 @@
 import opentype from 'opentype.js';
 
-export class ActaFont {
+export default class ActaFont {
     private _url: string;
     private _font: opentype.Font;
     private _fontFamilyEN: string;

@@ -1,11 +1,12 @@
-import { ActaTextChar } from './textchar';
-import { ActaTextStyleManager } from './textstylemgr';
-import { ActaTextStyle, ActaTextStyleInherit } from './textstyle';
+import ActaTextChar from './textchar';
+import ActaTextStyleManager from './textstylemgr';
+import ActaTextStyle from './textstyle';
+import ActaTextStyleInherit from './textstyle-inherit';
+
 import { v4 as uuidv4 } from 'uuid';
 import { Subscription } from 'rxjs';
-import { ActaTextStore } from './textstore';
 
-export class ActaTextNode {
+export default class ActaTextNode {
     private _id: string;
     private _tagname: string;
     private _value: (ActaTextChar | ActaTextNode)[];

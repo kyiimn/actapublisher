@@ -1,10 +1,10 @@
-import { supportedFeatures } from './utils';
+import supportedFeatures from './features';
 
-export enum ClipboardDataType {
+enum ClipboardDataType {
     NONE, TEXT, OBJECT
 };
 
-export class ActaClipboard {
+export default class ActaClipboard {
     private static _instance: ActaClipboard;
 
     static getInstance() {
@@ -22,7 +22,7 @@ export class ActaClipboard {
     private _dataPairText: string;
 
     private constructor() {
-        this._enableSystemClipboard = supportedFeatures().clipboard;
+        this._enableSystemClipboard = supportedFeatures.clipboard;
 
         this._data = undefined;
         this._dataType = ClipboardDataType.NONE;

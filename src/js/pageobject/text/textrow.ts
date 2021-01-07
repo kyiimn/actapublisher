@@ -1,10 +1,11 @@
-import { ActaParagraphColumn } from '../paragraph-col';
-import { ActaTextChar, CharType } from './textchar';
+import ActaParagraphColumn from '../paragraph-col';
+import ActaTextChar from './textchar';
+import { CharType } from './textchar';
 import { TextAlign } from './textstyle';
 
 import { v4 as uuidv4 } from 'uuid';
 
-export class ActaTextRow {
+export default class ActaTextRow {
     private _id: string;
     private _column: ActaParagraphColumn;
     private _maxHeight: number;

@@ -1,14 +1,17 @@
-import { IActaFrame, IActaPreflightProfile, IActaFrameOverlapArea } from './iframe';
-import { ActaGuide } from './guide';
-import { ActaClipboard } from '../util/clipboard';
-import { ActaParagraphColumn } from './paragraph-col';
-import { ActaParagraphMargin } from './paragraph-margin';
-import { ActaTextStyleManager } from './text/textstylemgr';
-import { ActaTextStore } from './text/textstore';
-import { ActaTextNode } from './text/textnode';
-import { ActaTextStyle, ActaTextStyleInherit, TextAlign } from './text/textstyle';
-import { ActaTextRow } from './text/textrow';
-import { ActaTextChar, CharType } from './text/textchar';
+import IActaFrame from './interface/frame';
+import IActaFrameOverlapArea from './interface/frame-overlap-area';
+import IActaPreflightProfile from './interface/preflight-profile';
+import ActaClipboard from '../util/clipboard';
+import ActaParagraphColumn from './paragraph-col';
+import ActaParagraphMargin from './paragraph-margin';
+import ActaTextStyleManager from './text/textstylemgr';
+import ActaTextStore from './text/textstore';
+import ActaTextNode from './text/textnode';
+import ActaTextStyle from './text/textstyle';
+import ActaTextStyleInherit from './text/textstyle-inherit';
+import ActaTextRow from './text/textrow';
+import ActaTextChar from './text/textchar';
+import { CharType } from './text/textchar';
 
 import { Subject, fromEvent } from 'rxjs';
 import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
@@ -114,7 +117,7 @@ class ActaParagraphEmpty extends IActaPreflightProfile {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-export class ActaParagraph extends IActaFrame {
+export default class ActaParagraph extends IActaFrame {
     private _columnCount: number;
     private _cursor: number | null;
     private _cursorMode: CursorMode;

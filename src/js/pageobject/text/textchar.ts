@@ -1,5 +1,5 @@
-import { ActaTextNode } from "./textnode";
-import { ActaTextRow } from './textrow';
+import ActaTextNode from "./textnode";
+import ActaTextRow from './textrow';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,7 +7,7 @@ export enum CharType {
     RETURN, SPACE, CHAR
 };
 
-export class ActaTextChar {
+export default class ActaTextChar {
     private _id: string;
 
     private _char: string;
