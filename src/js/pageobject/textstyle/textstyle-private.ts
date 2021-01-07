@@ -1,5 +1,5 @@
-import ActaFontManager from '../fontmgr';
-import ActaFont from '../font';
+import ActaFontManager from '../font/fontmgr';
+import ActaFont from '../font/font';
 
 import { Subject } from 'rxjs';
 

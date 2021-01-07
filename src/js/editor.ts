@@ -3,9 +3,9 @@ import ActaGuide from './pageobject/guide';
 import ActaParagraph from './pageobject/paragraph';
 import ActaImage from './pageobject/image';
 import { ImageFitType, ImageOverlapMethod } from './pageobject/image';
-import ActaFontManager from './pageobject/fontmgr';
-import ActaTextStyleManager from './pageobject/text/textstylemgr';
-import ActaTextStyle from './pageobject/text/textstyle';
+import ActaFontManager from './pageobject/font/fontmgr';
+import ActaTextStyleManager from './pageobject/textstyle/textstylemgr';
+import ActaTextStyle from './pageobject/textstyle/textstyle';
 import U from './util/units';
 
 import '../css/element.scss';

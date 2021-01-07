@@ -1,4 +1,4 @@
-import ActaFont from '../font';
+import ActaFont from '../font/font';
 import ActaTextStylePrivate from './textstyle-private';
 import ActaTextStyleInherit from './textstyle-inherit';
 
