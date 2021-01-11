@@ -1,0 +1,184 @@
+$layoutBackgroundColor: #252526;
+$layoutElementBackgroundColor: #323232;
+$layoutElementBorderColor: #252526;
+$layoutElementStatusBackgroudColor: #007acc;
+$layoutElementStatusColor: #ffffff;
+$layoutHeaderColor: #ffffff;
+$layoutHeaderFunctionColor: #979797;
+$layoutHeaderFunctionHoverColor: #ffffff;
+$layoutSeparaterColor: #535353;
+$layoutToolbarColor: #979797;
+$layoutToolbarHoverColor: #ffffff;
+
+html, body {
+    background-color: $layoutBackgroundColor;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+    width: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+
+    &, & > * {
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    & > .ui-layout-header {
+        align-items: center;
+        background-color: $layoutElementBackgroundColor;
+        border-bottom: 1px solid $layoutElementBorderColor;
+        display: flex;
+        flex-direction: row;
+        height: 2em;
+        justify-content: space-between;
+
+        h1 {
+            color: $layoutHeaderColor;
+            font-size: .7em;
+            margin: 0;
+            padding-left: 2em;
+            text-shadow: 0 1px #000000;
+            user-select: none;
+        }
+
+        ul {
+            align-items: center;
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+
+            & > * {
+                float: left;
+            }
+
+            li {
+                button {
+                    background: transparent;
+                    border: 0;
+                    color: $layoutHeaderFunctionColor;
+                    float: left;
+                    font-size: .8em;
+                    outline: none;
+                    padding: 0 2em;
+                    transition: color .2s;
+                    user-select: none;
+
+                    span:not(:first-child) {
+                        margin-left: .4em;
+                    }
+                }
+
+                button:hover {
+                    color: $layoutHeaderFunctionHoverColor;
+                }
+            }
+
+            hr {
+                border-color: $layoutSeparaterColor;
+                border-style: solid;
+                border-width: 0 1px 0 0;
+                display: inline-block;
+                height: .7em;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    }
+
+    & > .ui-layout-topbar {
+        background-color: $layoutElementBackgroundColor;
+        border-bottom: 1px solid $layoutElementBorderColor;
+    }
+
+    & > .ui-layout-topbar:empty {
+        display: none;
+    }
+
+    & > .ui-layout-body {
+        flex: 1;
+        position: relative;
+
+        & > .ui-layout-toolbar {
+            background-color: $layoutElementBackgroundColor;
+            float: left;
+            height: 100%;
+
+            ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+
+                li {
+                    align-items: center;
+                    display: flex;
+                    height: 2em;
+                    justify-content: center;
+                    width: 2em;
+
+                    button {
+                        background-color: transparent;
+                        border: 0;
+                        color: $layoutToolbarColor;
+                        font-size: 1em;
+                        height: 100%;
+                        outline: none;
+                        padding: 0;
+                        transition: color .2s;
+                        width: 100%;
+                    }
+
+                    button:hover {
+                        color: $layoutToolbarHoverColor;
+                    }
+                }
+
+                hr {
+                    border-color: $layoutSeparaterColor;
+                    border-style: solid;
+                    border-width: 1px 0 0 0;
+                    margin: 0;
+                }
+            }
+        }
+
+        & > .ui-layout-toolbar:empty {
+            display: none;
+        }
+
+        & > .ui-layout-property {
+            background-color: $layoutElementBackgroundColor;
+            float: right;
+            height: 100%;
+            width: 400px;
+        }
+    }
+
+    & > .ui-layout-statusbar {
+        align-items: center;
+        background-color: $layoutElementStatusBackgroudColor;
+        border-top: 1px solid $layoutElementBorderColor;
+        display: flex;
+        flex-direction: row;
+        height: 1.5em;
+        justify-content: space-between;
+
+        h5 {
+            color: $layoutElementStatusColor;
+            font-size: .7em;
+            font-weight: normal;
+            margin: 0;
+            padding: 0 .7em;
+            user-select: none;
+
+            &:empty::after {
+                content: '준비';
+            }
+        }
+    }
+}
