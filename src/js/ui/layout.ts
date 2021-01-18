@@ -1,14 +1,5 @@
 import '../../css/ui.scss';
 
-interface IActaUILayoutButtonOptions {
-    id?: string,
-    icon?: string,
-    icontype?: string,
-    class?: string,
-    attr?: { [key: string]: string },
-    click?: (ev: Event) => any,
-    name: string
-}
 class ActaUILayout {
     private static _instance: ActaUILayout;
 
@@ -66,60 +57,6 @@ class ActaUILayout {
 
         this._initHeader();
         this._initStatusbar();
-    }
-
-    generateFunctionButton(opts: IActaUILayoutButtonOptions): HTMLLIElement {
-        const li = document.createElement('li');
-        const button = document.createElement('button');
-        const text = document.createElement('span');
-        text.innerText = opts.name;
-
-        if (opts.icon) {
-            const icon = document.createElement('i');
-            icon.className = `${opts.icontype || 'fa'} fa-${opts.icon}`;
-            button.appendChild(icon);
-        }
-        button.appendChild(text);
-        li.appendChild(button);
-
-        li.addEventListener('click', (e) => opts.click);
-        if (opts.id) li.setAttribute('id', opts.id);
-        if (opts.class) li.className = opts.class;
-        if (opts.attr) {
-            for (const key in opts.attr) {
-                if (!opts.attr.hasOwnProperty(key)) continue;
-                li.setAttribute(`data-${key}`, opts.attr[key]);
-            }
-        }
-        return li;
-    }
-
-    generateSeparater(): HTMLHRElement {
-        return document.createElement('hr');
-    }
-
-    generateToolbarIcon(opts: IActaUILayoutButtonOptions): HTMLLIElement {
-        const li = document.createElement('li');
-        const button = document.createElement('button');
-
-        if (opts.icon) {
-            const icon = document.createElement('i');
-            icon.className = `${opts.icontype || 'fa'} fa-${opts.icon}`;
-            button.appendChild(icon);
-        }
-        li.appendChild(button);
-
-        li.setAttribute('title', opts.name);
-        li.addEventListener('click', (e) => opts.click);
-        if (opts.id) li.setAttribute('id', opts.id);
-        if (opts.class) li.className = opts.class;
-        if (opts.attr) {
-            for (const key in opts.attr) {
-                if (!opts.attr.hasOwnProperty(key)) continue;
-                li.setAttribute(`data-${key}`, opts.attr[key]);
-            }
-        }
-        return li;
     }
 
     get topbar() { return this._topbar; }
