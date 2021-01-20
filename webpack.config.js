@@ -44,9 +44,9 @@ module.exports = {
     },
     devtool: isProd ? false : 'eval-source-map',
     output: {
-        publicPath: 'dist',
+        publicPath: 'js',
         filename: '[name].bundle.js',
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve(__dirname, 'dist/js'),
     },
     plugins: [
         new HtmlWebPackPlugin({
@@ -75,12 +75,15 @@ module.exports = {
             chunks : ['planner']
         }),
         new MiniCssExtractPlugin({
-            filename: '[name].css'
+            filename: '../css/[name].css'
         }),
         new TerserPlugin({
             cache: true,
             parallel: true,
             terserOptions: {
+                format: {
+                    comments: false,
+                },
                 warnings: false,
                 compress: {
                     warnings: false,
@@ -90,6 +93,7 @@ module.exports = {
                 mangle: true,
                 unused: true,
             },
+            extractComments: false,
             sourceMap: isProd ? false : true
         })
     ]
