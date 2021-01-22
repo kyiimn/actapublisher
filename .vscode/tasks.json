@@ -3,30 +3,21 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"script": "dev:assets",
+			"script": "dev",
 			"problemMatcher": [],
-			"label": "npm: dev:assets",
+			"label": "npm: dev",
 			"detail": "webpack -d --watch"
 		},
 		{
 			"type": "npm",
-			"script": "build:assets",
+			"script": "build",
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			},
 			"problemMatcher": [],
-			"label": "npm: build:assets",
+			"label": "npm: build",
 			"detail": "NODE_ENV=production webpack -p --optimize-minimize"
-		},
-		{
-			"type": "typescript",
-			"tsconfig": "tsconfig.json",
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build",
-			"label": "tsc: 빌드 - tsconfig.json"
 		}
 	]
 }

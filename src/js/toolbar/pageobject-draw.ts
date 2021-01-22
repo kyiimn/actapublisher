@@ -1,6 +1,6 @@
 import { iconButton, separater } from '../ui/toolbar';
 
-class ActaToolbarPageObject {
+class ActaToolbarPageObjectDraw {
     private _toolbar: HTMLUListElement;
 
     private _onClick(e: MouseEvent) {
@@ -27,4 +27,4 @@ class ActaToolbarPageObject {
     }
     get el() { return this._toolbar; }
 }
-export default ActaToolbarPageObject;
+export default ActaToolbarPageObjectDraw;

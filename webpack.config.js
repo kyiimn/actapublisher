@@ -1,6 +1,7 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 const path = require('path');
 
 const isProd = process.env.NODE_ENV == 'production';
@@ -95,6 +96,7 @@ module.exports = {
             },
             extractComments: false,
             sourceMap: isProd ? false : true
-        })
+        }),
+        new Dotenv()
     ]
 };
