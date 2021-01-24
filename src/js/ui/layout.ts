@@ -67,7 +67,7 @@ class ActaUILayout {
     get title() { return this._title; }
     get status() { return this._status; }
 
-    get headerFunction() { return this._header.getElementsByTagName('ul')[0]; }
+    get headerMenubar() { return this._header.getElementsByTagName('ul')[0]; }
 
     set title(title: string) {
         this._title = title;
@@ -81,4 +81,4 @@ class ActaUILayout {
     }
 }
 
-export default ActaUILayout.getInstance();
+export default ActaUILayout;

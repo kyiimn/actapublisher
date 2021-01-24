@@ -4,7 +4,7 @@ interface IActaUIToolbarButtonOptions {
     icontype?: string,
     class?: string,
     attr?: { [key: string]: string },
-    click?: (ev: MouseEvent) => any,
+    click?: (ev: Event) => any,
     name: string
 };
 
@@ -34,23 +34,25 @@ interface IActaUIToolbarInputNumberOptions {
 
 let _UI_SEQUENCE = 1000;
 
+function _makeIconElement(iconname: string, icontype?: string) {
+    const icon = document.createElement('i');
+    if (icontype === 'material') {
+        icon.className = 'material-icons';
+        icon.innerHTML = iconname;
+        icon.style.fontSize = 'inherit';
+    } else {
+        icon.className = `${icontype || 'fa'} fa-${iconname}`;
+    }
+    return icon;
+}
+
 export function appButton(opts: IActaUIToolbarButtonOptions): HTMLLIElement {
     const li = document.createElement('li');
     const button = document.createElement('button');
     const text = document.createElement('span');
     text.innerText = opts.name;
 
-    if (opts.icon) {
-        const icon = document.createElement('i');
-        if (opts.icontype === 'material') {
-            icon.className = 'material-icons';
-            icon.innerHTML = opts.icon;
-            icon.style.fontSize = 'inherit';
-        } else {
-            icon.className = `${opts.icontype || 'fa'} fa-${opts.icon}`;
-        }
-        button.appendChild(icon);
-    }
+    if (opts.icon) button.appendChild(_makeIconElement(opts.icon, opts.icontype));
     button.appendChild(text);
     li.appendChild(button);
 
@@ -76,17 +78,7 @@ export function iconButton(opts: IActaUIToolbarButtonOptions): HTMLLIElement {
     const li = document.createElement('li');
     const button = document.createElement('button');
 
-    if (opts.icon) {
-        const icon = document.createElement('i');
-        if (opts.icontype === 'material') {
-            icon.className = 'material-icons';
-            icon.innerHTML = opts.icon;
-            icon.style.fontSize = 'inherit';
-        } else {
-            icon.className = `${opts.icontype || 'fa'} fa-${opts.icon}`;
-        }
-        button.appendChild(icon);
-    }
+    if (opts.icon) button.appendChild(_makeIconElement(opts.icon, opts.icontype));
     li.appendChild(button);
 
     if (!opts.id) opts.id = `ui-iconbutton-${_UI_SEQUENCE++}`;
@@ -103,6 +95,7 @@ export function iconButton(opts: IActaUIToolbarButtonOptions): HTMLLIElement {
     }
     return li;
 }
+
 export function combobox(opts: IActaUIToolbarComboboxOptions): HTMLLIElement {
     const li = document.createElement('li');
     const select = document.createElement('select');

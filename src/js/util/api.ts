@@ -54,7 +54,7 @@ class ActaAPI {
         const xhr = this.xhr;
         let url;
 
-        if (method === AjaxMethod.GET || method === AjaxMethod.DELETE) {
+        if ((method === AjaxMethod.GET || method === AjaxMethod.DELETE) && params) {
             url = `${this.url}${(path[0] !== '/') ? '/' : ''}${path}?${params}`;
         } else {
             url = `${this.url}${(path[0] !== '/') ? '/' : ''}${path}`;
@@ -66,7 +66,7 @@ class ActaAPI {
                 if (headers[key]) xhr.setRequestHeader(key, headers[key]);
             }
         }
-        if (method === AjaxMethod.POST || method === AjaxMethod.PUT) {
+        if ((method === AjaxMethod.POST || method === AjaxMethod.PUT) && params) {
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         }
         xhr.setRequestHeader("ActaApi-ClientID", this.clientId);

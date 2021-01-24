@@ -99,9 +99,16 @@ body {
 
     & > .ui-layout-topbar {
         background-color: $layoutElementBackgroundColor;
-        border-bottom: 1px solid $layoutElementBorderColor;
+        overflow: hidden;
+
+        &:empty {
+            display: none;
+        }
 
         ul {
+            border-color: $layoutElementBorderColor;
+            border-style: solid;
+            border-width: 0 1px 1px 0;
             display: flex;
             list-style: none;
             margin: 0;
@@ -157,6 +164,7 @@ body {
                     outline: none;
                     padding: 0;
                     transition: color .2s;
+                    user-select: none;
                     width: 1.5em;
 
                     &:hover {
@@ -179,10 +187,6 @@ body {
                 margin: 4px;
             }
         }
-    }
-
-    & > .ui-layout-topbar:empty {
-        display: none;
     }
 
     & > .ui-layout-body {
@@ -215,6 +219,7 @@ body {
                         outline: none;
                         padding: 0;
                         transition: color .2s;
+                        user-select: none;
                         width: 100%;
 
                         &:hover {
