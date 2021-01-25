@@ -75,13 +75,6 @@ interface IActaCodeClosingTime {
     editionId: number
 };
 
-interface IActaCodeStorage {
-    id: number,
-    name: string,
-    basePath: string,
-    archive: boolean
-};
-
 interface IActaCodePageSize {
     id: number,
     name: string,
@@ -154,12 +147,9 @@ class ActaCodeInfo {
     private _color: IActaCodeColor[];
     private _printType: IActaCodePrintType[];
     private _closingTime: IActaCodeClosingTime[];
-    private _storage: IActaCodeStorage[];
     private _pageSize: IActaCodePageSize[];
     private _font: IActaCodeFont[];
     private _textStyle: IActaCodeTextStyle[];
-
-    private _mediaId?: number;
 
     private constructor() {
         this._codeTable = [];
@@ -172,11 +162,17 @@ class ActaCodeInfo {
         this._color = [];
         this._printType = [];
         this._closingTime = [];
-        this._storage = [];
         this._pageSize = [];
         this._font = [];
         this._textStyle = [];
     }
-    set mediaId(mediaId: number) { this._mediaId = mediaId; }
+
+    async loadData() {
+        return new Promise((resolve, reject) => {
+            api.get('/info/code/codeclass').then(response => {
+                console.log(response);
+            });
+        });
+    }
 }
 export default ActaCodeInfo.in;

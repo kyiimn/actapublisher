@@ -49,11 +49,23 @@ class ActaAccountInfo {
     }
 
     async loadData() {
-        return new Promise((resolve, reject) => {
-            api.get('/login/info').then(response => {
-                console.log(response);
-            });
-        });
+        let result: any = await api.get('/login');
+        if (!result) return;
+        if (!result.data.logined) return;
+
+        this._logined = true;
+        this._loginMediaId = result.data.mediaId;
+        this._loginDept = result.data.dept;
+        this._loginUser = result.data.user;
+
+        result = await api.get('/info/account/dept');
+        if (!result) return;
+
+        this._logined = true;
+        this._loginMediaId = result.data.mediaId;
+        this._loginDept = result.data.dept;
+        this._loginUser = result.data.user;
+
     }
 }
 export default ActaAccountInfo.in;

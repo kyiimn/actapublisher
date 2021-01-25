@@ -42,7 +42,7 @@ class ActaAPI {
     }
 
     private get url() {
-        return `${this._protocol}://${this._server}:${this._port}/api/${this._version}`;
+        return `${this._protocol}://${this._server}:${this._port}/${this._version}`;
     }
 
     private get xhr() {
@@ -73,9 +73,14 @@ class ActaAPI {
         xhr.setRequestHeader("ActaApi-SessionID", this.sessionId);
 
         return new Promise((resolve, reject) => {
-            xhr.onload = () => { resolve([xhr.status, xhr.response]); };
-            xhr.onabort = () => { reject(); };
-            xhr.onerror = () => { reject(); };
+            xhr.onload = () => {
+                let resultData = false;
+                try { resultData = JSON.parse(xhr.response); }
+                catch (e) { resultData = false; }
+                resolve(resultData);
+            };
+            xhr.onabort = () => { resolve(false); };
+            xhr.onerror = () => { resolve(false); };
 
             if (method === AjaxMethod.POST || method === AjaxMethod.PUT) {
                 xhr.send(params);

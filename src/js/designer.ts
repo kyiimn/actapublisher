@@ -50,6 +50,7 @@ class Designer {
         this._initToolbar();
 
         accountInfo.loadData();
+        //codeInfo.loadData();
     }
 }
 (new Designer()).run();
