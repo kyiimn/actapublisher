@@ -101,33 +101,6 @@ interface IActaCodePageSize {
     lineTotalSize: number
 };
 
-interface IActaCodeFont {
-    id: number,
-    mediaId: number,
-    name: string,
-    fileStorageId: number,
-    fileExtension: string,
-    fileSize: number,
-    sort: number
-};
-
-interface IActaCodeTextStyle {
-    id: number,
-    mediaId: number,
-    name: string,
-    sort: number,
-    fontId: number,
-    fontSize: number,
-    color: string,
-    xscale: number,
-    letterSpacing: number,
-    lineHeight: number,
-    textAlign: number,
-    underline: boolean,
-    strikeline: boolean,
-    indent: number
-};
-
 class ActaCodeInfo {
     private static _instance: ActaCodeInfo;
 
@@ -137,7 +110,7 @@ class ActaCodeInfo {
     }
     static get in() { return ActaCodeInfo.getInstance(); }
 
-    private _codeTable: IActaCodeClass[];
+    private _codeClass: IActaCodeClass[];
     private _media: IActaCodeMedia[];
     private _local: IActaCodeLocal[];
     private _edition: IActaCodeEdition[];
@@ -148,11 +121,9 @@ class ActaCodeInfo {
     private _printType: IActaCodePrintType[];
     private _closingTime: IActaCodeClosingTime[];
     private _pageSize: IActaCodePageSize[];
-    private _font: IActaCodeFont[];
-    private _textStyle: IActaCodeTextStyle[];
 
     private constructor() {
-        this._codeTable = [];
+        this._codeClass = [];
         this._media = [];
         this._local = [];
         this._edition = [];
@@ -163,16 +134,64 @@ class ActaCodeInfo {
         this._printType = [];
         this._closingTime = [];
         this._pageSize = [];
-        this._font = [];
-        this._textStyle = [];
     }
 
     async loadData() {
-        return new Promise((resolve, reject) => {
-            api.get('/info/code/codeclass').then(response => {
-                console.log(response);
-            });
-        });
+        let result: any;
+        result = await api.get('/info/code/codeclass');
+        if (result) {
+            for (const code of result.data) this._codeClass.push(code);
+        }
+
+        result = await api.get('/info/code/media');
+        if (result) {
+            for (const code of result.data) this._media.push(code);
+        }
+
+        result = await api.get('/info/code/local');
+        if (result) {
+            for (const code of result.data) this._local.push(code);
+        }
+
+        result = await api.get('/info/code/edition');
+        if (result) {
+            for (const code of result.data) this._edition.push(code);
+        }
+
+        result = await api.get('/info/code/section');
+        if (result) {
+            for (const code of result.data) this._section.push(code);
+        }
+
+        result = await api.get('/info/code/adversize');
+        if (result) {
+            for (const code of result.data) this._adverSize.push(code);
+        }
+
+        result = await api.get('/info/code/adverlocal');
+        if (result) {
+            for (const code of result.data) this._adverLocal.push(code);
+        }
+
+        result = await api.get('/info/code/color');
+        if (result) {
+            for (const code of result.data) this._color.push(code);
+        }
+
+        result = await api.get('/info/code/printtype');
+        if (result) {
+            for (const code of result.data) this._printType.push(code);
+        }
+
+        result = await api.get('/info/code/closingtime');
+        if (result) {
+            for (const code of result.data) this._closingTime.push(code);
+        }
+
+        result = await api.get('/info/code/pagesize');
+        if (result) {
+            for (const code of result.data) this._pageSize.push(code);
+        }
     }
 }
 export default ActaCodeInfo.in;

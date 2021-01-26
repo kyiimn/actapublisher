@@ -4,7 +4,7 @@ interface IActaAccountUser {
     id: number,
     mediaId: number,
     deptId: number,
-    loginId: string,
+    loginName: string,
     name: string,
     email?: string,
     byline?: string,
@@ -59,13 +59,18 @@ class ActaAccountInfo {
         this._loginUser = result.data.user;
 
         result = await api.get('/info/account/dept');
-        if (!result) return;
+        if (result) {
+            for (const dept of result.data) {
+                this._dept.push(dept);
+            }
+        }
 
-        this._logined = true;
-        this._loginMediaId = result.data.mediaId;
-        this._loginDept = result.data.dept;
-        this._loginUser = result.data.user;
-
+        result = await api.get('/info/account/user');
+        if (result) {
+            for (const user of result.data) {
+                this._user.push(user);
+            }
+        }
     }
 }
 export default ActaAccountInfo.in;

@@ -43,14 +43,14 @@ class Designer {
         this._layout.headerMenubar.appendChild(appButton({ name: message.MENUITEM.DESIGNER_LOGOUT, icon: 'walking', click: (e) => { /* */ } }));
     }
 
-    run() {
+    async run() {
         this._layout.title = 'DESIGNER';
 
         this._initMenubar();
         this._initToolbar();
 
-        accountInfo.loadData();
-        //codeInfo.loadData();
+        await accountInfo.loadData();
+        await codeInfo.loadData();
     }
 }
 (new Designer()).run();
