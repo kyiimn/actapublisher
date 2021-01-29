@@ -3,7 +3,9 @@ import api from '../util/api';
 interface IActaAccountUser {
     id: number,
     mediaId: number,
+    mediaName: string,
     deptId: number,
+    deptName: string,
     loginName: string,
     name: string,
     email?: string,
@@ -17,6 +19,7 @@ interface IActaAccountUser {
 interface IActaAccountDept {
     id: number,
     mediaId: number,
+    mediaName: string,
     name: string,
     sort: number,
     invalidFlag: boolean,

@@ -5,6 +5,7 @@ interface IActaCodeClass {
     code: string,
     name: string,
     mediaId?: number,
+    mediaName?: string,
     sort?: number,
     use: boolean
 };
@@ -12,7 +13,8 @@ interface IActaCodeClass {
 interface IActaCodeMedia {
     id: number,
     name: string,
-    type: string
+    type: string,
+    typeName: string
 };
 
 interface IActaCodeLocal {
@@ -20,6 +22,7 @@ interface IActaCodeLocal {
     code: string,
     name: string,
     mediaId: number,
+    mediaName: string,
     sort: number,
     use: boolean
 };
@@ -29,6 +32,7 @@ interface IActaCodeEdition {
     edition: number,
     name: string,
     mediaId: number,
+    mediaName: string,
     use: boolean
 };
 
@@ -37,6 +41,7 @@ interface IActaCodeSection {
     code: string,
     name: string,
     mediaId: number,
+    mediaName: string,
     use: boolean
 };
 
@@ -44,6 +49,7 @@ interface IActaCodeAdverSize {
     id: number,
     name: string,
     mediaId: number,
+    mediaName: string,
     use: boolean
 };
 
@@ -52,6 +58,7 @@ interface IActaCodeAdverLocal {
     code: string,
     name: string,
     mediaId: number,
+    mediaName: string,
     sort: number,
     use: boolean
 };
@@ -71,19 +78,24 @@ interface IActaCodeClosingTime {
     closingDate?: string,
     closingTime: string,
     mediaId: number,
+    mediaName: string,
     page: number,
-    editionId: number
+    editionId: number,
+    editionName: string
 };
 
 interface IActaCodePageSize {
     id: number,
     name: string,
     paperType: string,
+    paperTypeName: string,
     paperWidth: number,
     paperHeight: number,
     paperDirection: string,
+    paperDirectionName: string,
     linespacingSize: number,
     linespacingUnit: string,
+    linespacingUnitName: string,
     linespacingRatio: number,
     columnMarginInside: number,
     columnMarginOutside: number,
