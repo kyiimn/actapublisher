@@ -18,7 +18,7 @@ export default class ActaFontManager {
         this._list = [];
     }
 
-    async add(url: string) {
+    async add(url: string): Promise<ActaFont> {
         for (let i = 0; i < this._list.length; i++) {
             if (this._list[i].url === url) return new Promise((resolve: any) => {
                 resolve(i);
@@ -49,6 +49,13 @@ export default class ActaFontManager {
             }
         }
         return false;
+    }
+
+    clear() {
+        for (let i = 0; i < this._list.length; i++) {
+            delete this._list[i];
+        }
+        this._list = [];
     }
 
     get list() { return this._list; }

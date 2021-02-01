@@ -5,6 +5,7 @@ import Layout from './ui/layout';
 
 import accountInfo from './info/account';
 import codeInfo from './info/code';
+import fontInfo from './info/font';
 import message from './ui/message';
 
 import { appButton, separater } from './ui/toolbar';
@@ -51,6 +52,7 @@ class Designer {
 
         await accountInfo.loadData();
         await codeInfo.loadData();
+        await fontInfo.loadData();
     }
 }
 (new Designer()).run();
