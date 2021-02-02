@@ -46,8 +46,12 @@ class ActaFontInfo {
         const result: any = await api.get('/info/code/font');
         if (result) {
             for (const font of result.data) {
-                const url = api.url(`${font.fileStorageId}/${font.id}`);
-                fontidset[font.id] = await ActaFontManager.in.add(url);
+                const url = api.file(font);
+                const idx = await ActaFontManager.in.add(url);
+                if (idx < 0) continue;
+
+                const actafont = ActaFontManager.in.get(idx);
+                if (actafont) fontidset[font.id] = actafont;
             }
         }
     }

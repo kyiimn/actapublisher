@@ -1,5 +1,4 @@
 import querystring from 'querystring';
-import { v4 as uuidv4 } from 'uuid';
 
 interface IActaAPIParameter {
     [key: string] : any
@@ -27,21 +26,15 @@ class ActaAPI {
     private _timeout: number;
     private _version: string;
 
-    private _sessionId?: string;
-    private _clientId?: string;
-
     private constructor() {
         this._protocol = process.env.API_SERVER_PROTOCOL || 'http';
         this._server = process.env.API_SERVER || 'localhost';
         this._port = parseInt(process.env.API_SERVER_PORT || '3000', 10);
         this._timeout = parseInt(process.env.API_TIMEOUT || '30000', 10);
         this._version = process.env.API_VERSION || 'v1';
-
-        this._clientId = window.localStorage.getItem('acta.api.client_id') || undefined;
-        this._sessionId = window.sessionStorage.getItem('acta.api.session_id') || undefined;
     }
 
-    private get _host() {
+    private get _url() {
         return `${this._protocol}://${this._server}:${this._port}/${this._version}`;
     }
 
@@ -55,11 +48,12 @@ class ActaAPI {
         let url;
 
         if ((method === AjaxMethod.GET || method === AjaxMethod.DELETE) && params) {
-            url = `${this._host}${(path[0] !== '/') ? '/' : ''}${path}?${params}`;
+            url = `${this._url}${(path[0] !== '/') ? '/' : ''}${path}?${params}`;
         } else {
-            url = `${this._host}${(path[0] !== '/') ? '/' : ''}${path}`;
+            url = `${this._url}${(path[0] !== '/') ? '/' : ''}${path}`;
         }
         xhr.open(method, url, true);
+        xhr.withCredentials = true;
         xhr.timeout = this._timeout;
         if (headers) {
             for (const key in headers) {
@@ -69,8 +63,6 @@ class ActaAPI {
         if ((method === AjaxMethod.POST || method === AjaxMethod.PUT) && params) {
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         }
-        xhr.setRequestHeader("ActaApi-ClientID", this.clientId);
-        xhr.setRequestHeader("ActaApi-SessionID", this.sessionId);
 
         return new Promise((resolve, reject) => {
             xhr.onload = () => {
@@ -90,22 +82,6 @@ class ActaAPI {
         });
     }
 
-    get clientId() {
-        if (!this._clientId) {
-            this._clientId = uuidv4();
-            window.localStorage.setItem('acta.api.client_id', this._clientId);
-        }
-        return this._clientId;
-    }
-
-    get sessionId() {
-        if (!this._sessionId) {
-            this._sessionId = uuidv4();
-            window.sessionStorage.setItem('acta.api.session_id', this._sessionId);
-        }
-        return this._sessionId;
-    }
-
     async get(path: string, parameter?: IActaAPIParameter, headers?: IActaAPIParameter) {
         return this._request(AjaxMethod.GET, path, parameter, headers);
     }
@@ -122,8 +98,18 @@ class ActaAPI {
         return this._request(AjaxMethod.DELETE, path, parameter, headers);
     }
 
-    url(path: string) {
-        return `${this._host}${(path[0] !== '/') ? '/' : ''}${path}`;
+    file(data: {
+        id: string | number,
+        fileStorageId: number,
+        fileExtension: string
+    }) {
+        let path;
+        if (typeof(data.id) === 'string') {
+            path = `${data.id.substr(0, 4)}/${data.id.substr(4, 2)}/${data.id.substr(6, 2)}/${data.id}`;
+        } else {
+            path = data.id.toString();
+        }
+        return `${this._protocol}://${this._server}:${this._port}/data/${data.fileStorageId}/${path}.${data.fileExtension}`;
     }
 }
 export default ActaAPI.in;
