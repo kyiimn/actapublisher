@@ -1,4 +1,4 @@
-import '../../css/ui.scss';
+import '../../css/ui/layout.scss';
 
 class ActaUILayout {
     private static _instance: ActaUILayout;

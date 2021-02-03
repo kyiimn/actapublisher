@@ -7,8 +7,7 @@ import accountInfo from './info/account';
 import codeInfo from './info/code';
 import fontInfo from './info/font';
 import message from './ui/message';
-
-import { appButton, separater } from './ui/toolbar';
+import tbbuilder from './ui/toolbar';
 
 import '@fortawesome/fontawesome-free/js/all.js';
 
@@ -34,25 +33,26 @@ class Designer {
     }
 
     private _initMenubar() {
-        this._layout.headerMenubar.appendChild(appButton({ name: message.MENUITEM.DESIGNER_NEW, icon: 'file', icontype: 'far', click: (e) => { /* */ } }));
-        this._layout.headerMenubar.appendChild(separater());
-        this._layout.headerMenubar.appendChild(appButton({ name: message.MENUITEM.DESIGNER_OPEN, icon: 'folder-open', click: (e) => { /* */ } }));
-        this._layout.headerMenubar.appendChild(separater());
-        this._layout.headerMenubar.appendChild(appButton({ name: message.MENUITEM.DESIGNER_SAVE, icon: 'save', click: (e) => { /* */ } }));
-        this._layout.headerMenubar.appendChild(appButton({ name: message.MENUITEM.DESIGNER_SAVEAS, icon: 'save', icontype: 'far', click: (e) => { /* */ } }));
-        this._layout.headerMenubar.appendChild(separater());
-        this._layout.headerMenubar.appendChild(appButton({ name: message.MENUITEM.DESIGNER_LOGOUT, icon: 'walking', click: (e) => { /* */ } }));
+        this._layout.headerMenubar.appendChild(tbbuilder.appButton({ name: message.MENUITEM.DESIGNER_NEW, icon: 'file', icontype: 'far', click: (e) => { /* */ } }));
+        this._layout.headerMenubar.appendChild(tbbuilder.separater());
+        this._layout.headerMenubar.appendChild(tbbuilder.appButton({ name: message.MENUITEM.DESIGNER_OPEN, icon: 'folder-open', click: (e) => { /* */ } }));
+        this._layout.headerMenubar.appendChild(tbbuilder.separater());
+        this._layout.headerMenubar.appendChild(tbbuilder.appButton({ name: message.MENUITEM.DESIGNER_SAVE, icon: 'save', click: (e) => { /* */ } }));
+        this._layout.headerMenubar.appendChild(tbbuilder.appButton({ name: message.MENUITEM.DESIGNER_SAVEAS, icon: 'save', icontype: 'far', click: (e) => { /* */ } }));
+        this._layout.headerMenubar.appendChild(tbbuilder.separater());
+        this._layout.headerMenubar.appendChild(tbbuilder.appButton({ name: message.MENUITEM.DESIGNER_LOGOUT, icon: 'walking', click: (e) => { /* */ } }));
     }
 
     async run() {
         this._layout.title = 'DESIGNER';
 
-        this._initMenubar();
-        this._initToolbar();
 
         await accountInfo.loadData();
         await codeInfo.loadData();
         await fontInfo.loadData();
+
+        this._initMenubar();
+        this._initToolbar();
     }
 }
 (new Designer()).run();

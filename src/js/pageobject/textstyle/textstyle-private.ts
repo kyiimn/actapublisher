@@ -74,7 +74,7 @@ export default class ActaTextStylePrivate {
 
     toString() {
         let returnValue = '';
-        if (this.font !== null) returnValue += `font-name="${this.font.fullname}" `;
+        if (this.font !== null) returnValue += `font-name="${this.font.name}" `;
         if (this.fontSize !== null) returnValue += `font-size="${this.fontSize}" `;
         if (this.xscale !== null) returnValue += `xscale="${this.xscale}" `;
         if (this.letterSpacing !== null) returnValue += `letter-spacing="${this.letterSpacing}" `;
@@ -178,7 +178,7 @@ export default class ActaTextStylePrivate {
     }
 
     get font() { return this._font; }
-    get fontName() { return this._font ? this._font.fullname : ''; }
+    get fontName() { return this._font ? this._font.name : ''; }
     get fontSize() { return this._fontSize; }
     get xscale() { return this._xscale; }
     get letterSpacing() { return this._letterSpacing; }

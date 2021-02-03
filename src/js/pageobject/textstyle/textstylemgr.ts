@@ -24,6 +24,7 @@ export default class ActaTextStyleManager {
     }
     remove(name: string) { delete this._list[name]; }
     get(name: string) { return this._list[name]; }
+    clear() { this._list = {}; }
 
     get list() { return this._list; }
     get length() { return Object.keys(this.list).length; }

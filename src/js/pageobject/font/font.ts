@@ -3,6 +3,7 @@ import opentype from 'opentype.js';
 export default class ActaFont {
     private _url: string;
     private _font: opentype.Font;
+    private _fontAlias?: string;
     private _fontFamilyEN: string;
     private _fontFamilyKO: string;
     private _fontSubfamilyEN: string;
@@ -10,9 +11,10 @@ export default class ActaFont {
     private _fontFullnameEN: string;
     private _fontFullnameKO: string;
 
-    constructor(url: string, font: opentype.Font) {
+    constructor(url: string, font: opentype.Font, fontAlias?: string) {
         this._url = url;
         this._font = font;
+        this._fontAlias = fontAlias;
         this._fontFamilyEN = font.names.fontFamily.en;
         this._fontSubfamilyEN = font.names.fontSubfamily.en;
         this._fontFamilyKO = font.names.fontFamily.ko || font.names.fontFamily.en;
@@ -31,4 +33,5 @@ export default class ActaFont {
     get family() { return this.familyKO || this.familyEN; }
     get subfamily() { return this.subfamilyKO || this.subfamilyEN; }
     get fullname() { return this.fullnameKO || this.fullnameEN; }
+    get name() { return this._fontAlias || this.fullname; }
 };

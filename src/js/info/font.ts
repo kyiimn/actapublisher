@@ -1,11 +1,13 @@
 import ActaFontManager from '../pageobject/font/fontmgr';
-import ActaFont from '../pageobject/font/font';
+import ActaTextStyle from '../pageobject/textstyle/textstyle';
+import ActaTextStyleManager from '../pageobject/textstyle/textstylemgr';
 import api from '../util/api';
+import U from '../util/units';
 
 export interface IActaFont {
     id: number,
     mediaId: number,
-    mediaName?: string,
+    mediaName: string,
     name: string,
     fileStorageId: number,
     fileExtension: string,
@@ -16,11 +18,11 @@ export interface IActaFont {
 export interface IActaTextStyle {
     id: number,
     mediaId: number,
-    mediaName?: string,
+    mediaName: string,
     name: string,
     sort: number,
     fontId: number,
-    fontName?: string,
+    fontName: string,
     fontSize: number,
     color: string,
     xscale: number,
@@ -41,18 +43,38 @@ class ActaFontInfo {
     }
     static get in() { return ActaFontInfo.getInstance(); }
     async loadData() {
+        let result: any = await api.get('/info/code/font');
+        if (!result) {
+            return;
+        }
         ActaFontManager.in.clear();
-        const fontidset: { [id: number]: ActaFont } = {};
-        const result: any = await api.get('/info/code/font');
-        if (result) {
-            for (const font of result.data) {
-                const url = api.file(font);
-                const idx = await ActaFontManager.in.add(url);
-                if (idx < 0) continue;
+        for (const code of result.data) {
+            const font: IActaFont = code;
+            const url = api.file(font);
+            await ActaFontManager.in.add(url, font.name);
+        }
 
-                const actafont = ActaFontManager.in.get(idx);
-                if (actafont) fontidset[font.id] = actafont;
-            }
+        result = await api.get('/info/code/textstyle');
+        if (!result) {
+            return;
+        }
+        ActaTextStyleManager.in.clear();
+        for (const code of result.data) {
+            const textstyle: IActaTextStyle = code;
+            if (!ActaFontManager.in.get(textstyle.fontName)) continue;
+
+            const t = new ActaTextStyle(textstyle.fontName);
+            t.fontSize = U.px(textstyle.fontSize + 'mm');
+            t.xscale = textstyle.xscale;
+            t.letterSpacing = U.px(textstyle.letterSpacing + 'mm');
+            t.lineHeight = textstyle.lineHeight;
+            t.textAlign = textstyle.textAlign;
+            t.underline = textstyle.underline;
+            t.strikeline = textstyle.strikeline;
+            t.indent = U.px(textstyle.indent + 'mm');
+            t.color = '#000000';
+
+            ActaTextStyleManager.in.add(textstyle.name, t);
         }
     }
 }
