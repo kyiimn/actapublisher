@@ -4,7 +4,7 @@ interface IActaTextStyleList {
     [styleName: string] : ActaTextStyle
 };
 
-export default class ActaTextStyleManager {
+class ActaTextStyleManager {
     private static _instance: ActaTextStyleManager;
     static getInstance() {
         if (!ActaTextStyleManager._instance) ActaTextStyleManager._instance = new ActaTextStyleManager();
@@ -29,3 +29,4 @@ export default class ActaTextStyleManager {
     get list() { return this._list; }
     get length() { return Object.keys(this.list).length; }
 };
+export default ActaTextStyleManager.in;

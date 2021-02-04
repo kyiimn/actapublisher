@@ -1,5 +1,5 @@
-import ActaFontManager from '../font/fontmgr';
 import ActaFont from '../font/font';
+import fontmgr from '../font/fontmgr';
 
 import { Subject } from 'rxjs';
 
@@ -10,7 +10,7 @@ export enum TextAlign {
 export default class ActaTextStylePrivate {
     private _font: ActaFont | null;
     private _fontSize: number | null;
-    private _color: string | null;
+    private _colorId: number | null;
     private _xscale: number | null;
     private _letterSpacing: number | null;
     private _lineHeight: number | null;
@@ -31,7 +31,7 @@ export default class ActaTextStylePrivate {
         this._underline = null;
         this._strikeline = null;
         this._indent = null;
-        this._color = null;
+        this._colorId = null;
 
         this._CHANGE$ = new Subject<string>();
     }
@@ -48,7 +48,7 @@ export default class ActaTextStylePrivate {
         if (textStyle.underline !== null) { this.underline = textStyle.underline; changed = true; }
         if (textStyle.strikeline !== null) { this.strikeline = textStyle.strikeline; changed = true; }
         if (textStyle.indent !== null) { this.indent = textStyle.indent; changed = true; }
-        if (textStyle.color !== null) { this.color = textStyle.color; changed = true; }
+        if (textStyle.colorId !== null) { this.colorId = textStyle.colorId; changed = true; }
 
         if (changed) this.emitChange('merge');
     }
@@ -67,7 +67,7 @@ export default class ActaTextStylePrivate {
         this._underline = textStyle.underline;
         this._strikeline = textStyle.strikeline;
         this._indent = textStyle.indent;
-        this._color = textStyle.color;
+        this._colorId = textStyle.colorId;
 
         this.emitChange('copy');
     }
@@ -80,7 +80,7 @@ export default class ActaTextStylePrivate {
         if (this.letterSpacing !== null) returnValue += `letter-spacing="${this.letterSpacing}" `;
         if (this.lineHeight !== null) returnValue += `font-size="${this.lineHeight}" `;
         if (this.indent !== null) returnValue += `indent="${this.indent}" `;
-        if (this.color !== null) returnValue += `color="${this.color}" `;
+        if (this.colorId !== null) returnValue += `color-id="${this.colorId}" `;
         if (this.underline !== null) returnValue += `underline="${this.underline ? 'yes' : 'no'}" `;
         if (this.strikeline !== null) returnValue += `strikeline="${this.strikeline ? 'yes' : 'no'}" `;
         if (this.textAlign !== null) {
@@ -99,7 +99,7 @@ export default class ActaTextStylePrivate {
     }
 
     set fontName(fontName: string) {
-        const font = ActaFontManager.in.get(fontName);
+        const font = fontmgr.get(fontName);
         if (!font) return;
         if (this._font !== font) {
             this._font = font;
@@ -161,9 +161,9 @@ export default class ActaTextStylePrivate {
             this.emitChange('indent');
         }
     }
-    set color(color: string | null) {
-        if (this._color !== color) {
-            this._color = color;
+    set colorId(colorId: number | null) {
+        if (this._colorId !== colorId) {
+            this._colorId = colorId;
             this.emitChange('color');
         }
     }
@@ -188,5 +188,5 @@ export default class ActaTextStylePrivate {
     get underline() { return this._underline; }
     get strikeline() { return this._strikeline; }
     get indent() { return this._indent; }
-    get color() { return this._color; }
+    get colorId() { return this._colorId; }
 }

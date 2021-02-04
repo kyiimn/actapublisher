@@ -3,32 +3,35 @@ import ActaGuide from './pageobject/guide';
 import ActaParagraph from './pageobject/paragraph';
 import ActaImage from './pageobject/image';
 import { ImageFitType, ImageOverlapMethod } from './pageobject/image';
-import ActaFontManager from './pageobject/font/fontmgr';
-import ActaTextStyleManager from './pageobject/textstyle/textstylemgr';
+import fontmgr from './pageobject/font/fontmgr';
+import colormgr from './pageobject/color/colormgr';
+import textstylemgr from './pageobject/textstyle/textstylemgr';
 import ActaTextStyle from './pageobject/textstyle/textstyle';
 import U from './util/units';
 
 import '../css/pageobject.scss';
 
 const main = async () => {
-    await ActaFontManager.in.add('fonts/jabml.ttf');
-    await ActaFontManager.in.add('fonts/jahgl.ttf');
+    await fontmgr.add('fonts/jabml.ttf');
+    await fontmgr.add('fonts/jahgl.ttf');
+
+    colormgr.add({id: 1, name: 'red', colorType: 'RGB', code: '#ff0000', rgbCode: '#ff0000' });
 
     let s;
     s = new ActaTextStyle('중앙신문명조');
     s.fontSize = U.px('9pt');
-    ActaTextStyleManager.in.add('본문1', s);
+    textstylemgr.add('본문1', s);
 
     s = new ActaTextStyle('중앙세고딕');
     s.fontSize = U.px('9pt');
     s.letterSpacing = 1;
-    s.color = '#ff0000';
-    ActaTextStyleManager.in.add('본문2', s);
+    s.colorId = 1;
+    textstylemgr.add('본문2', s);
 
     s = new ActaTextStyle('중앙신문명조');
     s.fontSize = U.px('9pt');
     s.indent = 8;
-    ActaTextStyleManager.in.add('본문3', s);
+    textstylemgr.add('본문3', s);
 
     const page = new ActaPage('25cm', '30cm');
     page.paddingTop = '0.5cm';

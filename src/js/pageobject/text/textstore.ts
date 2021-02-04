@@ -50,7 +50,7 @@ export default class ActaTextStore extends ActaTextNode {
                                 val = val.toLowerCase();
                                 switch (tt[0].toLowerCase()) {
                                     case 'name': newnode.defaultTextStyleName = val; break;
-                                    case 'color': textStyle.color = val; break;
+                                    case 'color-id': textStyle.colorId = !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : null; break;
                                     case 'underline': textStyle.underline = val === 'yes' ? true : false; break;
                                     case 'strikeline': textStyle.strikeline = val === 'yes' ? true : false; break;
                                     case 'xscale': textStyle.xscale = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;

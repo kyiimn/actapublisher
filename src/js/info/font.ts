@@ -1,6 +1,6 @@
-import ActaFontManager from '../pageobject/font/fontmgr';
 import ActaTextStyle from '../pageobject/textstyle/textstyle';
-import ActaTextStyleManager from '../pageobject/textstyle/textstylemgr';
+import fontmgr from '../pageobject/font/fontmgr';
+import textstylemgr from '../pageobject/textstyle/textstylemgr';
 import api from '../util/api';
 import U from '../util/units';
 
@@ -24,7 +24,7 @@ export interface IActaTextStyle {
     fontId: number,
     fontName: string,
     fontSize: number,
-    color: string,
+    colorId: number,
     xscale: number,
     letterSpacing: number,
     lineHeight: number,
@@ -47,21 +47,21 @@ class ActaFontInfo {
         if (!result) {
             return;
         }
-        ActaFontManager.in.clear();
+        fontmgr.clear();
         for (const code of result.data) {
             const font: IActaFont = code;
             const url = api.file(font);
-            await ActaFontManager.in.add(url, font.name);
+            await fontmgr.add(url, font.name);
         }
 
         result = await api.get('/info/code/textstyle');
         if (!result) {
             return;
         }
-        ActaTextStyleManager.in.clear();
+        textstylemgr.clear();
         for (const code of result.data) {
             const textstyle: IActaTextStyle = code;
-            if (!ActaFontManager.in.get(textstyle.fontName)) continue;
+            if (!fontmgr.get(textstyle.fontName)) continue;
 
             const t = new ActaTextStyle(textstyle.fontName);
             t.fontSize = U.px(textstyle.fontSize + 'mm');
@@ -72,9 +72,9 @@ class ActaFontInfo {
             t.underline = textstyle.underline;
             t.strikeline = textstyle.strikeline;
             t.indent = U.px(textstyle.indent + 'mm');
-            t.color = '#000000';
+            t.colorId = textstyle.colorId;
 
-            ActaTextStyleManager.in.add(textstyle.name, t);
+            textstylemgr.add(textstyle.name, t);
         }
     }
 }

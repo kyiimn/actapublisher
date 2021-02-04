@@ -4,13 +4,13 @@ import IActaPreflightProfile from './interface/preflight-profile';
 import ActaClipboard from '../util/clipboard';
 import ActaParagraphColumn from './paragraph-col';
 import ActaParagraphMargin from './paragraph-margin';
-import ActaTextStyleManager from './textstyle/textstylemgr';
 import ActaTextStore from './text/textstore';
 import ActaTextNode from './text/textnode';
 import ActaTextStyle from './textstyle/textstyle';
 import ActaTextStyleInherit from './textstyle/textstyle-inherit';
 import ActaTextRow from './text/textrow';
 import ActaTextChar from './text/textchar';
+import textstylemgr from './textstyle/textstylemgr';
 import { CharType } from './text/textchar';
 
 import { Subject, fromEvent } from 'rxjs';
@@ -445,7 +445,7 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     private _setPredefineTextStyle(textChars: ActaTextChar[], textStyleName: string) {
-        if (!ActaTextStyleManager.in.get(textStyleName)) return;
+        if (!textstylemgr.get(textStyleName)) return;
         const textNodes = this._toTextNodes(textChars);
         for (const textNode of textNodes) {
             textNode.defaultTextStyleName = textStyleName;
@@ -1066,7 +1066,7 @@ export default class ActaParagraph extends IActaFrame {
             if (returnTextStyle.underline !== textStyle.underline) returnTextStyle.underline = null;
             if (returnTextStyle.strikeline !== textStyle.strikeline) returnTextStyle.strikeline = null;
             if (returnTextStyle.indent !== textStyle.indent) returnTextStyle.indent = null;
-            if (returnTextStyle.color !== textStyle.color) returnTextStyle.color = null;
+            if (returnTextStyle.colorId !== textStyle.colorId) returnTextStyle.colorId = null;
         }
         return returnTextStyle;
     }
@@ -1125,7 +1125,7 @@ export default class ActaParagraph extends IActaFrame {
     get innerMargin() { return this._innerMargin; }
     get value() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
-    get defaultTextStyle() { return ActaTextStyleManager.in.get(this.defaultTextStyleName); }
+    get defaultTextStyle() { return textstylemgr.get(this.defaultTextStyleName); }
     get editable() { return this._editable; }
 
     get textChars() {

@@ -1,7 +1,7 @@
 import ActaTextChar from './textchar';
-import ActaTextStyleManager from '../textstyle/textstylemgr';
 import ActaTextStyle from '../textstyle/textstyle';
 import ActaTextStyleInherit from '../textstyle/textstyle-inherit';
+import textstylemgr from '../textstyle/textstylemgr';
 
 import { v4 as uuidv4 } from 'uuid';
 import { Subscription } from 'rxjs';
@@ -169,7 +169,7 @@ export default class ActaTextNode {
             this.defaultTextStyle = null;
             return;
         }
-        this.defaultTextStyle = ActaTextStyleManager.in.get(styleName);
+        this.defaultTextStyle = textstylemgr.get(styleName);
     }
 
     set modifiedTextStyle(style: ActaTextStyleInherit) {

@@ -1,3 +1,4 @@
+import colormgr from '../pageobject/color/colormgr';
 import api from '../util/api';
 
 interface IActaCodeClass {
@@ -65,7 +66,14 @@ interface IActaCodeAdverLocal {
 
 interface IActaCodeColor {
     id: number,
-    name: string
+    code: string,
+    name: string,
+    mediaId: number,
+    mediaName: string,
+    colorType: string,
+    colorTypeName: string,
+    rgbCode: string,
+    sort: number
 };
 
 interface IActaCodePrintType {
@@ -129,7 +137,6 @@ class ActaCodeInfo {
     private _section: IActaCodeSection[];
     private _adverSize: IActaCodeAdverSize[];
     private _adverLocal: IActaCodeAdverLocal[];
-    private _color: IActaCodeColor[];
     private _printType: IActaCodePrintType[];
     private _closingTime: IActaCodeClosingTime[];
     private _pageSize: IActaCodePageSize[];
@@ -142,7 +149,6 @@ class ActaCodeInfo {
         this._section = [];
         this._adverSize = [];
         this._adverLocal = [];
-        this._color = [];
         this._printType = [];
         this._closingTime = [];
         this._pageSize = [];
@@ -187,7 +193,7 @@ class ActaCodeInfo {
 
         result = await api.get('/info/code/color');
         if (result) {
-            for (const code of result.data) this._color.push(code);
+            for (const code of result.data as IActaCodeColor[]) colormgr.add(code);
         }
 
         result = await api.get('/info/code/printtype');

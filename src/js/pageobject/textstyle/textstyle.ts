@@ -21,7 +21,7 @@ export default class ActaTextStyle extends ActaTextStylePrivate {
         this.underline = false;
         this.strikeline = false;
         this.indent = 0;
-        this.color = '#000000';
+        this.colorId = 0;
     }
 
     merge(textStyle: ActaTextStyle | ActaTextStyleInherit) {
@@ -43,7 +43,7 @@ export default class ActaTextStyle extends ActaTextStylePrivate {
     set underline(underline: boolean) { super.underline = underline; }
     set strikeline(strikeline: boolean) { super.strikeline = strikeline; }
     set indent(indent: number) { super.indent = indent; }
-    set color(color: string) { super.color = color; }
+    set colorId(color: number) { super.colorId = color; }
 
     get name() { return this._name || ''; }
     get font() { return super.font as ActaFont; }
@@ -56,5 +56,5 @@ export default class ActaTextStyle extends ActaTextStylePrivate {
     get underline() { return super.underline as boolean; }
     get strikeline() { return super.strikeline as boolean; }
     get indent() { return super.indent as number; }
-    get color() { return super.color as string; }
+    get colorId() { return super.colorId as number; }
 };

@@ -1,7 +1,7 @@
 import ActaFont from './font';
 import opentype from 'opentype.js';
 
-export default class ActaFontManager {
+class ActaFontManager {
     private static _instance: ActaFontManager;
     static getInstance() {
         if (!ActaFontManager._instance) ActaFontManager._instance = new ActaFontManager();
@@ -62,3 +62,5 @@ export default class ActaFontManager {
     get list() { return this._list; }
     get length() { return this.list.length; }
 };
+
+export default ActaFontManager.in;

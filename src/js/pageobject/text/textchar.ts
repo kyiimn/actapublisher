@@ -1,5 +1,6 @@
 import ActaTextNode from "./textnode";
 import ActaTextRow from './textrow';
+import colormgr from '../color/colormgr';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -150,7 +151,7 @@ export default class ActaTextChar {
             this._oldTransform = transform;
             this._SVGPath.style.transform = transform;
         }
-        this._SVGPath.style.fill = this._invalidFont ? 'red' : (textStyle.color || '#000000');
+        this._SVGPath.style.fill = this._invalidFont ? 'red' : colormgr.getRGBCode(textStyle.colorId);
 
         if (!this._SVGPath.parentElement || this._SVGPath.parentElement as any as SVGElement !== this.textRow.column.canvas) {
             this.textRow.column.canvas.appendChild(this._SVGPath);
@@ -164,7 +165,7 @@ export default class ActaTextChar {
             strikeline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
             strikeline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
             strikeline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
-            strikeline.style.stroke = textStyle.color || '#000000';
+            strikeline.style.stroke = colormgr.getRGBCode(textStyle.colorId);
             strikeline.style.strokeLinecap = 'butt';
             strikeline.style.strokeWidth = '1';
 
@@ -179,7 +180,7 @@ export default class ActaTextChar {
             underline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
             underline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY).toString());
             underline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY).toString());
-            underline.style.stroke = textStyle.color || '#000000';
+            underline.style.stroke = colormgr.getRGBCode(textStyle.colorId);
             underline.style.strokeLinecap = 'butt';
             underline.style.strokeWidth = '1';
 
