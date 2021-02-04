@@ -157,59 +157,50 @@ class ActaCodeInfo {
     async loadData() {
         let result: any;
         result = await api.get('/info/code/codeclass');
-        if (result) {
-            for (const code of result.data) this._codeClass.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._codeClass.push(code);
 
         result = await api.get('/info/code/media');
-        if (result) {
-            for (const code of result.data) this._media.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._media.push(code);
 
         result = await api.get('/info/code/local');
-        if (result) {
-            for (const code of result.data) this._local.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._local.push(code);
 
         result = await api.get('/info/code/edition');
-        if (result) {
-            for (const code of result.data) this._edition.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._edition.push(code);
 
         result = await api.get('/info/code/section');
-        if (result) {
-            for (const code of result.data) this._section.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._section.push(code);
 
         result = await api.get('/info/code/adversize');
-        if (result) {
-            for (const code of result.data) this._adverSize.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._adverSize.push(code);
 
         result = await api.get('/info/code/adverlocal');
-        if (result) {
-            for (const code of result.data) this._adverLocal.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._adverLocal.push(code);
 
         result = await api.get('/info/code/color');
-        if (result) {
-            for (const code of result.data as IActaCodeColor[]) colormgr.add(code);
-        }
+        if (!result) return false;
+        for (const code of result.data as IActaCodeColor[]) colormgr.add(code);
 
         result = await api.get('/info/code/printtype');
-        if (result) {
-            for (const code of result.data) this._printType.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._printType.push(code);
 
         result = await api.get('/info/code/closingtime');
-        if (result) {
-            for (const code of result.data) this._closingTime.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._closingTime.push(code);
 
         result = await api.get('/info/code/pagesize');
-        if (result) {
-            for (const code of result.data) this._pageSize.push(code);
-        }
+        if (!result) return false;
+        for (const code of result.data) this._pageSize.push(code);
+
+        return true;
     }
     get codeClass() { return this._codeClass; }
     get media() { return this._media; }

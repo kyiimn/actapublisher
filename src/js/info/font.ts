@@ -44,9 +44,8 @@ class ActaFontInfo {
     static get in() { return ActaFontInfo.getInstance(); }
     async loadData() {
         let result: any = await api.get('/info/code/font');
-        if (!result) {
-            return;
-        }
+        if (!result) return false;
+
         fontmgr.clear();
         for (const code of result.data) {
             const font: IActaFont = code;
@@ -55,9 +54,8 @@ class ActaFontInfo {
         }
 
         result = await api.get('/info/code/textstyle');
-        if (!result) {
-            return;
-        }
+        if (!result) return false;
+
         textstylemgr.clear();
         for (const code of result.data) {
             const textstyle: IActaTextStyle = code;
@@ -76,6 +74,7 @@ class ActaFontInfo {
 
             textstylemgr.add(textstyle.name, t);
         }
+        return true;
     }
 }
 export default ActaFontInfo.in;

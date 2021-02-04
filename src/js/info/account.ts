@@ -67,8 +67,8 @@ class ActaAccountInfo {
 
     async loadData() {
         let result: any = await api.get('/login');
-        if (!result) return;
-        if (!result.data.logined) return;
+        if (!result) return false;
+        if (!result.data.logined) return false;
 
         this._logined = true;
         this._loginMediaId = result.data.mediaId;
@@ -77,18 +77,17 @@ class ActaAccountInfo {
         this._preference = result.data.preference;
 
         result = await api.get('/info/account/dept');
-        if (result) {
-            for (const dept of result.data) {
-                this._dept.push(dept);
-            }
+        if (!result) return false;
+        for (const dept of result.data) {
+            this._dept.push(dept);
         }
 
         result = await api.get('/info/account/user');
-        if (result) {
-            for (const user of result.data) {
-                this._user.push(user);
-            }
+        if (!result) return false;
+        for (const user of result.data) {
+            this._user.push(user);
         }
+        return true;
     }
     get prefFrameUnitType() { return this._preference ? this._preference.frameUnitType : __DEFAULT_ACCOUNT_INFO_FRAME_UNIT_TYPE; }
     get prefTextUnitType() { return this._preference ? this._preference.textUnitType : __DEFAULT_ACCOUNT_INFO_TEXT_UNIT_TYPE; }

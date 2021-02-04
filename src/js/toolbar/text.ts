@@ -1,3 +1,5 @@
+import fontmgr from '../pageobject/font/fontmgr';
+import textstylemgr from '../pageobject/textstyle/textstylemgr';
 import message from '../ui/message';
 import tbbuilder from '../ui/toolbar';
 
@@ -33,13 +35,26 @@ class ActaToolbarText {
         this._toolbar.classList.add('toolbar');
         this._toolbar.classList.add('text');
 
+        const fontList: { name: string, value: string }[] = [];
+        const textstyleList: { name: string, value: string }[] = [];
+
+        for (const font of fontmgr.list) {
+            fontList.push({
+                name: font.name,
+                value: font.name
+            });
+        }
+        for (const name of Object.keys(textstylemgr.list)) {
+            textstyleList.push({ name, value: name });
+        }
+
         this._toolbar.appendChild(tbbuilder.combobox({
             attr: { action: 'text-style' }, change: this._onEventSourcing,
-            items: [], width: '12em'
+            items: textstyleList, width: '12em'
         }));
         this._toolbar.appendChild(tbbuilder.combobox({
             attr: { action: 'text-font' }, change: this._onEventSourcing,
-            items: [], width: '9em'
+            items: fontList, width: '9em'
         }));
         this._toolbar.appendChild(tbbuilder.inputNumber({
             attr: { action: 'text-size' }, change: this._onEventSourcing,

@@ -48,15 +48,15 @@ class Designer {
     async run() {
         this._layout.title = 'DESIGNER';
 
-        await accountInfo.loadData();
+        if (!await accountInfo.loadData()) return false;
         if (!accountInfo.isLogined) {
             alert('로그인되지 않았습니다.');
             return;
         }
         U.DPI = accountInfo.prefDPI;
 
-        await codeInfo.loadData();
-        await fontInfo.loadData();
+        if (!await codeInfo.loadData()) return false;
+        if (!await fontInfo.loadData()) return false;
 
         this._initMenubar();
         this._initToolbar();
