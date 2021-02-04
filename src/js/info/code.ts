@@ -211,5 +211,15 @@ class ActaCodeInfo {
             for (const code of result.data) this._pageSize.push(code);
         }
     }
+    get codeClass() { return this._codeClass; }
+    get media() { return this._media; }
+    get local() { return this._local; }
+    get edition() { return this._edition; }
+    get section() { return this._section; }
+    get adverSize() { return this._adverSize; }
+    get adverLocal() { return this._adverLocal; }
+    get printType() { return this._printType; }
+    get closingTime() { return this._closingTime; }
+    get pageSize() { return this._pageSize; }
 }
 export default ActaCodeInfo.in;

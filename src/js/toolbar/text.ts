@@ -35,7 +35,7 @@ class ActaToolbarText {
 
         this._toolbar.appendChild(tbbuilder.combobox({
             attr: { action: 'text-style' }, change: this._onEventSourcing,
-            items: [], width: '10em'
+            items: [], width: '12em'
         }));
         this._toolbar.appendChild(tbbuilder.combobox({
             attr: { action: 'text-font' }, change: this._onEventSourcing,
@@ -44,23 +44,23 @@ class ActaToolbarText {
         this._toolbar.appendChild(tbbuilder.inputNumber({
             attr: { action: 'text-size' }, change: this._onEventSourcing,
             label: message.TOOLBAR.TEXT_SIZE,
-            width: '3.6em', step: .01, min: 0
+            width: '4.2em', step: .01, min: 0
         }));
         this._toolbar.appendChild(tbbuilder.separater());
         this._toolbar.appendChild(tbbuilder.inputNumber({
             attr: { action: 'xscale' }, change: this._onEventSourcing,
             label: message.TOOLBAR.TEXT_XSCALE, suffix: '%',
-            width: '3.6em', min: 0
+            width: '4.2em', min: 0
         }));
         this._toolbar.appendChild(tbbuilder.inputNumber({
             attr: { action: 'letter-spacing' }, change: this._onEventSourcing,
             label: message.TOOLBAR.TEXT_LETTERSPACING,
-            width: '3em', step: .01
+            width: '4em', step: .01
         }));
         this._toolbar.appendChild(tbbuilder.inputNumber({
             attr: { action: 'line-height' }, change: this._onEventSourcing,
             label: message.TOOLBAR.TEXT_LINEHEIGHT, suffix: '%',
-            width: '3.6em', min: 0
+            width: '4.2em', min: 0
         }));
         this._toolbar.appendChild(tbbuilder.separater());
         this._toolbar.appendChild(tbbuilder.iconButton({

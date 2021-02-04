@@ -9,6 +9,8 @@ import fontInfo from './info/font';
 import message from './ui/message';
 import tbbuilder from './ui/toolbar';
 
+import U from './util/units';
+
 import '@fortawesome/fontawesome-free/js/all.js';
 
 class Designer {
@@ -46,8 +48,13 @@ class Designer {
     async run() {
         this._layout.title = 'DESIGNER';
 
-
         await accountInfo.loadData();
+        if (!accountInfo.isLogined) {
+            alert('로그인되지 않았습니다.');
+            return;
+        }
+        U.DPI = accountInfo.prefDPI;
+
         await codeInfo.loadData();
         await fontInfo.loadData();
 
