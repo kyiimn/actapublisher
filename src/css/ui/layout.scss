@@ -14,7 +14,8 @@ $layoutTopbarHoverColor: #ffffff;
 $layoutTopbarFormBorderColor: #595959;
 $layoutTopbarFormBackgroundColor: #2a2a2a;
 $layoutTopbarFormColor: #d7d7d7;
-
+$layoutToolbarButtonSelectBackgroundColor: #888;
+$layoutToolbarButtonSelectColor: #ffffff;
 
 html, body {
     background-color: $layoutBackgroundColor;
@@ -172,6 +173,12 @@ body {
 
                     &:hover {
                         color: $layoutToolbarHoverColor;
+                    }
+
+                    &.selected {
+                        background-color: $layoutToolbarButtonSelectBackgroundColor;
+                        color: $layoutToolbarButtonSelectColor;
+                        border-radius: 3px;
                     }
                 }
 

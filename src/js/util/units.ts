@@ -34,6 +34,20 @@ export default class Unit {
         return this._INCH;
     }
 
+    static convert(returnUnit: string, value: string | number | null | undefined): number {
+        let returnValue: number;
+        switch (returnUnit) {
+            case 'POINT': returnValue = this.pt(value); break;
+            case 'CM': returnValue = this.cm(value); break;
+            case 'MM': returnValue = this.mm(value); break;
+            case 'INCH': returnValue = this.in(value); break;
+            case 'GUB': returnValue = this.gu(value); break;
+            case 'BAE': returnValue = this.ba(value); break;
+            default: returnValue = this.px(value); break;
+        }
+        return returnValue;
+    }
+
     static px(value: string | number | null | undefined): number {
         if (value === undefined || value === null) return NaN;
         if (typeof(value) === 'number') {

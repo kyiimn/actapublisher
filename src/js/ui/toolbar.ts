@@ -1,11 +1,13 @@
+import { fromEvent, Observable } from "rxjs";
+import { filter, map } from "rxjs/operators";
+
 interface IActaUIToolbarButtonOptions {
     id?: string,
     icon?: string,
     icontype?: string,
     class?: string,
     attr?: { [key: string]: string },
-    click?: (ev: Event) => any,
-    name: string
+    label: string
 };
 
 interface IActaUIToolbarComboboxOptions {
@@ -15,8 +17,7 @@ interface IActaUIToolbarComboboxOptions {
     label?: string,
     items: { name: string, value: string }[],
     suffix?: string,
-    width?: number | string,
-    change: (ev: Event) => any
+    width?: number | string
 };
 
 interface IActaUIToolbarInputNumberOptions {
@@ -28,10 +29,73 @@ interface IActaUIToolbarInputNumberOptions {
     min?: number,
     max?: number,
     step?: number,
-    width?: number | string,
-    change: (ev: Event) => any
+    width?: number | string
 };
 
+export class ActaUIToolbarFormItem {
+    private _EVENT$: Observable<{ value: string, element: HTMLElement }>;
+    private _element: HTMLElement;
+    private _input: HTMLSelectElement | HTMLInputElement;
+
+    constructor(data: {
+        el: HTMLElement,
+        input: HTMLSelectElement | HTMLInputElement,
+        eventName: string
+    }) {
+        this._element = data.el;
+        this._input = data.input;
+        this._EVENT$ = fromEvent(data.input, data.eventName).pipe(
+            filter(e => e.target != null),
+            map(e => ({ value: this.value, element: this.el }))
+        );
+    }
+    set value(value: string) { this.input.value = value.toString(); }
+
+    get el() { return this._element; }
+    get input() { return this._input; }
+    get observable() { return this._EVENT$; }
+    get value() { return this.input.value || ''; }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaUIToolbarButtonItem {
+    private _EVENT$: Observable<HTMLButtonElement>;
+    private _element: HTMLElement;
+    private _button: HTMLButtonElement;
+
+    constructor(data: {
+        el: HTMLElement,
+        button: HTMLButtonElement
+    }) {
+        this._element = data.el;
+        this._button = data.button;
+        this._EVENT$ = fromEvent(data.button, 'click').pipe(map(e => this.button));
+    }
+    set value(value: boolean) {
+        if (value) {
+            this.button.classList.add('selected');
+        } else {
+            this.button.classList.remove('selected');
+        }
+    }
+
+    get el() { return this._element; }
+    get button() { return this._button; }
+    get observable() { return this._EVENT$; }
+    get value() { return this.button.classList.contains('selected'); }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaUIToolbarItem {
+    private _element: HTMLElement;
+
+    constructor(el: HTMLElement) {
+        this._element = el;
+    }
+    get el() { return this._element; }
+}
+
+// tslint:disable-next-line: max-classes-per-file
 class ActaUIToolbarBuilder {
     private static _sequence: number = 1000;
     private constructor() {}
@@ -48,11 +112,11 @@ class ActaUIToolbarBuilder {
         return icon;
     }
 
-    static appButton(opts: IActaUIToolbarButtonOptions): HTMLLIElement {
+    static appButton(opts: IActaUIToolbarButtonOptions): ActaUIToolbarButtonItem {
         const li = document.createElement('li');
         const button = document.createElement('button');
         const text = document.createElement('span');
-        text.innerText = opts.name;
+        text.innerText = opts.label;
 
         if (opts.icon) button.appendChild(
             this._makeIconElement(opts.icon, opts.icontype)
@@ -64,21 +128,21 @@ class ActaUIToolbarBuilder {
         li.setAttribute('id', opts.id);
 
         if (opts.class) li.className = opts.class;
-        if (opts.click) li.addEventListener('click', opts.click);
         if (opts.attr) {
             for (const key in opts.attr) {
                 if (!opts.attr.hasOwnProperty(key)) continue;
                 li.setAttribute(`data-${key}`, opts.attr[key]);
             }
         }
-        return li;
+        return new ActaUIToolbarButtonItem({ el: li, button });
     }
 
-    static separater(): HTMLHRElement {
-        return document.createElement('hr');
+    static separater(): ActaUIToolbarItem {
+        const hr = document.createElement('hr');
+        return new ActaUIToolbarItem(hr);
     }
 
-    static iconButton(opts: IActaUIToolbarButtonOptions): HTMLLIElement {
+    static iconButton(opts: IActaUIToolbarButtonOptions): ActaUIToolbarButtonItem {
         const li = document.createElement('li');
         const button = document.createElement('button');
 
@@ -89,20 +153,19 @@ class ActaUIToolbarBuilder {
 
         if (!opts.id) opts.id = `ui-iconbutton-${this._sequence++}`;
         li.setAttribute('id', opts.id);
-        li.setAttribute('title', opts.name);
+        li.setAttribute('title', opts.label);
 
         if (opts.class) li.className = opts.class;
-        if (opts.click) li.addEventListener('click', opts.click);
         if (opts.attr) {
             for (const key in opts.attr) {
                 if (!opts.attr.hasOwnProperty(key)) continue;
                 li.setAttribute(`data-${key}`, opts.attr[key]);
             }
         }
-        return li;
+        return new ActaUIToolbarButtonItem({ el: li, button });
     }
 
-    static combobox(opts: IActaUIToolbarComboboxOptions): HTMLLIElement {
+    static combobox(opts: IActaUIToolbarComboboxOptions): ActaUIToolbarFormItem {
         const li = document.createElement('li');
         const select = document.createElement('select');
 
@@ -131,7 +194,6 @@ class ActaUIToolbarBuilder {
             option.innerHTML = item.name || item.value;
             select.appendChild(option);
         }
-        select.addEventListener('change', opts.change);
         li.appendChild(select);
 
         if (opts.suffix) {
@@ -141,10 +203,10 @@ class ActaUIToolbarBuilder {
             label.innerHTML = opts.suffix;
             li.appendChild(label);
         }
-        return li;
+        return new ActaUIToolbarFormItem({ el: li, input: select, eventName: 'change' });
     }
 
-    static inputNumber(opts: IActaUIToolbarInputNumberOptions): HTMLLIElement {
+    static inputNumber(opts: IActaUIToolbarInputNumberOptions): ActaUIToolbarFormItem {
         const li = document.createElement('li');
         const input = document.createElement('input');
 
@@ -172,7 +234,6 @@ class ActaUIToolbarBuilder {
         if (opts.max !== undefined) input.setAttribute('max', opts.max.toString());
         if (opts.step !== undefined) input.setAttribute('step', opts.step.toString());
 
-        input.addEventListener('change', opts.change);
         li.appendChild(input);
 
         if (opts.suffix) {
@@ -182,8 +243,7 @@ class ActaUIToolbarBuilder {
             label.innerHTML = opts.suffix;
             li.appendChild(label);
         }
-        return li;
+        return new ActaUIToolbarFormItem({ el: li, input, eventName: 'change' });
     }
 }
-
 export default ActaUIToolbarBuilder;

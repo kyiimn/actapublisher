@@ -1,4 +1,5 @@
 import api from '../util/api';
+import U from '../util/units';
 
 const __DEFAULT_ACCOUNT_INFO_FRAME_UNIT_TYPE = 'MM';
 const __DEFAULT_ACCOUNT_INFO_TEXT_UNIT_TYPE = 'POINT';
@@ -70,11 +71,12 @@ class ActaAccountInfo {
         if (!result) return false;
         if (!result.data.logined) return false;
 
-        this._logined = true;
         this._loginMediaId = result.data.mediaId;
         this._loginDept = result.data.dept;
         this._loginUser = result.data.user;
+
         this._preference = result.data.preference;
+        U.DPI = this.prefDPI;
 
         result = await api.get('/info/account/dept');
         if (!result) return false;
@@ -87,6 +89,8 @@ class ActaAccountInfo {
         for (const user of result.data) {
             this._user.push(user);
         }
+        this._logined = true;
+
         return true;
     }
     get prefFrameUnitType() { return this._preference ? this._preference.frameUnitType : __DEFAULT_ACCOUNT_INFO_FRAME_UNIT_TYPE; }

@@ -1,4 +1,5 @@
 import ActaTextStyle from './textstyle';
+import { Subject } from 'rxjs';
 
 interface IActaTextStyleList {
     [styleName: string] : ActaTextStyle
@@ -16,17 +17,30 @@ class ActaTextStyleManager {
     }
 
     private _list: IActaTextStyleList;
-    private constructor() { this._list = {}; }
+    private _CHANGE$: Subject<IActaTextStyleList>;
+
+    private constructor() {
+        this._list = {};
+        this._CHANGE$ = new Subject();
+    }
 
     add(name: string, style: ActaTextStyle) {
         style.name = name;
         this._list[name] = style;
+        this._CHANGE$.next(this._list);
     }
-    remove(name: string) { delete this._list[name]; }
+    remove(name: string) {
+        delete this._list[name];
+        this._CHANGE$.next(this._list);
+    }
+    clear() {
+        this._list = {};
+        this._CHANGE$.next(this._list);
+    }
     get(name: string) { return this._list[name]; }
-    clear() { this._list = {}; }
 
     get list() { return this._list; }
     get length() { return Object.keys(this.list).length; }
+    get observable() { return this._CHANGE$; }
 };
 export default ActaTextStyleManager.in;

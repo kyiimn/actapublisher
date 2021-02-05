@@ -1,6 +1,8 @@
 import ActaFont from './font';
 import opentype from 'opentype.js';
 
+import { Subject } from 'rxjs';
+
 class ActaFontManager {
     private static _instance: ActaFontManager;
     static getInstance() {
@@ -13,9 +15,11 @@ class ActaFontManager {
     }
 
     private _list: ActaFont[];
+    private _CHANGE$: Subject<ActaFont[]>;
 
     private constructor() {
         this._list = [];
+        this._CHANGE$ = new Subject();
     }
 
     async add(url: string, fontAlias?: string): Promise<number> {
@@ -28,6 +32,7 @@ class ActaFontManager {
             opentype.load(url, (err, font) => {
                 if (font !== undefined && !err) {
                     resolve(this._list.push(new ActaFont(url, font, fontAlias)) - 1);
+                    this._CHANGE$.next(this._list);
                 } else {
                     resolve(-1);
                 }
@@ -57,10 +62,11 @@ class ActaFontManager {
             delete this._list[i];
         }
         this._list = [];
+        this._CHANGE$.next(this._list);
     }
 
     get list() { return this._list; }
     get length() { return this.list.length; }
+    get observable() { return this._CHANGE$; }
 };
-
 export default ActaFontManager.in;
