@@ -6,14 +6,30 @@ import accountInfo from '../info/account';
 import U from '../util/units';
 
 import { TextAlign } from '../pageobject/textstyle/textstyle';
+import { ParagraphVAlign} from '../pageobject/paragraph';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { textChangeRangeIsUnchanged } from 'typescript';
+
+interface IActaToolbarTextData {
+    textStyleName?: string,
+    fontName?: string,
+    fontSize?: number,
+    indent?: number,
+    xscale?: number,
+    letterSpacing?: number,
+    lineHeight?: number,
+    underline?: boolean,
+    strikeline?: boolean,
+    textAlign?: TextAlign,
+    textVAlign?: ParagraphVAlign
+};
 
 class ActaToolbarText {
     private _toolbar: HTMLUListElement;
     private _itemTextStyle;
-    private _itemTextFont;
-    private _itemTextSize;
+    private _itemFont;
+    private _itemFontSize;
     private _itemIndent;
     private _itemXScale;
     private _itemLetterSpacing;
@@ -29,7 +45,7 @@ class ActaToolbarText {
     private _itemVAlignBottom;
     private _itemVAlignJustify;
 
-    private _CHANGE$: Subject<ActaToolbarText>;
+    private _CHANGE$: Subject<IActaToolbarTextData>;
 
     constructor() {
         this._CHANGE$ = new Subject();
@@ -39,8 +55,8 @@ class ActaToolbarText {
         this._toolbar.classList.add('text');
 
         this._itemTextStyle = tbbuilder.combobox({ items: [], width: '10em' });
-        this._itemTextFont = tbbuilder.combobox({ items: [], width: '7em' });
-        this._itemTextSize = tbbuilder.inputNumber({ label: message.TOOLBAR.TEXT_SIZE, width: '4.2em', step: .01, min: 0 });
+        this._itemFont = tbbuilder.combobox({ items: [], width: '7em' });
+        this._itemFontSize = tbbuilder.inputNumber({ label: message.TOOLBAR.TEXT_SIZE, width: '4.2em', step: .01, min: 0 });
         this._itemIndent = tbbuilder.inputNumber({ label: message.TOOLBAR.TEXT_INDENT, width: '4.2em', step: .01, min: 0 });
         this._itemXScale = tbbuilder.inputNumber({ label: message.TOOLBAR.TEXT_XSCALE, suffix: '%', width: '4.2em', min: 0 });
         this._itemLetterSpacing = tbbuilder.inputNumber({ label: message.TOOLBAR.TEXT_LETTERSPACING, width: '4em', step: .01 });
@@ -60,8 +76,8 @@ class ActaToolbarText {
         this._itemVAlignTop.value = true;
 
         this._toolbar.appendChild(this._itemTextStyle.el);
-        this._toolbar.appendChild(this._itemTextFont.el);
-        this._toolbar.appendChild(this._itemTextSize.el);
+        this._toolbar.appendChild(this._itemFont.el);
+        this._toolbar.appendChild(this._itemFontSize.el);
         this._toolbar.appendChild(tbbuilder.separater().el);
         this._toolbar.appendChild(this._itemIndent.el);
         this._toolbar.appendChild(this._itemXScale.el);
@@ -82,15 +98,13 @@ class ActaToolbarText {
         this._toolbar.appendChild(this._itemVAlignJustify.el);
 
         fontmgr.observable.subscribe(list => {
-            const oldValue = this._itemTextFont.value;
-            this._itemTextFont.input.innerHTML = '';
+            this._itemFont.input.innerHTML = '';
             for (const font of list) {
                 const option = document.createElement('option');
                 option.value = font.name;
                 option.innerHTML = font.name;
-                this._itemTextFont.input.append(option);
+                this._itemFont.input.append(option);
             }
-            if (this._itemTextFont.value !== oldValue) this._changeValues();
         });
 
         textstylemgr.observable.subscribe(list => {
@@ -102,10 +116,15 @@ class ActaToolbarText {
                 option.innerHTML = name;
                 this._itemTextStyle.input.append(option);
             }
-            if (this._itemTextStyle.value !== oldValue) this._changeTextStyle(this._itemTextStyle.value);
+            if (this._itemTextStyle.value !== oldValue && oldValue === '') {
+                this._changeTextStyle(this._itemTextStyle.value);
+            }
         });
 
-        this._itemTextStyle.observable.subscribe(data => this._changeTextStyle(data.value));
+        this._itemTextStyle.observable.subscribe(data => {
+            this._changeTextStyle(data.value);
+            this._changeValues();
+        });
         this._itemUnderline.observable.subscribe(_ => {
             this._itemUnderline.value = !this._itemUnderline.value;
             this._changeValues();
@@ -115,7 +134,7 @@ class ActaToolbarText {
             this._changeValues();
         });
         merge(
-            this._itemTextFont.observable, this._itemTextSize.observable, this._itemIndent.observable, this._itemXScale.observable,
+            this._itemFont.observable, this._itemFontSize.observable, this._itemIndent.observable, this._itemXScale.observable,
             this._itemLetterSpacing.observable, this._itemLineHeight.observable
         ).subscribe(_ => {
             this._changeValues();
@@ -131,13 +150,13 @@ class ActaToolbarText {
             this._changeValues();
         });
         merge(
-            this._itemVAlignTop.observable.pipe(map(_ => TextAlign.JUSTIFY)), this._itemVAlignMiddle.observable.pipe(map(_ => TextAlign.LEFT)),
-            this._itemVAlignBottom.observable.pipe(map(_ => TextAlign.CENTER)), this._itemVAlignJustify.observable.pipe(map(_ => TextAlign.RIGHT))
+            this._itemVAlignTop.observable.pipe(map(_ => ParagraphVAlign.TOP)), this._itemVAlignMiddle.observable.pipe(map(_ => ParagraphVAlign.MIDDLE)),
+            this._itemVAlignBottom.observable.pipe(map(_ => ParagraphVAlign.BOTTOM)), this._itemVAlignJustify.observable.pipe(map(_ => ParagraphVAlign.JUSTIFY))
         ).subscribe(align => {
-            this._itemVAlignTop.value = align === TextAlign.JUSTIFY ? true : false;
-            this._itemVAlignMiddle.value = align === TextAlign.LEFT ? true : false;
-            this._itemVAlignBottom.value = align === TextAlign.CENTER ? true : false;
-            this._itemVAlignJustify.value = align === TextAlign.RIGHT ? true : false;
+            this._itemVAlignTop.value = align === ParagraphVAlign.TOP ? true : false;
+            this._itemVAlignMiddle.value = align === ParagraphVAlign.MIDDLE ? true : false;
+            this._itemVAlignBottom.value = align === ParagraphVAlign.BOTTOM ? true : false;
+            this._itemVAlignJustify.value = align === ParagraphVAlign.JUSTIFY ? true : false;
             this._changeValues();
         });
     }
@@ -148,8 +167,8 @@ class ActaToolbarText {
 
         const unit = accountInfo.prefTextUnitType;
 
-        this._itemTextFont.value = textstyle.fontName;
-        this._itemTextSize.value = U.convert(unit, textstyle.fontSize).toFixed(2);
+        this._itemFont.value = textstyle.fontName;
+        this._itemFontSize.value = U.convert(unit, textstyle.fontSize).toFixed(2);
         this._itemIndent.value = U.convert(unit, textstyle.indent).toFixed(2);
         this._itemXScale.value = (textstyle.xscale * 100).toString();
         this._itemLetterSpacing.value = U.convert(unit, textstyle.letterSpacing).toFixed(2);
@@ -160,11 +179,68 @@ class ActaToolbarText {
         this._itemAlignLeft.value = textstyle.textAlign === TextAlign.LEFT ? true : false;
         this._itemAlignCenter.value = textstyle.textAlign === TextAlign.CENTER ? true : false;
         this._itemAlignRight.value = textstyle.textAlign === TextAlign.RIGHT ? true : false;
-        this._changeValues();
     }
 
     private _changeValues() {
-        this._CHANGE$.next(this);
+        this._CHANGE$.next(this.data);
+    }
+
+    get observable() { return this._CHANGE$; }
+
+    set data(data: IActaToolbarTextData) {
+        const unit = accountInfo.prefTextUnitType;
+
+        if (data.textStyleName !== undefined) {
+            this._itemTextStyle.value = data.textStyleName;
+            this._changeTextStyle(data.textStyleName);
+        }
+        if (data.fontName !== undefined) this._itemFont.value = data.fontName;
+        if (data.fontSize !== undefined) this._itemFontSize.value = U.convert(unit, data.fontSize).toFixed(2);
+        if (data.indent !== undefined) this._itemIndent.value = U.convert(unit, data.indent).toFixed(2);
+        if (data.xscale !== undefined) this._itemXScale.value = (data.xscale * 100).toString();
+        if (data.letterSpacing !== undefined) this._itemLetterSpacing.value = U.convert(unit, data.letterSpacing).toFixed(2);
+        if (data.lineHeight !== undefined) this._itemLineHeight.value = (data.lineHeight * 100).toString();
+        if (data.underline !== undefined) this._itemUnderline.value = data.underline;
+        if (data.strikeline !== undefined) this._itemStrikeline.value = data.strikeline;
+        if (data.textAlign !== undefined) {
+            this._itemAlignJustify.value = data.textAlign === TextAlign.JUSTIFY ? true : false;
+            this._itemAlignLeft.value = data.textAlign === TextAlign.LEFT ? true : false;
+            this._itemAlignCenter.value = data.textAlign === TextAlign.CENTER ? true : false;
+            this._itemAlignRight.value = data.textAlign === TextAlign.RIGHT ? true : false;
+        }
+        if (data.textVAlign !== undefined) {
+            this._itemVAlignTop.value = data.textVAlign === ParagraphVAlign.TOP ? true : false;
+            this._itemVAlignMiddle.value = data.textVAlign === ParagraphVAlign.MIDDLE ? true : false;
+            this._itemVAlignBottom.value = data.textVAlign === ParagraphVAlign.BOTTOM ? true : false;
+            this._itemVAlignJustify.value = data.textVAlign === ParagraphVAlign.JUSTIFY ? true : false;
+        }
+    }
+
+    get data() {
+        const data: IActaToolbarTextData = {};
+        const unit = accountInfo.prefTextUnitType;
+
+        data.textStyleName = this._itemTextStyle.value;
+        data.fontName = this._itemFont.value;
+        data.fontSize = U.px(this._itemFontSize.value, unit);
+        data.indent = U.px(this._itemIndent.value, unit);
+        data.xscale = parseFloat(this._itemXScale.value) / 100;
+        data.letterSpacing = U.px(this._itemLetterSpacing.value, unit);
+        data.lineHeight = parseFloat(this._itemLineHeight.value) / 100;
+        data.underline = this._itemUnderline.value;
+        data.strikeline = this._itemStrikeline.value;
+
+        if (this._itemAlignJustify.value) data.textAlign = TextAlign.JUSTIFY;
+        if (this._itemAlignLeft.value) data.textAlign = TextAlign.LEFT;
+        if (this._itemAlignCenter.value) data.textAlign = TextAlign.CENTER;
+        if (this._itemAlignRight.value) data.textAlign = TextAlign.RIGHT;
+
+        if (this._itemVAlignTop.value) data.textVAlign = ParagraphVAlign.TOP;
+        if (this._itemVAlignMiddle.value) data.textVAlign = ParagraphVAlign.MIDDLE;
+        if (this._itemVAlignBottom.value) data.textVAlign = ParagraphVAlign.BOTTOM;
+        if (this._itemVAlignJustify.value) data.textVAlign = ParagraphVAlign.JUSTIFY;
+
+        return data;
     }
 
     get el() { return this._toolbar; }

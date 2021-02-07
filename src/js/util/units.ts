@@ -34,32 +34,46 @@ export default class Unit {
         return this._INCH;
     }
 
-    static convert(returnUnit: string, value: string | number | null | undefined): number {
+    static convert(returnUnit: string, value: string | number | null | undefined, inputUnit?: string): number {
         let returnValue: number;
         switch (returnUnit) {
-            case 'POINT': returnValue = this.pt(value); break;
-            case 'CM': returnValue = this.cm(value); break;
-            case 'MM': returnValue = this.mm(value); break;
-            case 'INCH': returnValue = this.in(value); break;
-            case 'GUB': returnValue = this.gu(value); break;
-            case 'BAE': returnValue = this.ba(value); break;
-            default: returnValue = this.px(value); break;
+            case 'POINT': returnValue = this.pt(value, inputUnit); break;
+            case 'CM': returnValue = this.cm(value, inputUnit); break;
+            case 'MM': returnValue = this.mm(value, inputUnit); break;
+            case 'INCH': returnValue = this.in(value, inputUnit); break;
+            case 'GUB': returnValue = this.gu(value, inputUnit); break;
+            case 'BAE': returnValue = this.ba(value, inputUnit); break;
+            default: returnValue = this.px(value, inputUnit); break;
         }
         return returnValue;
     }
 
-    static px(value: string | number | null | undefined): number {
+    static px(value: string | number | null | undefined, inputUnit?: string): number {
         if (value === undefined || value === null) return NaN;
         if (typeof(value) === 'number') {
             return value;
         } else {
             value = value.toLowerCase();
             if (value === '') return NaN;
-            if (parseFloat(value).toString() === value) {
+            if (parseFloat(value).toString() === value && !inputUnit) {
                 return parseFloat(value);
-            } else if (value.length > 2) {
-                const unit = value.substr(value.length - 2, 2);
-                const num = parseFloat(value.substr(0, value.length - 2));
+            } else if (value.length > 2 || inputUnit) {
+                let unit, num;
+                if (inputUnit) {
+                    switch (inputUnit) {
+                        case 'POINT': unit = 'pt'; break;
+                        case 'CM': unit = 'cm'; break;
+                        case 'MM': unit = 'mm'; break;
+                        case 'INCH': unit = 'in'; break;
+                        case 'GUB': unit = 'gu'; break;
+                        case 'BAE': unit = 'ba'; break;
+                        default: unit = 'px'; break;
+                    }
+                    num = parseFloat(value);
+                } else {
+                    unit = value.substr(value.length - 2, 2);
+                    num = parseFloat(value.substr(0, value.length - 2));
+                }
                 if (isNaN(num)) {
                     return NaN;
                 } else if (unit === 'mm') {
@@ -82,33 +96,33 @@ export default class Unit {
         }
     }
 
-    static pt(value: string | number | null | undefined): number {
-        const px = this.px(value);
+    static pt(value: string | number | null | undefined, inputUnit?: string): number {
+        const px = this.px(value, inputUnit);
         return isNaN(px) ? NaN : px / this._POINT;
     }
 
-    static in(value: string | number | null | undefined): number {
-        const px = this.px(value);
+    static in(value: string | number | null | undefined, inputUnit?: string): number {
+        const px = this.px(value, inputUnit);
         return isNaN(px) ? NaN : px / this._INCH;
     }
 
-    static cm(value: string | number | null | undefined): number {
-        const px = this.px(value);
+    static cm(value: string | number | null | undefined, inputUnit?: string): number {
+        const px = this.px(value, inputUnit);
         return isNaN(px) ? NaN : px / this._CM;
     }
 
-    static mm(value: string | number | null | undefined): number {
-        const px = this.px(value);
+    static mm(value: string | number | null | undefined, inputUnit?: string): number {
+        const px = this.px(value, inputUnit);
         return isNaN(px) ? NaN : px / this._MM;
     }
 
-    static gu(value: string | number | null | undefined): number {
-        const px = this.px(value);
+    static gu(value: string | number | null | undefined, inputUnit?: string): number {
+        const px = this.px(value, inputUnit);
         return isNaN(px) ? NaN : px / this._GUB;
     }
 
-    static ba(value: string | number | null | undefined): number {
-        const px = this.px(value);
+    static ba(value: string | number | null | undefined, inputUnit?: string): number {
+        const px = this.px(value, inputUnit);
         return isNaN(px) ? NaN : px / this._BAE;
     }
 }

@@ -1,6 +1,7 @@
 import ToolbarPODraw from './toolbar/pageobject-draw';
 import ToolbarPOControl from './toolbar/pageobject-control';
 import ToolbarText from './toolbar/text';
+import Editor from './editor/editor';
 import Layout from './ui/layout';
 
 import accountInfo from './info/account';
@@ -16,6 +17,8 @@ class Designer {
     private _toolbarPOCtrl: ToolbarPOControl;
     private _toolbarText: ToolbarText;
 
+    private _editor: Editor;
+
     private _layout: Layout;
 
     private _headerMenuItemNew;
@@ -28,6 +31,8 @@ class Designer {
         this._toolbarPODraw = new ToolbarPODraw();
         this._toolbarPOCtrl = new ToolbarPOControl();
         this._toolbarText = new ToolbarText();
+
+        this._editor = new Editor();
 
         this._headerMenuItemNew = tbbuilder.appButton({ label: message.MENUITEM.DESIGNER_NEW, icon: 'file', icontype: 'far' });
         this._headerMenuItemOpen = tbbuilder.appButton({ label: message.MENUITEM.DESIGNER_OPEN, icon: 'folder-open' });

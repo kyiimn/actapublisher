@@ -91,6 +91,10 @@ enum InputMethod {
     EN, KO
 };
 
+export enum ParagraphVAlign {
+    TOP = 0, MIDDLE, BOTTOM, JUSTIFY
+}
+
 class ActaParagraphOverflow extends IActaPreflightProfile {
     constructor(target: ActaParagraph, detailMessage: string) {
         super();
