@@ -9,7 +9,8 @@ import codeInfo from './info/code';
 import fontInfo from './info/font';
 import message from './ui/message';
 import tbbuilder from './ui/toolbar';
-import uialert from './ui/alert';
+import uialert from './ui/confirm';
+import waitbar from './ui/waitbar';
 
 import '@fortawesome/fontawesome-free/js/all.js';
 
@@ -42,7 +43,9 @@ class Designer {
         this._headerMenuItemLogout = tbbuilder.appButton({ label: message.MENUITEM.DESIGNER_LOGOUT, icon: 'walking' });
 
         this._headerMenuItemNew.observable.subscribe(el => {
-            uialert.show('asdasd');
+            uialert.show('asdasd').then(_ => {
+                alert('aaa');
+            })
         });
 
         this._layout = Layout.getInstance();
@@ -68,6 +71,7 @@ class Designer {
     async run() {
         this._layout.title = 'DESIGNER';
 
+        const w = waitbar.show();
         if (!await accountInfo.loadData()) {
             alert('로그인되지 않았습니다.');
             return;
@@ -77,6 +81,8 @@ class Designer {
 
         this._initMenubar();
         this._initToolbar();
+
+        w.close();
     }
 }
 (new Designer()).run();

@@ -1,9 +1,10 @@
-import Dialog from './dialog';
+import IDialog from './idialog';
 import message from './message';
+import { fromEvent } from 'rxjs';
 
 import '../../css/ui/alert.scss';
 
-export default class ActaUIAlert extends Dialog {
+export default class ActaUIAlert extends IDialog {
     private _text?: HTMLElement;
 
     constructor() {
@@ -15,12 +16,11 @@ export default class ActaUIAlert extends Dialog {
         bodyEl.appendChild(this._text);
     }
     protected _initButtons(buttonsEl: HTMLElement): void {
-        const okbtn = document.createElement('button');
-        okbtn.innerHTML = message.UI.CLOSE;
-        okbtn.onclick = e => {
-            this.close();
-        };
-        buttonsEl.append(okbtn);
+        const okButton = document.createElement('button');
+        okButton.innerHTML = message.UI.CLOSE;
+        fromEvent(okButton, 'click').subscribe(_ => { this.close(); });
+
+        buttonsEl.append(okButton);
     }
 
     set text(text: string) {

@@ -58,9 +58,11 @@ export default {
     },
     UI: {
         ALERT: '알림',
+        CONFIRM: '확인',
         CLOSE: '닫기',
         YES: '예',
         NO: '아니요',
+        OK: '확인',
         CANCEL: '취소',
     }
 };

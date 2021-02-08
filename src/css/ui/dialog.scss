@@ -18,7 +18,7 @@ dialog {
     top: 0px;
     padding: 0;
 
-    & > .titlebar {
+    & > .titlebar:not(:empty) {
         background-color: $dialogTitleBackgroundColor;
         color: $dialogTitleColor;
         font-size: .8em;
@@ -27,7 +27,7 @@ dialog {
         user-select: none;
     }
 
-    & > .buttons {
+    & > .buttons:not(:empty) {
         background-color: $dialogButtonsBackgroundColor;
         display: flex;
         flex-direction: row;
