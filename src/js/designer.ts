@@ -9,6 +9,7 @@ import codeInfo from './info/code';
 import fontInfo from './info/font';
 import message from './ui/message';
 import tbbuilder from './ui/toolbar';
+import uialert from './ui/alert';
 
 import '@fortawesome/fontawesome-free/js/all.js';
 
@@ -39,6 +40,10 @@ class Designer {
         this._headerMenuItemSave = tbbuilder.appButton({ label: message.MENUITEM.DESIGNER_SAVE, icon: 'save' });
         this._headerMenuItemSaveAs = tbbuilder.appButton({ label: message.MENUITEM.DESIGNER_SAVEAS, icon: 'save', icontype: 'far' });
         this._headerMenuItemLogout = tbbuilder.appButton({ label: message.MENUITEM.DESIGNER_LOGOUT, icon: 'walking' });
+
+        this._headerMenuItemNew.observable.subscribe(el => {
+            uialert.show('asdasd');
+        });
 
         this._layout = Layout.getInstance();
     }

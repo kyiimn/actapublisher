@@ -1,0 +1,11 @@
+dialog.alert {
+    min-height: 140px;
+    min-width: 240px;
+    
+    & > .body {
+        align-items: center;
+        display: flex;
+        flex: 1;
+        padding: 12px 16px;
+    }
+}

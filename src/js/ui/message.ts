@@ -56,4 +56,11 @@ export default {
         PAGEOBJECT_CONTROL_ROTATE_STEP: '회전간격',
         PAGEOBJECT_CONTROL_REMOVE: '프레임 삭제',
     },
+    UI: {
+        ALERT: '알림',
+        CLOSE: '닫기',
+        YES: '예',
+        NO: '아니요',
+        CANCEL: '취소',
+    }
 };

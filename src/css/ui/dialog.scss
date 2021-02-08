@@ -1,0 +1,52 @@
+$dialogBackgroundColor: #252526;
+$dialogColor: #979797;
+$dialogTitleBackgroundColor: #323232;
+$dialogTitleColor: #ffffff;
+$dialogButtonsBackgroundColor: #323232;
+$dialogButtonColor: #979797;
+$dialogButtonHoverColor: #ffffff;
+
+dialog {
+    background-color: $dialogBackgroundColor;
+    box-shadow: 0 0 8px 2px #000000;
+    border: 0;
+    color: $dialogColor;
+    display: flex;
+    flex-direction: column;
+    font-size: .9em;
+    left: 0px;
+    top: 0px;
+    padding: 0;
+
+    & > .titlebar {
+        background-color: $dialogTitleBackgroundColor;
+        color: $dialogTitleColor;
+        font-size: .8em;
+        font-weight: bold;
+        padding: 6px 12px;
+        user-select: none;
+    }
+
+    & > .buttons {
+        background-color: $dialogButtonsBackgroundColor;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        padding: 6px;
+
+        button {
+            border: 0;
+            background-color: transparent;
+            color: $dialogButtonColor;
+            cursor: pointer;
+            padding: 4px 16px;
+            outline: none;
+            transition: color .2s;
+            user-select: none;
+
+            &:hover {
+                color: $dialogButtonHoverColor;
+            }
+        }
+    }
+}
