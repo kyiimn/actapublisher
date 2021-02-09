@@ -1,0 +1,101 @@
+$formColor: #979797;
+$formHoverColor: #ffffff;
+$formItemBorderColor: #595959;
+$formItemBackgroundColor: #2a2a2a;
+$formItemColor: #d7d7d7;
+$formItemButtonSelectColor: #ffffff;
+$formItemButtonSelectBackgroundColor: #888;
+$formSeparaterColor: #535353;
+
+ul.ui-form {
+    border: none;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 12px 18px;
+
+    li {
+        align-items: center;
+        display: inline-flex;
+        margin: 0 4px;
+        white-space: nowrap;
+
+        label {
+            color: $formColor;
+            font-size: .9em;
+            user-select: none;
+            transition: color .2s;
+            white-space: nowrap;
+
+            &:first-child {
+                margin-right: 8px;
+                min-width: 80px;
+                text-align: right;
+
+                &:after {
+                    content: ': ';
+                }
+            }
+
+            &:last-child {
+                margin-left: 4px;
+            }
+        }
+
+        input[type="text"], input[type="number"], select {
+            border-color: $formItemBorderColor;
+            border-radius: 5px;
+            border-style: solid;
+            border-width: 1px;
+            background-color: $formItemBackgroundColor;
+            color: $formItemColor;
+            padding: 2px 4px;
+        }
+
+        input[type="number"] {
+            text-align: right;
+        }
+
+        button {
+            align-items: center;
+            background-color: transparent;
+            border: 0;
+            color: $formColor;
+            display: inline-flex;
+            font-size: 1em;
+            height: 1.5em;
+            justify-content: center;
+            outline: none;
+            padding: 0;
+            transition: color .2s;
+            user-select: none;
+            width: 1.5em;
+
+            &:hover {
+                color: $formHoverColor;
+            }
+
+            &.selected {
+                background-color: $formItemButtonSelectBackgroundColor;
+                color: $formItemButtonSelectColor;
+                border-radius: 3px;
+            }
+        }
+
+        &:hover {
+            label {
+                color: $formHoverColor;
+            }
+        }
+    }
+
+
+    hr {
+        border-color: $formSeparaterColor;
+        border-style: solid;
+        border-width: 1px 0 0 0;
+        margin: 8px 0px;
+    }
+}

@@ -5,6 +5,7 @@ import { fromEvent } from 'rxjs';
 import '../../css/ui/alert.scss';
 
 export default class ActaUIAlert extends IDialog {
+    private _okButton?: HTMLButtonElement;
     private _text?: HTMLElement;
 
     constructor() {
@@ -16,22 +17,28 @@ export default class ActaUIAlert extends IDialog {
         bodyEl.appendChild(this._text);
     }
     protected _initButtons(buttonsEl: HTMLElement): void {
-        const okButton = document.createElement('button');
-        okButton.innerHTML = message.UI.CLOSE;
-        fromEvent(okButton, 'click').subscribe(_ => { this.close(); });
+        this._okButton = document.createElement('button');
+        this._okButton.innerHTML = message.UI.CLOSE;
 
-        buttonsEl.append(okButton);
+        buttonsEl.append(this._okButton);
     }
 
     set text(text: string) {
         if (this._text) this._text.innerHTML = text;
     }
 
-    static show(text: string, title?: string) {
+    static async show(text: string, title?: string) {
         const dialog = new this();
         dialog.title = title ? title : message.UI.ALERT;
         dialog.text = text;
         dialog.modal = true;
         dialog.show();
+
+        return new Promise((r, _) => {
+            fromEvent(dialog._okButton as HTMLButtonElement, 'click').subscribe(_e => {
+                r(true);
+                dialog.close();
+            });
+        });
     }
 }

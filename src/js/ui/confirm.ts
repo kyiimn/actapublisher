@@ -22,9 +22,7 @@ export default class ActaUIConfirm extends IDialog {
     }
     protected _initButtons(buttonsEl: HTMLElement): void {
         this._okButton = document.createElement('button');
-
         this._cancelButton = document.createElement('button');
-        fromEvent(this._cancelButton, 'click').subscribe(_ => { this.close(); });
 
         buttonsEl.append(this._okButton);
         buttonsEl.append(this._cancelButton);
@@ -51,6 +49,10 @@ export default class ActaUIConfirm extends IDialog {
         return new Promise((r, _) => {
             fromEvent(dialog._okButton as HTMLButtonElement, 'click').subscribe(_e => {
                 r(true);
+                dialog.close();
+            });
+            fromEvent(dialog._cancelButton as HTMLButtonElement, 'click').subscribe(_e => {
+                r(false);
                 dialog.close();
             });
         });

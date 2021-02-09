@@ -1,7 +1,7 @@
 import colormgr from '../pageobject/color/colormgr';
 import api from '../util/api';
 
-interface IActaCodeClass {
+export interface IActaCodeClass {
     class: number,
     code: string,
     name: string,
@@ -11,14 +11,14 @@ interface IActaCodeClass {
     use: boolean
 };
 
-interface IActaCodeMedia {
+export interface IActaCodeMedia {
     id: number,
     name: string,
     type: string,
     typeName: string
 };
 
-interface IActaCodeLocal {
+export interface IActaCodeLocal {
     id: number,
     code: string,
     name: string,
@@ -28,7 +28,7 @@ interface IActaCodeLocal {
     use: boolean
 };
 
-interface IActaCodeEdition {
+export interface IActaCodeEdition {
     id: number,
     edition: number,
     name: string,
@@ -37,7 +37,7 @@ interface IActaCodeEdition {
     use: boolean
 };
 
-interface IActaCodeSection {
+export interface IActaCodeSection {
     id: number,
     code: string,
     name: string,
@@ -46,7 +46,7 @@ interface IActaCodeSection {
     use: boolean
 };
 
-interface IActaCodeAdverSize {
+export interface IActaCodeAdverSize {
     id: number,
     name: string,
     mediaId: number,
@@ -54,7 +54,7 @@ interface IActaCodeAdverSize {
     use: boolean
 };
 
-interface IActaCodeAdverLocal {
+export interface IActaCodeAdverLocal {
     id: number,
     code: string,
     name: string,
@@ -64,7 +64,7 @@ interface IActaCodeAdverLocal {
     use: boolean
 };
 
-interface IActaCodeColor {
+export interface IActaCodeColor {
     id: number,
     code: string,
     name: string,
@@ -76,12 +76,12 @@ interface IActaCodeColor {
     sort: number
 };
 
-interface IActaCodePrintType {
+export interface IActaCodePrintType {
     id: number,
     name: string
 };
 
-interface IActaCodeClosingTime {
+export interface IActaCodeClosingTime {
     id: number,
     closingDate?: string,
     closingTime: string,
@@ -92,7 +92,7 @@ interface IActaCodeClosingTime {
     editionName: string
 };
 
-interface IActaCodePageSize {
+export interface IActaCodePageSize {
     id: number,
     name: string,
     paperType: string,
@@ -212,5 +212,105 @@ class ActaCodeInfo {
     get printType() { return this._printType; }
     get closingTime() { return this._closingTime; }
     get pageSize() { return this._pageSize; }
+
+    findCodeClass(cls: number, code: string): IActaCodeClass | null {
+        let ret = null;
+        for (const cc of this.codeClass) {
+            if (cc.class !== cls || cc.code !== code) continue;
+            ret = cc;
+            break;
+        }
+        return ret;
+    }
+
+    findMedia(id: number): IActaCodeMedia | null {
+        let ret = null;
+        for (const code of this.media) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findLocal(id: number): IActaCodeLocal | null {
+        let ret = null;
+        for (const code of this.local) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findEdition(id: number): IActaCodeEdition | null {
+        let ret = null;
+        for (const code of this.edition) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findSection(id: number): IActaCodeSection | null {
+        let ret = null;
+        for (const code of this.section) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findAdverSize(id: number): IActaCodeAdverSize | null {
+        let ret = null;
+        for (const code of this.adverSize) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findAdverLocal(id: number): IActaCodeAdverLocal | null {
+        let ret = null;
+        for (const code of this.adverLocal) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findPrintType(id: number): IActaCodePrintType | null {
+        let ret = null;
+        for (const code of this.printType) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findClosingTime(id: number): IActaCodeClosingTime | null {
+        let ret = null;
+        for (const code of this.closingTime) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
+
+    findPageSize(id: number): IActaCodePageSize | null {
+        let ret = null;
+        for (const code of this.pageSize) {
+            if (code.id !== id) continue;
+            ret = code;
+            break;
+        }
+        return ret;
+    }
 }
 export default ActaCodeInfo.in;

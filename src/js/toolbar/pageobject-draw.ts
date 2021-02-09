@@ -1,5 +1,5 @@
 import message from '../ui/message';
-import tbbuilder from '../ui/toolbar';
+import formbuilder from '../ui/form';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -25,31 +25,31 @@ class ActaToolbarPageObjectDraw {
         this._toolbar.classList.add('toolbar');
         this._toolbar.classList.add('pageobject-draw');
 
-        this._itemSelect = tbbuilder.iconButton({ attr: { action: 'select' }, icon: 'mouse-pointer', label: message.TOOLBAR.PAGEOBJECT_DRAW_SELECT });
-        this._itemFrameEditMode = tbbuilder.iconButton({ attr: { action: 'frame-mode' }, icon: 'draw-polygon', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_DRAW_FRAME_EDITMODE });
-        this._itemFrameMoveMode = tbbuilder.iconButton({ attr: { action: 'move-mode' }, icon: 'hand-paper', icontype: 'far', label: message.TOOLBAR.PAGEOBJECT_DRAW_FRAME_MOVEMODE });
-        this._itemTextMode = tbbuilder.iconButton({ attr: { action: 'text-mode' }, icon: 'edit', label: message.TOOLBAR.PAGEOBJECT_DRAW_TEXTMODE });
-        this._itemZoom = tbbuilder.iconButton({ attr: { action: 'zoom' }, icon: 'search', label: message.TOOLBAR.PAGEOBJECT_DRAW_ZOOM });
-        this._itemEmptyFrame = tbbuilder.iconButton({ attr: { action: 'empty-frame' }, icon: 'square', icontype: 'far', label: message.TOOLBAR.PAGEOBJECT_DRAW_EMPTYFRAME });
-        this._itemTitleFrame = tbbuilder.iconButton({ attr: { action: 'title-frame' }, icon: 'tumblr-square', icontype: 'fab', label: message.TOOLBAR.PAGEOBJECT_DRAW_TITLEFRAME });
-        this._itemTextFrame = tbbuilder.iconButton({ attr: { action: 'text-frame' }, icon: 'pen-square', label: message.TOOLBAR.PAGEOBJECT_DRAW_TEXTFRAME });
-        this._itemImageFrame = tbbuilder.iconButton({ attr: { action: 'image-frame' }, icon: 'image', label: message.TOOLBAR.PAGEOBJECT_DRAW_IMAGEFRAME });
-        this._itemLine = tbbuilder.iconButton({ attr: { action: 'line' }, icon: 'slash', label: message.TOOLBAR.PAGEOBJECT_DRAW_LINE });
+        this._itemSelect = formbuilder.iconButton({ attr: { action: 'select' }, icon: 'mouse-pointer', label: message.TOOLBAR.PAGEOBJECT_DRAW_SELECT });
+        this._itemFrameEditMode = formbuilder.iconButton({ attr: { action: 'frame-mode' }, icon: 'draw-polygon', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_DRAW_FRAME_EDITMODE });
+        this._itemFrameMoveMode = formbuilder.iconButton({ attr: { action: 'move-mode' }, icon: 'hand-paper', icontype: 'far', label: message.TOOLBAR.PAGEOBJECT_DRAW_FRAME_MOVEMODE });
+        this._itemTextMode = formbuilder.iconButton({ attr: { action: 'text-mode' }, icon: 'edit', label: message.TOOLBAR.PAGEOBJECT_DRAW_TEXTMODE });
+        this._itemZoom = formbuilder.iconButton({ attr: { action: 'zoom' }, icon: 'search', label: message.TOOLBAR.PAGEOBJECT_DRAW_ZOOM });
+        this._itemEmptyFrame = formbuilder.iconButton({ attr: { action: 'empty-frame' }, icon: 'square', icontype: 'far', label: message.TOOLBAR.PAGEOBJECT_DRAW_EMPTYFRAME });
+        this._itemTitleFrame = formbuilder.iconButton({ attr: { action: 'title-frame' }, icon: 'tumblr-square', icontype: 'fab', label: message.TOOLBAR.PAGEOBJECT_DRAW_TITLEFRAME });
+        this._itemTextFrame = formbuilder.iconButton({ attr: { action: 'text-frame' }, icon: 'pen-square', label: message.TOOLBAR.PAGEOBJECT_DRAW_TEXTFRAME });
+        this._itemImageFrame = formbuilder.iconButton({ attr: { action: 'image-frame' }, icon: 'image', label: message.TOOLBAR.PAGEOBJECT_DRAW_IMAGEFRAME });
+        this._itemLine = formbuilder.iconButton({ attr: { action: 'line' }, icon: 'slash', label: message.TOOLBAR.PAGEOBJECT_DRAW_LINE });
 
         this._itemSelect.value = true;
 
         this._toolbar.appendChild(this._itemSelect.el);
-        this._toolbar.appendChild(tbbuilder.separater().el);
+        this._toolbar.appendChild(formbuilder.separater);
         this._toolbar.appendChild(this._itemFrameEditMode.el);
         this._toolbar.appendChild(this._itemFrameMoveMode.el);
         this._toolbar.appendChild(this._itemTextMode.el);
         this._toolbar.appendChild(this._itemZoom.el);
-        this._toolbar.appendChild(tbbuilder.separater().el);
+        this._toolbar.appendChild(formbuilder.separater);
         this._toolbar.appendChild(this._itemEmptyFrame.el);
         this._toolbar.appendChild(this._itemTitleFrame.el);
         this._toolbar.appendChild(this._itemTextFrame.el);
         this._toolbar.appendChild(this._itemImageFrame.el);
-        this._toolbar.appendChild(tbbuilder.separater().el);
+        this._toolbar.appendChild(formbuilder.separater);
         this._toolbar.appendChild(this._itemLine.el);
 
         merge(

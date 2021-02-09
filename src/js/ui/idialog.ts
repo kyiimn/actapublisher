@@ -1,3 +1,5 @@
+import { fromEvent } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import '../../css/ui/dialog.scss';
 
 export default abstract class IActaUIDialog {
@@ -28,14 +30,14 @@ export default abstract class IActaUIDialog {
         this._initBody(this._body);
         this._initButtons(this._buttons);
 
+        fromEvent<KeyboardEvent>(this._dialog, 'keydown').pipe(filter(e => e.keyCode === 27)).subscribe(e => {
+            e.stopPropagation();
+            e.preventDefault();
+        });
         document.body.appendChild(this._dialog);
     }
 
-    close() {
-        document.body.removeChild(this._dialog);
-    }
-
-    show() {
+    protected show() {
         if (this._modal) {
             if (typeof this._dialog.showModal === 'function') {
                 this._dialog.showModal();
@@ -47,7 +49,7 @@ export default abstract class IActaUIDialog {
         }
     }
 
-    hide() {
+    protected hide() {
         this._dialog.removeAttribute('open');
     }
 
@@ -61,4 +63,8 @@ export default abstract class IActaUIDialog {
 
     protected get title() { return this._titlebar.innerHTML; }
     protected set title(title: string) { this._titlebar.innerHTML = title; }
+
+    close() {
+        document.body.removeChild(this._dialog);
+    }
 }
