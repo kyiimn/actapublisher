@@ -16,6 +16,23 @@ ul.ui-form {
     margin: 0;
     padding: 12px 18px;
 
+    &.ui-fieldset {
+        border: 1px solid $formSeparaterColor;
+        margin: 10px;
+        position: relative;
+
+        legend {
+            background-color: inherit;
+            margin-top: -11px;
+            position: absolute;
+            top: 0;
+
+            &:empty {
+                display: none;
+            }
+        }
+    }
+
     li {
         align-items: center;
         display: inline-flex;

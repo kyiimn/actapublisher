@@ -46,14 +46,12 @@ export default class ActaNewTemplateDialog extends IDialog {
         } else {
             for (const code of codeinfo.pageSize) {
                 pageSizes.push({
-                    name: code.name,
-                    value: code.id.toString()
+                    name: code.name, value: code.id.toString()
                 });
             }
         }
-
         this._itemPageSize = formbuilder.combobox({ label: message.DESIGNER.PAGE_SIZE, items: pageSizes });
-        this._itemPageSize.observable.subscribe(data => this._showInfo(parseInt(data.value, 10)));
+        this._itemPageSize.observable.subscribe(_ => this._updateInfo());
 
         this._itemPaperType = formbuilder.label({ label: message.DESIGNER.PAPER_TYPE });
         this._itemLinespacingSize = formbuilder.label({ label: message.DESIGNER.LINESPACING_SIZE });
@@ -75,54 +73,39 @@ export default class ActaNewTemplateDialog extends IDialog {
         this._itemLineInfo = formbuilder.label({ label: message.DESIGNER.LINE_INFO });
 
         form.appendChild(this._itemPageSize.el);
-        form.appendChild(formbuilder.separater);
-        form.appendChild(this._itemPaperType.el);
-        form.appendChild(this._itemLinespacingSize.el);
-        form.appendChild(formbuilder.separater);
-        form.appendChild(this._itemColumnInsideMargin.el);
-        form.appendChild(this._itemColumnOutsideMargin.el);
-        form.appendChild(this._itemColumnCount.el);
-        form.appendChild(this._itemColumnSize.el);
-        form.appendChild(this._itemColumnSpacing.el);
-        form.appendChild(this._itemColumnOther.el);
-        form.appendChild(this._itemColumnTotalSize.el);
-        form.appendChild(this._itemColumnInfo.el);
-        form.appendChild(formbuilder.separater);
-        form.appendChild(this._itemLineTopMargin.el);
-        form.appendChild(this._itemLineBottomMargin.el);
-        form.appendChild(this._itemLineHeight.el);
-        form.appendChild(this._itemLineCount.el);
-        form.appendChild(this._itemLineSpacing.el);
-        form.appendChild(this._itemLineOther.el);
-        form.appendChild(this._itemLineTotalSize.el);
-        form.appendChild(this._itemLineInfo.el);
+
+        const fieldset = formbuilder.fieldset;
+        form.appendChild(fieldset);
+
+        fieldset.appendChild(this._itemPaperType.el);
+        fieldset.appendChild(this._itemLinespacingSize.el);
+        fieldset.appendChild(formbuilder.separater);
+        fieldset.appendChild(this._itemColumnInsideMargin.el);
+        fieldset.appendChild(this._itemColumnOutsideMargin.el);
+        fieldset.appendChild(this._itemColumnCount.el);
+        fieldset.appendChild(this._itemColumnSize.el);
+        fieldset.appendChild(this._itemColumnSpacing.el);
+        fieldset.appendChild(this._itemColumnOther.el);
+        fieldset.appendChild(this._itemColumnTotalSize.el);
+        fieldset.appendChild(formbuilder.separater);
+        fieldset.appendChild(this._itemColumnInfo.el);
+        fieldset.appendChild(formbuilder.separater);
+        fieldset.appendChild(this._itemLineTopMargin.el);
+        fieldset.appendChild(this._itemLineBottomMargin.el);
+        fieldset.appendChild(this._itemLineHeight.el);
+        fieldset.appendChild(this._itemLineCount.el);
+        fieldset.appendChild(this._itemLineSpacing.el);
+        fieldset.appendChild(this._itemLineOther.el);
+        fieldset.appendChild(this._itemLineTotalSize.el);
+        fieldset.appendChild(formbuilder.separater);
+        fieldset.appendChild(this._itemLineInfo.el);
+
+        this._updateInfo();
     }
-    /*
-    paper_type	용지구분	varchar	8	N	공통코드 (10)
-    paper_width	용지가로	float		N	mm
-    paper_height	용지세로	float		N	mm
-    paper_direction	가로세로구분	varchar	8	N	공통코드 (11)
-    linespacing_size	배수크기	float		N	
-    linespacing_unit	배수단위	varchar	8	N	공통코드 (12)
-    linespacing_ratio	배수비율	float		N	
-    col_margin_inside	단 안쪽여백	float		N	mm
-    col_margin_outside	단 바깥쪽여백	float		N	mm
-    col_count	단수	int		N	
-    col_size	단폭	float		N	mm
-    col_spacing	단간격	float		N	mm
-    col_other	보정값	float		N	mm
-    col_total_size	단전체크기	float		N	mm
-    line_margin_top	행 위쪽여백	float		N	mm
-    line_margin_bottom	행 아래쪽여백	float		N	mm
-    line_height	행높이	float		N	mm
-    line_count	행수	int		N	
-    line_spacing	행간격	float		N	mm
-    line_other	보정값	float		N	mm
-    line_total_size	행전체크기	float		N	mm
-    */
+
     protected _initButtons(buttonsEl: HTMLElement): void {
         this._openButton = document.createElement('button');
-        this._openButton.innerHTML = message.UI.OPEN;
+        this._openButton.innerHTML = message.DESIGNER.MAKE;
 
         this._closeButton = document.createElement('button');
         this._closeButton.innerHTML = message.UI.CLOSE;
@@ -131,8 +114,41 @@ export default class ActaNewTemplateDialog extends IDialog {
         buttonsEl.append(this._closeButton);
     }
 
-    private _showInfo(id: number) {
-        alert(id);
+    private get value() {
+        return parseInt(this._itemPageSize?.value || '0', 10);
+    }
+
+    private _updateInfo() {
+        const id = this.value;
+        if (!id) return;
+
+        const pageSize = codeinfo.findPageSize(id);
+        if (!pageSize) return;
+
+        if (this._itemPaperType) this._itemPaperType.value = `${pageSize.paperTypeName} (${pageSize.paperWidth} mm x ${pageSize.paperHeight} mm, ${pageSize.paperDirectionName})`;
+        if (this._itemLinespacingSize) this._itemLinespacingSize.value = `${pageSize.linespacingSize} ${pageSize.linespacingUnitName} x ${(pageSize.linespacingRatio / 100.0).toFixed(2)} = ${(pageSize.linespacingSize * (pageSize.linespacingRatio / 100.0)).toFixed(2)} ${pageSize.linespacingUnitName}`;
+
+        if (this._itemColumnInsideMargin) this._itemColumnInsideMargin.value = `${pageSize.columnMarginInside} mm`;
+        if (this._itemColumnOutsideMargin) this._itemColumnOutsideMargin.value = `${pageSize.columnMarginOutside} mm`;
+        if (this._itemColumnCount) this._itemColumnCount.value = `${pageSize.columnCount}`;
+        if (this._itemColumnSize) this._itemColumnSize.value = `${pageSize.columnSize} mm`;
+        if (this._itemColumnSpacing) this._itemColumnSpacing.value = `${pageSize.columnSpacing} mm`;
+        if (this._itemColumnOther) this._itemColumnOther.value = `${pageSize.columnOther} mm`;
+        if (this._itemColumnTotalSize) this._itemColumnTotalSize.value = `${pageSize.columnTotalSize} mm`;
+        if (this._itemColumnInfo) {
+            this._itemColumnInfo.value = `${pageSize.columnMarginInside} mm + ${pageSize.columnMarginOutside} mm + (${pageSize.columnSize} mm x ${pageSize.columnCount}) + (${pageSize.columnSpacing} mm x (${pageSize.columnCount} - 1)) + ${pageSize.columnOther} mm = ${pageSize.columnTotalSize} mm`;
+        }
+
+        if (this._itemLineTopMargin) this._itemLineTopMargin.value = `${pageSize.lineMarginTop} mm`;
+        if (this._itemLineBottomMargin) this._itemLineBottomMargin.value = `${pageSize.lineMarginBottom} mm`;
+        if (this._itemLineHeight) this._itemLineHeight.value = `${pageSize.lineHeight} mm`;
+        if (this._itemLineCount) this._itemLineCount.value = `${pageSize.lineCount}`;
+        if (this._itemLineSpacing) this._itemLineSpacing.value = `${pageSize.lineSpacing} mm`;
+        if (this._itemLineOther) this._itemLineOther.value = `${pageSize.lineOther} mm`;
+        if (this._itemLineTotalSize) this._itemLineTotalSize.value = `${pageSize.lineTotalSize} mm`;
+        if (this._itemLineInfo) {
+            this._itemLineInfo.value = `${pageSize.lineMarginTop} mm + ${pageSize.lineMarginBottom} mm + (${pageSize.lineHeight} mm x ${pageSize.lineCount}) + (${pageSize.lineSpacing} mm x (${pageSize.lineCount} - 1)) + ${pageSize.lineOther} mm = ${pageSize.lineTotalSize} mm`;
+        }
     }
 
     static async show() {

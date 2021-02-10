@@ -131,6 +131,18 @@ export class ActaUIForm {
 }
 
 // tslint:disable-next-line: max-classes-per-file
+export class ActaUIFieldset {
+    private _element: HTMLElement;
+
+    constructor() {
+        this._element = document.createElement('ul');
+        this._element.classList.add('ui-form');
+        this._element.classList.add('ui-fieldset');
+    }
+    get el() { return this._element; }
+}
+
+// tslint:disable-next-line: max-classes-per-file
 class ActaUIFormBuilder {
     private static _sequence: number = 1000;
     private constructor() {}
@@ -154,6 +166,10 @@ class ActaUIFormBuilder {
 
     static get form(): HTMLElement {
         return (new ActaUIForm()).el;
+    }
+
+    static get fieldset(): HTMLElement {
+        return (new ActaUIFieldset()).el;
     }
 
     static appButton(opts: IActaUIFormButtonOptions): ActaUIFormButtonItem {
