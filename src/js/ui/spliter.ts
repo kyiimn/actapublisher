@@ -24,7 +24,8 @@ export default class ActaUISpliter {
 
     private _initSize: number;
 
-    private _RESIZE$?: Observable<MouseEvent>;
+    private _beforePositionTop?: number;
+    private _beforePositionLeft?: number;
 
     private _id: string;
 
@@ -72,10 +73,34 @@ export default class ActaUISpliter {
         lock.classList.add('ui-spliter-lock');
         document.body.appendChild(lock);
 
-        fromEvent<MouseEvent>(lock, 'mousemove').pipe(filter(me => me.target !== null)).subscribe(e => {
+        this._beforePositionLeft = e.clientX;
+        this._beforePositionTop = e.clientY;
+
+        this._targetEl.classList.add('resize');
+
+        fromEvent<MouseEvent>(lock, 'mousemove').pipe(filter(me => me.target !== null)).subscribe(me => {
+            me.stopPropagation();
+
+            const disLeft = me.clientX - (this._beforePositionLeft || 0);
+            const disTop = me.clientY - (this._beforePositionTop || 0);
+            const style = window.getComputedStyle(this._targetEl);
+
+            this._beforePositionLeft = me.clientX;
+            this._beforePositionTop = me.clientY;
+
+            if (this._direction === 'col') {
+                this._targetEl.style.width = `${Math.max(this._minSize, Math.min(this._maxSize, parseFloat(style.width) + (disLeft * (this._targetIsFront ? 1 : -1))))}px`;
+            } else {
+                this._targetEl.style.height = `${Math.max(this._minSize, Math.min(this._maxSize, parseFloat(style.height) + (disTop * (this._targetIsFront ? 1 : -1))))}px`;
+            }
         });
-        fromEvent(lock, 'mouseout').pipe(filter(me => me.target !== null), map(me => me.target as HTMLElement));
-        fromEvent(lock, 'mouseup').pipe(filter(me => me.target !== null), map(me => me.target as HTMLElement));
+        merge(
+            fromEvent(lock, 'mouseout').pipe(filter(me => me.target !== null), map(me => me.target as HTMLElement)),
+            fromEvent(lock, 'mouseup').pipe(filter(me => me.target !== null), map(me => me.target as HTMLElement))
+        ).subscribe(el => {
+            this._targetEl.classList.remove('resize');
+            document.body.removeChild(el);
+        });
     }
 
     toggle(e: Event) {

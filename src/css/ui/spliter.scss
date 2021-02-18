@@ -49,7 +49,7 @@ $spliterCloseButtonSize: 10%;
     }
 }
 
-.ui-spliter-target {
+.ui-spliter-target:not(.resize) {
     transition: width .2s, height .2s;
 }
 
