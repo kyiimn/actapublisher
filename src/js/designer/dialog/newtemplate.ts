@@ -9,8 +9,8 @@ import { fromEvent } from 'rxjs';
 import '../../../css/designer/newtemplate.scss';
 
 export default class ActaNewTemplateDialog extends IDialog {
-    private _openButton?: HTMLElement;
-    private _closeButton?: HTMLElement;
+    private _okButton?: HTMLElement;
+    private _cancelButton?: HTMLElement;
 
     private _itemPageSize?: ActaUIFormInputItem;
     private _itemPaperType?: ActaUIFormLabelItem;
@@ -55,21 +55,21 @@ export default class ActaNewTemplateDialog extends IDialog {
 
         this._itemPaperType = formbuilder.label({ label: message.DESIGNER.PAPER_TYPE });
         this._itemLinespacingSize = formbuilder.label({ label: message.DESIGNER.LINESPACING_SIZE });
-        this._itemColumnInsideMargin = formbuilder.label({ label: message.DESIGNER.COLUMN_INSIDE_MARGIN });
-        this._itemColumnOutsideMargin = formbuilder.label({ label: message.DESIGNER.COLUMN_OUTSIDE_MARGIN });
-        this._itemColumnCount = formbuilder.label({ label: message.DESIGNER.COLUMN_COUNT });
-        this._itemColumnSize = formbuilder.label({ label: message.DESIGNER.COLUMN_SIZE });
-        this._itemColumnSpacing = formbuilder.label({ label: message.DESIGNER.COLUMN_SPACING });
-        this._itemColumnOther = formbuilder.label({ label: message.DESIGNER.COLUMN_OTHER });
-        this._itemColumnTotalSize = formbuilder.label({ label: message.DESIGNER.COLUMN_TOTAL_SIZE });
+        this._itemColumnInsideMargin = formbuilder.label({ label: message.DESIGNER.COLUMN_INSIDE_MARGIN, suffix: 'mm' });
+        this._itemColumnOutsideMargin = formbuilder.label({ label: message.DESIGNER.COLUMN_OUTSIDE_MARGIN, suffix: 'mm' });
+        this._itemColumnCount = formbuilder.label({ label: message.DESIGNER.COLUMN_COUNT, suffix: message.DESIGNER.COLUMN });
+        this._itemColumnSize = formbuilder.label({ label: message.DESIGNER.COLUMN_SIZE, suffix: 'mm' });
+        this._itemColumnSpacing = formbuilder.label({ label: message.DESIGNER.COLUMN_SPACING, suffix: 'mm' });
+        this._itemColumnOther = formbuilder.label({ label: message.DESIGNER.COLUMN_OTHER, suffix: 'mm' });
+        this._itemColumnTotalSize = formbuilder.label({ label: message.DESIGNER.COLUMN_TOTAL_SIZE, suffix: 'mm' });
         this._itemColumnInfo = formbuilder.label({ label: message.DESIGNER.COLUMN_INFO });
-        this._itemLineTopMargin = formbuilder.label({ label: message.DESIGNER.LINE_TOP_MARGIN });
-        this._itemLineBottomMargin = formbuilder.label({ label: message.DESIGNER.LINE_BOTTOM_MARGIN });
-        this._itemLineHeight = formbuilder.label({ label: message.DESIGNER.LINE_HEIGHT });
-        this._itemLineCount = formbuilder.label({ label: message.DESIGNER.LINE_COUNT });
-        this._itemLineSpacing = formbuilder.label({ label: message.DESIGNER.LINE_SPACING });
-        this._itemLineOther = formbuilder.label({ label: message.DESIGNER.LINE_OTHER });
-        this._itemLineTotalSize = formbuilder.label({ label: message.DESIGNER.LINE_TOTAL_SIZE });
+        this._itemLineTopMargin = formbuilder.label({ label: message.DESIGNER.LINE_TOP_MARGIN, suffix: 'mm' });
+        this._itemLineBottomMargin = formbuilder.label({ label: message.DESIGNER.LINE_BOTTOM_MARGIN, suffix: 'mm' });
+        this._itemLineHeight = formbuilder.label({ label: message.DESIGNER.LINE_HEIGHT, suffix: 'mm' });
+        this._itemLineCount = formbuilder.label({ label: message.DESIGNER.LINE_COUNT, suffix: message.DESIGNER.LINE });
+        this._itemLineSpacing = formbuilder.label({ label: message.DESIGNER.LINE_SPACING, suffix: 'mm' });
+        this._itemLineOther = formbuilder.label({ label: message.DESIGNER.LINE_OTHER, suffix: 'mm' });
+        this._itemLineTotalSize = formbuilder.label({ label: message.DESIGNER.LINE_TOTAL_SIZE, suffix: 'mm' });
         this._itemLineInfo = formbuilder.label({ label: message.DESIGNER.LINE_INFO });
 
         form.appendChild(this._itemPageSize.el);
@@ -104,14 +104,14 @@ export default class ActaNewTemplateDialog extends IDialog {
     }
 
     protected _initButtons(buttonsEl: HTMLElement): void {
-        this._openButton = document.createElement('button');
-        this._openButton.innerHTML = message.DESIGNER.MAKE;
+        this._okButton = document.createElement('button');
+        this._okButton.innerHTML = message.UI.OK;
 
-        this._closeButton = document.createElement('button');
-        this._closeButton.innerHTML = message.UI.CLOSE;
+        this._cancelButton = document.createElement('button');
+        this._cancelButton.innerHTML = message.UI.CANCEL;
 
-        buttonsEl.append(this._openButton);
-        buttonsEl.append(this._closeButton);
+        buttonsEl.append(this._okButton);
+        buttonsEl.append(this._cancelButton);
     }
 
     private get value() {
@@ -128,24 +128,24 @@ export default class ActaNewTemplateDialog extends IDialog {
         if (this._itemPaperType) this._itemPaperType.value = `${pageSize.paperTypeName} (${pageSize.paperWidth} mm x ${pageSize.paperHeight} mm, ${pageSize.paperDirectionName})`;
         if (this._itemLinespacingSize) this._itemLinespacingSize.value = `${pageSize.linespacingSize} ${pageSize.linespacingUnitName} x ${(pageSize.linespacingRatio / 100.0).toFixed(2)} = ${(pageSize.linespacingSize * (pageSize.linespacingRatio / 100.0)).toFixed(2)} ${pageSize.linespacingUnitName}`;
 
-        if (this._itemColumnInsideMargin) this._itemColumnInsideMargin.value = `${pageSize.columnMarginInside} mm`;
-        if (this._itemColumnOutsideMargin) this._itemColumnOutsideMargin.value = `${pageSize.columnMarginOutside} mm`;
+        if (this._itemColumnInsideMargin) this._itemColumnInsideMargin.value = `${pageSize.columnMarginInside}`;
+        if (this._itemColumnOutsideMargin) this._itemColumnOutsideMargin.value = `${pageSize.columnMarginOutside}`;
         if (this._itemColumnCount) this._itemColumnCount.value = `${pageSize.columnCount}`;
-        if (this._itemColumnSize) this._itemColumnSize.value = `${pageSize.columnSize} mm`;
-        if (this._itemColumnSpacing) this._itemColumnSpacing.value = `${pageSize.columnSpacing} mm`;
-        if (this._itemColumnOther) this._itemColumnOther.value = `${pageSize.columnOther} mm`;
-        if (this._itemColumnTotalSize) this._itemColumnTotalSize.value = `${pageSize.columnTotalSize} mm`;
+        if (this._itemColumnSize) this._itemColumnSize.value = `${pageSize.columnSize}`;
+        if (this._itemColumnSpacing) this._itemColumnSpacing.value = `${pageSize.columnSpacing}`;
+        if (this._itemColumnOther) this._itemColumnOther.value = `${pageSize.columnOther}`;
+        if (this._itemColumnTotalSize) this._itemColumnTotalSize.value = `${pageSize.columnTotalSize}`;
         if (this._itemColumnInfo) {
             this._itemColumnInfo.value = `${pageSize.columnMarginInside} mm + ${pageSize.columnMarginOutside} mm + (${pageSize.columnSize} mm x ${pageSize.columnCount}) + (${pageSize.columnSpacing} mm x (${pageSize.columnCount} - 1)) + ${pageSize.columnOther} mm = ${pageSize.columnTotalSize} mm`;
         }
 
-        if (this._itemLineTopMargin) this._itemLineTopMargin.value = `${pageSize.lineMarginTop} mm`;
-        if (this._itemLineBottomMargin) this._itemLineBottomMargin.value = `${pageSize.lineMarginBottom} mm`;
-        if (this._itemLineHeight) this._itemLineHeight.value = `${pageSize.lineHeight} mm`;
+        if (this._itemLineTopMargin) this._itemLineTopMargin.value = `${pageSize.lineMarginTop}`;
+        if (this._itemLineBottomMargin) this._itemLineBottomMargin.value = `${pageSize.lineMarginBottom}`;
+        if (this._itemLineHeight) this._itemLineHeight.value = `${pageSize.lineHeight}`;
         if (this._itemLineCount) this._itemLineCount.value = `${pageSize.lineCount}`;
-        if (this._itemLineSpacing) this._itemLineSpacing.value = `${pageSize.lineSpacing} mm`;
-        if (this._itemLineOther) this._itemLineOther.value = `${pageSize.lineOther} mm`;
-        if (this._itemLineTotalSize) this._itemLineTotalSize.value = `${pageSize.lineTotalSize} mm`;
+        if (this._itemLineSpacing) this._itemLineSpacing.value = `${pageSize.lineSpacing}`;
+        if (this._itemLineOther) this._itemLineOther.value = `${pageSize.lineOther}`;
+        if (this._itemLineTotalSize) this._itemLineTotalSize.value = `${pageSize.lineTotalSize}`;
         if (this._itemLineInfo) {
             this._itemLineInfo.value = `${pageSize.lineMarginTop} mm + ${pageSize.lineMarginBottom} mm + (${pageSize.lineHeight} mm x ${pageSize.lineCount}) + (${pageSize.lineSpacing} mm x (${pageSize.lineCount} - 1)) + ${pageSize.lineOther} mm = ${pageSize.lineTotalSize} mm`;
         }
@@ -158,11 +158,11 @@ export default class ActaNewTemplateDialog extends IDialog {
         dialog.show();
 
         return new Promise<number | boolean>((r, _) => {
-            fromEvent(dialog._openButton as HTMLButtonElement, 'click').subscribe(_e => {
+            fromEvent(dialog._okButton as HTMLButtonElement, 'click').subscribe(_e => {
                 r(parseInt(dialog._itemPageSize?.value || '0', 10));
                 dialog.close();
             });
-            fromEvent(dialog._closeButton as HTMLButtonElement, 'click').subscribe(_e => {
+            fromEvent(dialog._cancelButton as HTMLButtonElement, 'click').subscribe(_e => {
                 r(false);
                 dialog.close();
             });

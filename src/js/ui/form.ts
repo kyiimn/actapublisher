@@ -318,6 +318,8 @@ class ActaUIFormBuilder {
                 input.setAttribute(`data-${key}`, opts.attr[key]);
             }
         }
+        input.classList.add('input');
+
         li.appendChild(input);
 
         if (opts.suffix) {

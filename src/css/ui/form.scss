@@ -46,6 +46,10 @@ ul.ui-form {
             transition: color .2s;
             white-space: nowrap;
 
+            &.input {
+                color: $formItemColor;
+            }
+
             &:first-child {
                 margin-right: 8px;
                 min-width: 80px;
@@ -56,7 +60,8 @@ ul.ui-form {
                 }
             }
 
-            &:last-child {
+            &:last-child:not(.input) {
+                color: $formItemColor;
                 margin-left: 4px;
             }
         }

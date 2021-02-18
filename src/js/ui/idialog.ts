@@ -1,4 +1,4 @@
-import { fromEvent } from 'rxjs';
+import { fromEvent, Observable, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import '../../css/ui/dialog.scss';
 
@@ -8,6 +8,8 @@ export default abstract class IActaUIDialog {
     private _buttons: HTMLDivElement;
     private _dialog: HTMLDialogElement;
     private _modal: boolean;
+
+    private _ESCAPE$: Subscription;
 
     constructor(className?: string) {
         this._titlebar = document.createElement('div');
@@ -30,7 +32,8 @@ export default abstract class IActaUIDialog {
         this._initBody(this._body);
         this._initButtons(this._buttons);
 
-        fromEvent<KeyboardEvent>(this._dialog, 'keydown').pipe(filter(e => e.keyCode === 27)).subscribe(e => {
+        this._ESCAPE$ = fromEvent<KeyboardEvent>(document.body, 'keydown').pipe(filter(e => e.keyCode === 27)).subscribe(e => {
+            this.close();
             e.stopPropagation();
             e.preventDefault();
         });
@@ -65,6 +68,7 @@ export default abstract class IActaUIDialog {
     protected set title(title: string) { this._titlebar.innerHTML = title; }
 
     close() {
+        this._ESCAPE$.unsubscribe();
         document.body.removeChild(this._dialog);
     }
 }

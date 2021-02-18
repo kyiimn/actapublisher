@@ -24,7 +24,7 @@ class Designer {
     private _toolbarPOCtrl: ToolbarPOControl;
     private _toolbarText: ToolbarText;
 
-    private _editor: Editor;
+    private _editors: Editor[];
 
     private _layout: Layout;
 
@@ -39,7 +39,7 @@ class Designer {
         this._toolbarPOCtrl = new ToolbarPOControl();
         this._toolbarText = new ToolbarText();
 
-        this._editor = new Editor();
+        this._editors = [];
 
         this._headerMenuItemNew = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_NEW, icon: 'file', icontype: 'far' });
         this._headerMenuItemOpen = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_OPEN, icon: 'folder-open' });
