@@ -70,6 +70,10 @@ class Designer {
         this._layout.toolbar.appendChild(this._toolbarPODraw.el);
         this._layout.topbar.appendChild(this._toolbarPOCtrl.el);
         this._layout.topbar.appendChild(this._toolbarText.el);
+
+        this._toolbarPODraw.disable();
+        this._toolbarPOCtrl.disable();
+        this._toolbarText.disable();
     }
 
     private _initMenubar() {

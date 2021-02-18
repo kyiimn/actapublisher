@@ -16,10 +16,14 @@ class ActaToolbarPageObjectDraw {
     private _itemImageFrame;
     private _itemLine;
 
+    private _disabled: boolean;
+
     private _SELECT$: Subject<string>;
 
     constructor() {
         this._SELECT$ = new Subject();
+
+        this._disabled = false;
 
         this._toolbar = document.createElement('ul');
         this._toolbar.classList.add('toolbar');
@@ -94,6 +98,37 @@ class ActaToolbarPageObjectDraw {
         this._SELECT$.next(value);
     }
 
+    enable() {
+        this._itemSelect.disabled = false;
+        this._itemFrameEditMode.disabled = false;
+        this._itemFrameMoveMode.disabled = false;
+        this._itemTextMode.disabled = false;
+        this._itemZoom.disabled = false;
+        this._itemEmptyFrame.disabled = false;
+        this._itemTitleFrame.disabled = false;
+        this._itemTextFrame.disabled = false;
+        this._itemImageFrame.disabled = false;
+        this._itemLine.disabled = false;
+
+        this._disabled = false;
+    }
+
+    disable() {
+        this._itemSelect.disabled = true;
+        this._itemFrameEditMode.disabled = true;
+        this._itemFrameMoveMode.disabled = true;
+        this._itemTextMode.disabled = true;
+        this._itemZoom.disabled = true;
+        this._itemEmptyFrame.disabled = true;
+        this._itemTitleFrame.disabled = true;
+        this._itemTextFrame.disabled = true;
+        this._itemImageFrame.disabled = true;
+        this._itemLine.disabled = true;
+
+        this._disabled = true;
+    }
+
+    get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }
 export default ActaToolbarPageObjectDraw;

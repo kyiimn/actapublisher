@@ -1,3 +1,5 @@
+import spliter from '../ui/spliter';
+
 import '../../css/ui/layout.scss';
 
 class ActaUILayout {
@@ -8,7 +10,11 @@ class ActaUILayout {
     private _statusbar: HTMLElement;
     private _toolbar: HTMLElement;
     private _body: HTMLElement;
+    private _article: HTMLElement;
+    private _propertyPanelSpliter: HTMLElement;
     private _propertyPanel: HTMLElement;
+
+    private _spliter: spliter;
 
     private _title: string;
     private _status: string;
@@ -33,7 +39,9 @@ class ActaUILayout {
         this._statusbar = document.createElement('footer');
         this._topbar = document.createElement('nav');
         this._body = document.createElement('section');
+        this._article = document.createElement('article');
         this._toolbar = document.createElement('div');
+        this._propertyPanelSpliter = document.createElement('div');
         this._propertyPanel = document.createElement('div');
 
         this._title = '';
@@ -45,6 +53,7 @@ class ActaUILayout {
         this._statusbar.classList.add('ui-layout-statusbar');
 
         this._toolbar.classList.add('ui-layout-toolbar');
+        this._article.classList.add('ui-layout-article');
         this._propertyPanel.classList.add('ui-layout-property');
 
         document.body.appendChild(this._header);
@@ -53,8 +62,15 @@ class ActaUILayout {
         document.body.appendChild(this._statusbar);
 
         this._body.appendChild(this._toolbar);
+        this._body.appendChild(this._article);
+        this._body.appendChild(this._propertyPanelSpliter);
         this._body.appendChild(this._propertyPanel);
 
+        this._spliter = spliter.create({
+            spliterEl: this._propertyPanelSpliter,
+            targetEl: this._propertyPanel,
+            direction: 'col'
+        });
         this._initHeader();
         this._initStatusbar();
     }
@@ -62,6 +78,7 @@ class ActaUILayout {
     get topbar() { return this._topbar; }
     get body() { return this._body; }
     get toolbar() { return this._toolbar; }
+    get article() { return this._article; }
     get propertyPanel() { return this._propertyPanel; }
 
     get title() { return this._title; }

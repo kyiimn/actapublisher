@@ -5,16 +5,25 @@ $layoutElementStatusBackgroudColor: #007acc;
 $layoutElementStatusColor: #ffffff;
 $layoutHeaderColor: #ffffff;
 $layoutHeaderFunctionColor: #979797;
+$layoutHeaderFunctionDisableColor: #505050;
 $layoutHeaderFunctionHoverColor: #ffffff;
 $layoutSeparaterColor: #535353;
 $layoutToolbarColor: #979797;
+$layoutToolbarDisableColor: #505050;
+$layoutToolbarHoverColor: #ffffff;
 $layoutTopbarColor: #979797;
+$layoutTopbarDisableColor: #505050;
 $layoutTopbarHoverColor: #ffffff;
 $layoutTopbarFormBorderColor: #595959;
 $layoutTopbarFormBackgroundColor: #2a2a2a;
 $layoutTopbarFormColor: #d7d7d7;
+$layoutTopbarFormDisableBackgroundColor: #404040;
+$layoutTopbarFormDisableColor: #909090;
 $layoutTopbarButtonSelectColor: #ffffff;
 $layoutTopbarButtonSelectBackgroundColor: #888;
+$layoutTopbarButtonDisableColor: #505050;
+$layoutTopbarButtonDisableSelectBackgroundColor: #555;
+$layoutTopbarButtonDisableSelectColor: #999;
 
 html, body {
     background-color: $layoutBackgroundColor;
@@ -75,14 +84,19 @@ body {
                     transition: color .2s;
                     user-select: none;
 
+                    &:disabled {
+                        color: $layoutHeaderFunctionDisableColor;
+                    }
+
+                    &:hover:not(:disabled) {
+                        color: $layoutHeaderFunctionHoverColor;
+                    }
+
                     span:not(:first-child) {
                         margin-left: .4em;
                     }
                 }
 
-                button:hover {
-                    color: $layoutHeaderFunctionHoverColor;
-                }
             }
 
             hr {
@@ -118,7 +132,7 @@ body {
             li {
                 align-items: center;
                 display: inline-flex;
-                margin: 0 4px;
+                margin: 0 3px;
                 white-space: nowrap;
 
                 label {
@@ -137,7 +151,7 @@ body {
                     }
 
                     &:last-child {
-                        margin-left: 4px;
+                        margin-left: 2px;
                     }
                 }
 
@@ -149,6 +163,11 @@ body {
                     background-color: $layoutTopbarFormBackgroundColor;
                     color: $layoutTopbarFormColor;
                     padding: 2px 4px;
+
+                    &:disabled {
+                        background-color: $layoutTopbarFormDisableBackgroundColor;
+                        color: $layoutTopbarFormDisableColor;
+                    }
                 }
 
                 input[type="number"] {
@@ -159,35 +178,50 @@ body {
                     align-items: center;
                     background-color: transparent;
                     border: 0;
+                    border-radius: 3px;
                     color: $layoutTopbarColor;
                     display: inline-flex;
                     font-size: 1em;
-                    height: 1.5em;
+                    height: calc(1.5em - 4px);
+                    margin: 2px;
                     justify-content: center;
                     outline: none;
                     padding: 0;
                     transition: color .2s;
                     user-select: none;
-                    width: 1.5em;
+                    width: calc(1.5em - 4px);
 
-                    &:hover {
+                    &:disabled {
+                        color: $layoutTopbarButtonDisableColor;
+                    }
+
+                    &:hover:not(:disabled) {
                         color: $layoutTopbarHoverColor;
                     }
 
                     &.selected {
                         background-color: $layoutTopbarButtonSelectBackgroundColor;
                         color: $layoutTopbarButtonSelectColor;
-                        border-radius: 3px;
+                    }
+
+                    &:disabled.selected {
+                        background-color: $layoutTopbarButtonDisableSelectBackgroundColor;
+                        color: $layoutTopbarButtonDisableSelectColor;
                     }
                 }
 
-                &:hover {
+                &:hover:not(.disabled) {
                     label {
                         color: $layoutTopbarHoverColor;
                     }
                 }
-            }
 
+                &.disabled {
+                    label {
+                        color: $layoutTopbarDisableColor;
+                    }
+                }
+            }
 
             hr {
                 border-color: $layoutSeparaterColor;
@@ -199,13 +233,15 @@ body {
     }
 
     & > .ui-layout-body {
+        display: flex;
         flex: 1;
-        position: relative;
+
+        & > * {
+            height: 100%;
+        }
 
         & > .ui-layout-toolbar {
             background-color: $layoutElementBackgroundColor;
-            float: left;
-            height: 100%;
 
             ul {
                 list-style: none;
@@ -231,8 +267,12 @@ body {
                         user-select: none;
                         width: 100%;
 
-                        &:hover {
-                            color: $layoutTopbarHoverColor;
+                        &:disabled {
+                            color: $layoutToolbarDisableColor;
+                        }
+
+                        &:hover:not(:disabled) {
+                            color: $layoutToolbarHoverColor;
                         }
                     }
                 }
@@ -250,10 +290,13 @@ body {
             display: none;
         }
 
+        & > .ui-layout-article {
+            background-color: $layoutBackgroundColor;
+            flex: 1;
+        }
+
         & > .ui-layout-property {
             background-color: $layoutElementBackgroundColor;
-            float: right;
-            height: 100%;
             width: 400px;
         }
     }

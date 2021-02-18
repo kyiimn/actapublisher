@@ -31,10 +31,14 @@ class ActaToolbarPageObjectControl {
     private _itemRotateStep;
     private _itemRemove;
 
+    private _disabled: boolean;
+
     private _CLICK$: Subject<{ action: string, step?: number }>;
 
     constructor() {
         this._CLICK$ = new Subject();
+
+        this._disabled = false;
 
         this._toolbar = document.createElement('ul');
         this._toolbar.classList.add('toolbar');
@@ -136,6 +140,61 @@ class ActaToolbarPageObjectControl {
         });
     }
 
+    enable() {
+        this._itemFlipToBack.disabled = false;
+        this._itemFlipToFront.disabled = false;
+        this._itemAlignCenter.disabled = false;
+        this._itemAlignLeft.disabled = false;
+        this._itemAlignRight.disabled = false;
+        this._itemVAlignMiddle.disabled = false;
+        this._itemVAlignTop.disabled = false;
+        this._itemVAlignBottom.disabled = false;
+        this._itemMoveLeft.disabled = false;
+        this._itemMoveUp.disabled = false;
+        this._itemMoveDown.disabled = false;
+        this._itemMoveRight.disabled = false;
+        this._itemMoveStep1.disabled = false;
+        this._itemMoveLeftUp.disabled = false;
+        this._itemMoveRightUp.disabled = false;
+        this._itemMoveLeftDown.disabled = false;
+        this._itemMoveRightDown.disabled = false;
+        this._itemMoveStep2.disabled = false;
+        this._itemRotateLeft.disabled = false;
+        this._itemRotateRight.disabled = false;
+        this._itemRotateStep.disabled = false;
+        this._itemRemove.disabled = false;
+
+        this._disabled = false;
+    }
+
+    disable() {
+        this._itemFlipToBack.disabled = true;
+        this._itemFlipToFront.disabled = true;
+        this._itemAlignCenter.disabled = true;
+        this._itemAlignLeft.disabled = true;
+        this._itemAlignRight.disabled = true;
+        this._itemVAlignMiddle.disabled = true;
+        this._itemVAlignTop.disabled = true;
+        this._itemVAlignBottom.disabled = true;
+        this._itemMoveLeft.disabled = true;
+        this._itemMoveUp.disabled = true;
+        this._itemMoveDown.disabled = true;
+        this._itemMoveRight.disabled = true;
+        this._itemMoveStep1.disabled = true;
+        this._itemMoveLeftUp.disabled = true;
+        this._itemMoveRightUp.disabled = true;
+        this._itemMoveLeftDown.disabled = true;
+        this._itemMoveRightDown.disabled = true;
+        this._itemMoveStep2.disabled = true;
+        this._itemRotateLeft.disabled = true;
+        this._itemRotateRight.disabled = true;
+        this._itemRotateStep.disabled = true;
+        this._itemRemove.disabled = true;
+
+        this._disabled = true;
+    }
+
+    get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }
 export default ActaToolbarPageObjectControl;
