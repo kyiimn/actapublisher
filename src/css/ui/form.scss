@@ -1,10 +1,17 @@
 $formColor: #979797;
+$formDisableColor: #505050;
 $formHoverColor: #ffffff;
 $formItemBorderColor: #595959;
 $formItemBackgroundColor: #2a2a2a;
 $formItemColor: #d7d7d7;
+$formItemDisableBackgroundColor: #404040;
+$formItemDisableColor: #909090;
 $formItemButtonSelectColor: #ffffff;
 $formItemButtonSelectBackgroundColor: #888;
+$formItemButtonDisableColor: #505050;
+$formItemButtonDisableSelectBackgroundColor: #555;
+$formItemButtonDisableSelectColor: #999;
+
 $formSeparaterColor: #535353;
 
 ul.ui-form {
@@ -69,6 +76,11 @@ ul.ui-form {
             background-color: $formItemBackgroundColor;
             color: $formItemColor;
             padding: 2px 4px;
+
+            &:disabled {
+                background-color: $formItemDisableBackgroundColor;
+                color: $formItemDisableColor;
+            }
         }
 
         input[type="number"] {
@@ -79,6 +91,7 @@ ul.ui-form {
             align-items: center;
             background-color: transparent;
             border: 0;
+            border-radius: 3px;
             color: $formColor;
             display: inline-flex;
             font-size: 1em;
@@ -90,20 +103,34 @@ ul.ui-form {
             user-select: none;
             width: 1.5em;
 
-            &:hover {
+            &:disabled {
+                color: $formItemButtonDisableColor;
+            }
+
+            &:hover:not(:disabled) {
                 color: $formHoverColor;
             }
 
             &.selected {
                 background-color: $formItemButtonSelectBackgroundColor;
                 color: $formItemButtonSelectColor;
-                border-radius: 3px;
+            }
+
+            &:disable.selected {
+                background-color: $formItemButtonDisableSelectBackgroundColor;
+                color: $formItemButtonDisableSelectColor;
             }
         }
 
-        &:hover {
+        &:hover:not(.disabled) {
             label {
                 color: $formHoverColor;
+            }
+        }
+
+        &.disabled {
+            label {
+                color: $formDisableColor;
             }
         }
     }

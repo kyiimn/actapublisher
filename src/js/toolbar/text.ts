@@ -45,10 +45,14 @@ class ActaToolbarText {
     private _itemVAlignBottom;
     private _itemVAlignJustify;
 
+    private _disabled: boolean;
+
     private _CHANGE$: Subject<IActaToolbarTextData>;
 
     constructor() {
         this._CHANGE$ = new Subject();
+
+        this._disabled = false;
 
         this._toolbar = document.createElement('ul');
         this._toolbar.classList.add('toolbar');
@@ -185,6 +189,50 @@ class ActaToolbarText {
         this._CHANGE$.next(this.data);
     }
 
+    enable() {
+        this._itemTextStyle.disabled = false;
+        this._itemFont.disabled = false;
+        this._itemFontSize.disabled = false;
+        this._itemIndent.disabled = false;
+        this._itemXScale.disabled = false;
+        this._itemLetterSpacing.disabled = false;
+        this._itemLineHeight.disabled = false;
+        this._itemUnderline.disabled = false;
+        this._itemStrikeline.disabled = false;
+        this._itemAlignLeft.disabled = false;
+        this._itemAlignCenter.disabled = false;
+        this._itemAlignRight.disabled = false;
+        this._itemAlignJustify.disabled = false;
+        this._itemVAlignTop.disabled = false;
+        this._itemVAlignMiddle.disabled = false;
+        this._itemVAlignBottom.disabled = false;
+        this._itemVAlignJustify.disabled = false;
+
+        this._disabled = false;
+    }
+
+    disable() {
+        this._itemTextStyle.disabled = true;
+        this._itemFont.disabled = true;
+        this._itemFontSize.disabled = true;
+        this._itemIndent.disabled = true;
+        this._itemXScale.disabled = true;
+        this._itemLetterSpacing.disabled = true;
+        this._itemLineHeight.disabled = true;
+        this._itemUnderline.disabled = true;
+        this._itemStrikeline.disabled = true;
+        this._itemAlignLeft.disabled = true;
+        this._itemAlignCenter.disabled = true;
+        this._itemAlignRight.disabled = true;
+        this._itemAlignJustify.disabled = true;
+        this._itemVAlignTop.disabled = true;
+        this._itemVAlignMiddle.disabled = true;
+        this._itemVAlignBottom.disabled = true;
+        this._itemVAlignJustify.disabled = true;
+
+        this._disabled = true;
+    }
+
     get observable() { return this._CHANGE$; }
 
     set data(data: IActaToolbarTextData) {
@@ -243,6 +291,7 @@ class ActaToolbarText {
         return data;
     }
 
+    get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }
 export default ActaToolbarText;

@@ -56,6 +56,7 @@ export class ActaUIFormItem {
 export class ActaUIFormInputItem extends ActaUIFormItem {
     private _EVENT$: Observable<{ value: string, element: HTMLElement }>;
     private _input: HTMLSelectElement | HTMLInputElement;
+    private _disabled: boolean;
 
     constructor(data: {
         el: HTMLElement,
@@ -65,15 +66,67 @@ export class ActaUIFormInputItem extends ActaUIFormItem {
         super(data.el);
         this._input = data.input;
         this._EVENT$ = fromEvent(data.input, data.eventName).pipe(
-            filter(e => e.target != null),
-            map(e => ({ value: this.value, element: this.el }))
+            filter(e => e.target != null && !this.disabled),
+            map(_ => ({ value: this.value, element: this.el }))
         );
+        this._disabled = false;
     }
     set value(value: string) { this.input.value = value.toString(); }
+    set disabled(value: boolean) {
+        this._disabled = value;
+        this._input.disabled = value;
+        if (value) {
+            this.el.classList.add('disabled');
+        } else {
+            this.el.classList.remove('disabled');
+        }
+    }
 
     get input() { return this._input; }
     get observable() { return this._EVENT$; }
     get value() { return this.input.value || ''; }
+    get disabled() { return this._disabled; }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class ActaUIFormButtonItem extends ActaUIFormItem {
+    private _EVENT$: Observable<HTMLButtonElement>;
+    private _button: HTMLButtonElement;
+    private _disabled: boolean;
+
+    constructor(data: {
+        el: HTMLElement,
+        button: HTMLButtonElement
+    }) {
+        super(data.el);
+        this._button = data.button;
+        this._EVENT$ = fromEvent(data.button, 'click').pipe(
+            filter(_ => !this.disabled),
+            map(_ => this.button)
+        );
+        this._disabled = false;
+    }
+    set value(value: boolean) {
+        if (value) {
+            this.button.classList.add('selected');
+        } else {
+            this.button.classList.remove('selected');
+        }
+    }
+    set disabled(value: boolean) {
+        this._disabled = value;
+        this._button.disabled = value;
+        if (value) {
+            this.el.classList.add('disabled');
+        } else {
+            this.el.classList.remove('disabled');
+        }
+    }
+
+    get button() { return this._button; }
+    get observable() { return this._EVENT$; }
+    get value() { return this.button.classList.contains('selected'); }
+    get disabled() { return this._disabled; }
 }
 
 // tslint:disable-next-line: max-classes-per-file
@@ -91,32 +144,6 @@ export class ActaUIFormLabelItem extends ActaUIFormItem {
 
     get label() { return this._label; }
     get value() { return this.label.innerHTML || ''; }
-}
-
-// tslint:disable-next-line: max-classes-per-file
-export class ActaUIFormButtonItem extends ActaUIFormItem {
-    private _EVENT$: Observable<HTMLButtonElement>;
-    private _button: HTMLButtonElement;
-
-    constructor(data: {
-        el: HTMLElement,
-        button: HTMLButtonElement
-    }) {
-        super(data.el);
-        this._button = data.button;
-        this._EVENT$ = fromEvent(data.button, 'click').pipe(map(e => this.button));
-    }
-    set value(value: boolean) {
-        if (value) {
-            this.button.classList.add('selected');
-        } else {
-            this.button.classList.remove('selected');
-        }
-    }
-
-    get button() { return this._button; }
-    get observable() { return this._EVENT$; }
-    get value() { return this.button.classList.contains('selected'); }
 }
 
 // tslint:disable-next-line: max-classes-per-file
