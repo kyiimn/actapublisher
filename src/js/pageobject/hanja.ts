@@ -4,6 +4,8 @@ import getHanjaDic from './hanja-data';
 import { Subject, fromEvent } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
+import "../../css/pageobject/hanja.scss";
+
 export default function selectHanja(textChar: ActaTextChar, x: number, y: number) {
 	const KEY_ENTER = 13;
 	const KEY_UP = 38;

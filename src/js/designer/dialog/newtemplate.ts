@@ -2,7 +2,7 @@ import IDialog from '../../ui/idialog';
 import message from '../../ui/message';
 import uialert from '../../ui/alert';
 
-import codeinfo from '../../info/code';
+import codeInfo from '../../info/code';
 import formbuilder, { ActaUIFormInputItem, ActaUIFormLabelItem } from '../../ui/form';
 import { fromEvent } from 'rxjs';
 
@@ -41,10 +41,10 @@ export default class ActaNewTemplateDialog extends IDialog {
         bodyEl.appendChild(form);
 
         const pageSizes = [];
-        if (codeinfo.pageSize.length < 1) {
+        if (codeInfo.pageSize.length < 1) {
             uialert.show(message.DESIGNER.HASNOT_DEFINED_PAGE_SIZE);
         } else {
-            for (const code of codeinfo.pageSize) {
+            for (const code of codeInfo.pageSize) {
                 pageSizes.push({
                     name: code.name, value: code.id.toString()
                 });
@@ -122,7 +122,7 @@ export default class ActaNewTemplateDialog extends IDialog {
         const id = this.value;
         if (!id) return;
 
-        const pageSize = codeinfo.findPageSize(id);
+        const pageSize = codeInfo.findPageSize(id);
         if (!pageSize) return;
 
         if (this._itemPaperType) this._itemPaperType.value = `${pageSize.paperTypeName} (${pageSize.paperWidth} mm x ${pageSize.paperHeight} mm, ${pageSize.paperDirectionName})`;
@@ -157,13 +157,13 @@ export default class ActaNewTemplateDialog extends IDialog {
         dialog.modal = true;
         dialog.show();
 
-        return new Promise<number | boolean>((r, _) => {
+        return new Promise<number | null>((r, _) => {
             fromEvent(dialog._okButton as HTMLButtonElement, 'click').subscribe(_e => {
                 r(parseInt(dialog._itemPageSize?.value || '0', 10));
                 dialog.close();
             });
             fromEvent(dialog._cancelButton as HTMLButtonElement, 'click').subscribe(_e => {
-                r(false);
+                r(null);
                 dialog.close();
             });
         });

@@ -20,6 +20,8 @@ import Hangul from 'hangul-js';
 import SelectHanja from './hanja';
 import U from '../util/units';
 
+import "../../css/pageobject/paragraph.scss";
+
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
     'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
     'W': ['W','ㅉ'], 'w': ['w','ㅈ'],

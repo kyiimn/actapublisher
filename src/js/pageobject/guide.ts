@@ -3,6 +3,8 @@ import U from '../util/units';
 
 import { Subject, Subscription } from 'rxjs';
 
+import "../../css/pageobject/guide.scss";
+
 export default class ActaGuide extends IActaElement {
     private _subscriptionChangePageSize?: Subscription;
 

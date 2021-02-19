@@ -6,6 +6,8 @@ import U from '../util/units';
 import { fromEvent, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
+import "../../css/pageobject/page.scss";
+
 export default class ActaPage extends IActaElement {
     private _CHANGE_PAGE_STYLE$: Subject<string>;
     private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;

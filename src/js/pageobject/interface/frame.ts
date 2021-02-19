@@ -5,6 +5,8 @@ import U from '../../util/units';
 
 import { Subject, Subscription } from 'rxjs';
 
+import "../../../css/pageobject/frame.scss";
+
 export default abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
     private _overlapFrames: IActaFrame[];

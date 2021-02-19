@@ -2,10 +2,10 @@ import ToolbarPODraw from './toolbar/pageobject-draw';
 import ToolbarPOControl from './toolbar/pageobject-control';
 import ToolbarText from './toolbar/text';
 import Editor from './editor/editor';
-import Layout from './ui/layout';
 
 import NewTemplate from './designer/dialog/newtemplate';
 
+import layout from './ui/layout';
 import accountInfo from './info/account';
 import codeInfo from './info/code';
 import fontInfo from './info/font';
@@ -20,13 +20,11 @@ import { map } from 'rxjs/operators';
 import '@fortawesome/fontawesome-free/js/all.js';
 
 class Designer {
-    private _toolbarPODraw: ToolbarPODraw;
-    private _toolbarPOCtrl: ToolbarPOControl;
-    private _toolbarText: ToolbarText;
+    private _toolbarPODraw;
+    private _toolbarPOCtrl;
+    private _toolbarText;
 
-    private _editors: Editor[];
-
-    private _layout: Layout;
+    private _layout;
 
     private _headerMenuItemNew;
     private _headerMenuItemOpen;
@@ -38,8 +36,6 @@ class Designer {
         this._toolbarPODraw = new ToolbarPODraw();
         this._toolbarPOCtrl = new ToolbarPOControl();
         this._toolbarText = new ToolbarText();
-
-        this._editors = [];
 
         this._headerMenuItemNew = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_NEW, icon: 'file', icontype: 'far' });
         this._headerMenuItemOpen = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_OPEN, icon: 'folder-open' });
@@ -55,7 +51,17 @@ class Designer {
             this._headerMenuItemLogout.observable.pipe(map(_ => 'logout'))
         ).subscribe(action => {
             switch (action) {
-                case 'new': NewTemplate.show(); break;
+                case 'new':
+                    NewTemplate.show().then(id => {
+                        if (!id) return;
+
+                        const pageSize = codeInfo.findPageSize(id);
+                        if (!pageSize) return;
+                        layout.add(
+                            new Editor(pageSize)
+                        );
+                    });
+                    break;
                 case 'open': break;
                 case 'save': break;
                 case 'saveas': break;
@@ -63,7 +69,7 @@ class Designer {
                 default: break;
             }
         });
-        this._layout = Layout.getInstance();
+        this._layout = layout;
     }
 
     private _initToolbar() {

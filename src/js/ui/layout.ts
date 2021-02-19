@@ -1,3 +1,5 @@
+import Editor from '../editor/editor';
+
 import spliter from '../ui/spliter';
 
 import '../../css/ui/layout.scss';
@@ -14,10 +16,11 @@ class ActaUILayout {
     private _propertyPanelSpliter: HTMLElement;
     private _propertyPanel: HTMLElement;
 
-    private _spliter: spliter;
-
     private _title: string;
     private _status: string;
+
+    private _editors: Editor[];
+    private _activeEditor?: Editor;
 
     static getInstance() {
         if (!ActaUILayout._instance) ActaUILayout._instance = new ActaUILayout();
@@ -66,20 +69,55 @@ class ActaUILayout {
         this._body.appendChild(this._propertyPanelSpliter);
         this._body.appendChild(this._propertyPanel);
 
-        this._spliter = spliter.create({
-            spliterEl: this._propertyPanelSpliter,
-            targetEl: this._propertyPanel,
-            direction: 'col'
-        });
         this._initHeader();
         this._initStatusbar();
+
+        spliter.create({
+            spliterEl: this._propertyPanelSpliter,
+            targetEl: this._propertyPanel,
+            direction: 'col',
+            minSize: 320
+        });
+        this._editors = [];
+    }
+
+    add(editor: Editor) {
+        if (this._editors.indexOf(editor) < 0) {
+            this.editorBody.appendChild(editor.el);
+            this._editors.push(editor);
+        }
+        this.active = editor;
+    }
+
+    set active(editor: Editor | number) {
+        let validEditor;
+        if (typeof(editor) === 'number') {
+            if (!this._editors[editor]) return;
+            validEditor = this._editors[editor];
+        } else {
+            if (this._editors.indexOf(editor) < 0) return;
+            validEditor = editor;
+        }
+        this._activeEditor = validEditor;
+
+        for (const e of this._editors) {
+            if (e === validEditor) {
+                e.el.classList.add('active');
+            } else {
+                e.el.classList.remove('active');
+            }
+        }
+    }
+
+    get active() {
+        return this._activeEditor ? this._activeEditor : 0;
     }
 
     get topbar() { return this._topbar; }
-    get body() { return this._body; }
     get toolbar() { return this._toolbar; }
-    get article() { return this._article; }
     get propertyPanel() { return this._propertyPanel; }
+
+    get editorBody() { return this._article; }
 
     get title() { return this._title; }
     get status() { return this._status; }
@@ -97,5 +135,4 @@ class ActaUILayout {
         this._statusbar.getElementsByTagName('h5')[0].innerHTML = status;
     }
 }
-
-export default ActaUILayout;
+export default ActaUILayout.getInstance();
