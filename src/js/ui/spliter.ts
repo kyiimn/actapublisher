@@ -78,7 +78,7 @@ export default class ActaUISpliter {
 
         this._targetEl.classList.add('resize');
 
-        fromEvent<MouseEvent>(lock, 'mousemove').pipe(filter(me => me.target !== null)).subscribe(me => {
+        const mousemove$ = fromEvent<MouseEvent>(lock, 'mousemove').pipe(filter(me => me.target !== null)).subscribe(me => {
             me.stopPropagation();
 
             const disLeft = me.clientX - (this._beforePositionLeft || 0);
@@ -94,12 +94,15 @@ export default class ActaUISpliter {
                 this._targetEl.style.height = `${Math.max(this._minSize, Math.min(this._maxSize, parseFloat(style.height) + (disTop * (this._targetIsFront ? 1 : -1))))}px`;
             }
         });
-        merge(
+        const lockout$ = merge(
             fromEvent(lock, 'mouseout').pipe(filter(me => me.target !== null), map(me => me.target as HTMLElement)),
             fromEvent(lock, 'mouseup').pipe(filter(me => me.target !== null), map(me => me.target as HTMLElement))
         ).subscribe(el => {
             this._targetEl.classList.remove('resize');
             document.body.removeChild(el);
+
+            mousemove$.unsubscribe();
+            lockout$.unsubscribe();
         });
     }
 
