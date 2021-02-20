@@ -1,0 +1,25 @@
+.editor {
+    background-color: #ffffff;
+    box-shadow: 4px 4px 12px #000000; 
+    display: inline-block;
+    overflow: hidden;
+    margin: 24px;
+
+    x-page {
+        x-guide {
+            border-color: #000000;
+        }
+
+        x-guide-col {
+            border-color: #000000;
+        }
+
+        x-guide-margin {
+            border-color: #000000;
+        }
+
+        .frame {
+            border-color: #000000;
+        }
+    }
+}

@@ -12,6 +12,7 @@ export default class ActaPage extends IActaElement {
     private _CHANGE_PAGE_STYLE$: Subject<string>;
     private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;
     private _CHANGE_FOCUS$: Subject<IActaFrame>;
+    private _CHANGE_SCALE$: Subject<number>;
 
     private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
     private _OBSERVER_CHANGE_FRAME_STYLE$: MutationObserver;
@@ -19,7 +20,7 @@ export default class ActaPage extends IActaElement {
     private _guide: ActaGuide | undefined;
 
     static get observedAttributes() {
-        return ['width', 'height', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'];
+        return ['width', 'height', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'scale'];
     }
 
     private _applyAttribute(name: string, value: string | null) {
@@ -31,6 +32,10 @@ export default class ActaPage extends IActaElement {
             case 'padding-bottom': this.style.paddingBottom = !isNaN(num) ? (num + 'px') : ''; break;
             case 'padding-left': this.style.paddingLeft = !isNaN(num) ? (num + 'px') : ''; break;
             case 'padding-right': this.style.paddingRight = !isNaN(num) ? (num + 'px') : ''; break;
+            case 'scale':
+                this.style.transform = !isNaN(num) ? `scale(${num})` : '';
+                this._CHANGE_SCALE$.next(!isNaN(num) ? num : 1);
+                break;
             default: break;
         }
     }
@@ -66,6 +71,8 @@ export default class ActaPage extends IActaElement {
 
     constructor(width?: string | number, height?: string | number) {
         super();
+
+        this._CHANGE_SCALE$ = new Subject();
 
         this._CHANGE_PAGE_STYLE$ = new Subject();
         this._CHANGE_FOCUS$ = new Subject();
@@ -150,6 +157,7 @@ export default class ActaPage extends IActaElement {
     set paddingBottom(padding: string | number) { this.setAttribute('padding-bottom', padding.toString()); }
     set paddingLeft(padding: string | number) { this.setAttribute('padding-left', padding.toString()); }
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
+    set scale(scale: number) { this.setAttribute('scale', scale.toString()); }
 
     set guide(guide: ActaGuide | undefined) {
         if (this._guide !== undefined) this.removeChild(this._guide);
@@ -163,6 +171,12 @@ export default class ActaPage extends IActaElement {
     get paddingBottom() { return this.getAttribute('padding-bottom') || ''; }
     get paddingLeft() { return this.getAttribute('padding-left') || ''; }
     get paddingRight() { return this.getAttribute('padding-right') || ''; }
+
+    get scale() { return parseFloat(this.getAttribute('scale') || '1'); }
+    get scaledWidth() { return U.px(this.width) * this.scale; }
+    get scaledHeight() { return U.px(this.height) * this.scale; }
+    get scale$() { return this._CHANGE_SCALE$; }
+
     get guide() { return this._guide; }
 
     get frames() {

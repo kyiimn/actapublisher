@@ -3,6 +3,7 @@ $layoutElementBackgroundColor: #323232;
 $layoutElementBorderColor: #252526;
 $layoutElementStatusBackgroudColor: #007acc;
 $layoutElementStatusColor: #ffffff;
+$layoutArticleBackgroundColor: #444444;
 $layoutHeaderColor: #ffffff;
 $layoutHeaderFunctionColor: #979797;
 $layoutHeaderFunctionDisableColor: #505050;
@@ -291,10 +292,14 @@ body {
         }
 
         & > .ui-layout-article {
-            background-color: $layoutBackgroundColor;
+            background-color: $layoutArticleBackgroundColor;
             flex: 1;
             overflow: auto;
-        }
+
+            &:empty {
+                background-color: $layoutBackgroundColor;
+            }
+        };
 
         & > .ui-layout-property {
             background-color: $layoutElementBackgroundColor;
