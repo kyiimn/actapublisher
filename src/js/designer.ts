@@ -1,6 +1,7 @@
 import ToolbarPODraw from './toolbar/pageobject-draw';
 import ToolbarPOControl from './toolbar/pageobject-control';
 import ToolbarText from './toolbar/text';
+import ToolbarDocStatus from './toolbar/document-status';
 import Editor from './editor/editor';
 
 import NewTemplate from './designer/dialog/newtemplate';
@@ -23,6 +24,7 @@ class Designer {
     private _toolbarPODraw;
     private _toolbarPOCtrl;
     private _toolbarText;
+    private _toolbarDocStatus;
 
     private _layout;
 
@@ -36,6 +38,7 @@ class Designer {
         this._toolbarPODraw = new ToolbarPODraw();
         this._toolbarPOCtrl = new ToolbarPOControl();
         this._toolbarText = new ToolbarText();
+        this._toolbarDocStatus = new ToolbarDocStatus();
 
         this._headerMenuItemNew = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_NEW, icon: 'file', icontype: 'far' });
         this._headerMenuItemOpen = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_OPEN, icon: 'folder-open' });
@@ -57,9 +60,7 @@ class Designer {
 
                         const pageSize = codeInfo.findPageSize(id);
                         if (!pageSize) return;
-                        layout.add(
-                            new Editor(pageSize)
-                        );
+                        layout.add(new Editor(pageSize));
                     });
                     break;
                 case 'open': break;
@@ -76,10 +77,22 @@ class Designer {
         this._layout.toolbar.appendChild(this._toolbarPODraw.el);
         this._layout.topbar.appendChild(this._toolbarPOCtrl.el);
         this._layout.topbar.appendChild(this._toolbarText.el);
+        this._layout.documentStatusbar.appendChild(this._toolbarDocStatus.el);
 
         this._toolbarPODraw.disable();
         this._toolbarPOCtrl.disable();
         this._toolbarText.disable();
+        this._toolbarDocStatus.disable();
+
+        this._toolbarText.observable.subscribe(data => {
+            console.log(data);
+        });
+        this._toolbarDocStatus.observable.subscribe(data => {
+            if (data.action === 'scale') {
+                const editor = this._layout.active as Editor;
+                if (editor) editor.scale = (data.value as number) / 100;
+            }
+        });
     }
 
     private _initMenubar() {
@@ -91,6 +104,41 @@ class Designer {
         this._layout.headerMenubar.appendChild(this._headerMenuItemSaveAs.el);
         this._layout.headerMenubar.appendChild(formbuilder.separater);
         this._layout.headerMenubar.appendChild(this._headerMenuItemLogout.el);
+    }
+
+    private _initEvent() {
+        this._layout.observable.subscribe(data => {
+            if (data.action === 'active') {
+                if (data.value) {
+                    const editor = data.value as Editor;
+                    this._toolbarPODraw.enable();
+                    this._toolbarPOCtrl.enable();
+                    this._toolbarText.enable();
+                    this._toolbarDocStatus.enable();
+
+                    this._toolbarDocStatus.data = {
+                        scale: Math.round(editor.scale * 100)
+                    };
+                } else {
+                    this._toolbarPODraw.disable();
+                    this._toolbarPOCtrl.disable();
+                    this._toolbarText.disable();
+                    this._toolbarDocStatus.disable();
+                }
+            } else if (data.action === 'add') {
+                const editor = this._layout.active as Editor;
+                editor.observable.subscribe(rdata => {
+                    if (rdata.action === 'scale' && this._layout.active === editor) {
+                        this._toolbarDocStatus.data = {
+                            scale: Math.round(rdata.value * 100)
+                        };
+                    }
+                });
+            } else if (data.action === 'remove') {
+                const editor = this._layout.active as Editor;
+                editor.observable.unsubscribe();
+            }
+        });
     }
 
     async run() {
@@ -109,6 +157,7 @@ class Designer {
 
             this._initMenubar();
             this._initToolbar();
+            this._initEvent();
         } finally {
             w.close();
         }

@@ -112,7 +112,15 @@ body {
         }
     }
 
-    & > .ui-layout-topbar {
+    & > .ui-layout-topbar ul {
+        border-width: 0 1px 1px 0;
+    }
+
+    & .ui-layout-document-statusbar ul {
+        border-width: 1px 0 0 0;
+    }
+
+    & > .ui-layout-topbar, & .ui-layout-document-statusbar {
         background-color: $layoutElementBackgroundColor;
         overflow: hidden;
 
@@ -123,7 +131,6 @@ body {
         ul {
             border-color: $layoutElementBorderColor;
             border-style: solid;
-            border-width: 0 1px 1px 0;
             display: flex;
             flex-wrap: wrap;
             list-style: none;
@@ -233,7 +240,7 @@ body {
         }
     }
 
-    & > .ui-layout-body {
+    & > .ui-layout-middle {
         display: flex;
         flex: 1;
 
@@ -291,15 +298,27 @@ body {
             display: none;
         }
 
-        & > .ui-layout-article {
-            background-color: $layoutArticleBackgroundColor;
+        & > .ui-layout-main {
+            border-left: 1px solid $layoutElementBorderColor;
+            display: flex;
             flex: 1;
-            overflow: auto;
+            flex-direction: column;
+            overflow: hidden;
 
-            &:empty {
-                background-color: $layoutBackgroundColor;
+            & > .ui-layout-documents {
+                background-color: $layoutArticleBackgroundColor;
+                flex: 1;
+                overflow: auto;
+
+                &:empty {
+                    background-color: $layoutBackgroundColor;
+                }
             }
-        };
+
+            & > .ui-layout-document-statusbar {
+            }
+        }
+
 
         & > .ui-layout-property {
             background-color: $layoutElementBackgroundColor;

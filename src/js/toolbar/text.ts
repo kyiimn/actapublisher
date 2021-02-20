@@ -233,8 +233,6 @@ class ActaToolbarText {
         this._disabled = true;
     }
 
-    get observable() { return this._CHANGE$; }
-
     set data(data: IActaToolbarTextData) {
         const unit = accountInfo.prefTextUnitType;
 
@@ -291,6 +289,7 @@ class ActaToolbarText {
         return data;
     }
 
+    get observable() { return this._CHANGE$; }
     get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }

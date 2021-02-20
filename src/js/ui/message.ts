@@ -55,7 +55,6 @@ export default {
         PAGEOBJECT_DRAW_FRAME_EDITMODE: '프레임 수정모드',
         PAGEOBJECT_DRAW_FRAME_MOVEMODE: '프레임 이동모드',
         PAGEOBJECT_DRAW_TEXTMODE: '텍스트모드',
-        PAGEOBJECT_DRAW_ZOOM: '확대',
         PAGEOBJECT_DRAW_EMPTYFRAME: '빈프레임',
         PAGEOBJECT_DRAW_TITLEFRAME: '제목프레임',
         PAGEOBJECT_DRAW_TEXTFRAME: '텍스트프레임',
@@ -83,6 +82,8 @@ export default {
         PAGEOBJECT_CONTROL_ROTATE_RIGHT: '프레임 우측으로 단위회전',
         PAGEOBJECT_CONTROL_ROTATE_STEP: '회전간격',
         PAGEOBJECT_CONTROL_REMOVE: '프레임 삭제',
+
+        DOCUMENTSTATUS_SCALE: '비율',
     },
     UI: {
         ALERT: '알림',

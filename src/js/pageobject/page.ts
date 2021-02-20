@@ -12,7 +12,7 @@ export default class ActaPage extends IActaElement {
     private _CHANGE_PAGE_STYLE$: Subject<string>;
     private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;
     private _CHANGE_FOCUS$: Subject<IActaFrame>;
-    private _CHANGE_SCALE$: Subject<number>;
+    private _CHANGE_SCALE$: Subject<{ width: number, height: number }>;
 
     private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
     private _OBSERVER_CHANGE_FRAME_STYLE$: MutationObserver;
@@ -34,7 +34,7 @@ export default class ActaPage extends IActaElement {
             case 'padding-right': this.style.paddingRight = !isNaN(num) ? (num + 'px') : ''; break;
             case 'scale':
                 this.style.transform = !isNaN(num) ? `scale(${num})` : '';
-                this._CHANGE_SCALE$.next(!isNaN(num) ? num : 1);
+                this._CHANGE_SCALE$.next({ width: this.scaledWidth, height: this.scaledHeight });
                 break;
             default: break;
         }

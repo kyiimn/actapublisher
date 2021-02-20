@@ -1,6 +1,7 @@
 import Editor from '../editor/editor';
-
 import spliter from '../ui/spliter';
+import { fromEvent, Subject } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 import '../../css/ui/layout.scss';
 
@@ -8,19 +9,25 @@ class ActaUILayout {
     private static _instance: ActaUILayout;
 
     private _header: HTMLElement;
-    private _topbar: HTMLElement;
-    private _statusbar: HTMLElement;
+    private _top: HTMLElement;
+    private _middle: HTMLElement;
+    private _bottom: HTMLElement;
+
     private _toolbar: HTMLElement;
-    private _body: HTMLElement;
-    private _article: HTMLElement;
+    private _main: HTMLElement;
     private _propertyPanelSpliter: HTMLElement;
     private _propertyPanel: HTMLElement;
+
+    private _documents: HTMLElement;
+    private _documentStatusbar: HTMLElement;
 
     private _title: string;
     private _status: string;
 
     private _editors: Editor[];
     private _activeEditor?: Editor;
+
+    private _CHANGE$: Subject<{ action: string, value: any }>;
 
     static getInstance() {
         if (!ActaUILayout._instance) ActaUILayout._instance = new ActaUILayout();
@@ -33,41 +40,51 @@ class ActaUILayout {
     }
 
     private _initStatusbar() {
-        this._statusbar.appendChild(document.createElement('h5'));
-        this._statusbar.appendChild(document.createElement('ul'));
+        this._bottom.appendChild(document.createElement('h5'));
+        this._bottom.appendChild(document.createElement('ul'));
     }
 
     private constructor() {
         this._header = document.createElement('header');
-        this._statusbar = document.createElement('footer');
-        this._topbar = document.createElement('nav');
-        this._body = document.createElement('section');
-        this._article = document.createElement('article');
+        this._top = document.createElement('nav');
+        this._middle = document.createElement('section');
+        this._bottom = document.createElement('footer');
+
         this._toolbar = document.createElement('div');
+        this._main = document.createElement('section');
         this._propertyPanelSpliter = document.createElement('div');
         this._propertyPanel = document.createElement('div');
+
+        this._documents = document.createElement('article');
+        this._documentStatusbar = document.createElement('div');
 
         this._title = '';
         this._status = '';
 
         this._header.classList.add('ui-layout-header');
-        this._topbar.classList.add('ui-layout-topbar');
-        this._body.classList.add('ui-layout-body');
-        this._statusbar.classList.add('ui-layout-statusbar');
+        this._top.classList.add('ui-layout-topbar');
+        this._middle.classList.add('ui-layout-middle');
+        this._bottom.classList.add('ui-layout-statusbar');
 
         this._toolbar.classList.add('ui-layout-toolbar');
-        this._article.classList.add('ui-layout-article');
+        this._main.classList.add('ui-layout-main');
         this._propertyPanel.classList.add('ui-layout-property');
 
-        document.body.appendChild(this._header);
-        document.body.appendChild(this._topbar);
-        document.body.appendChild(this._body);
-        document.body.appendChild(this._statusbar);
+        this._documents.classList.add('ui-layout-documents');
+        this._documentStatusbar.classList.add('ui-layout-document-statusbar');
 
-        this._body.appendChild(this._toolbar);
-        this._body.appendChild(this._article);
-        this._body.appendChild(this._propertyPanelSpliter);
-        this._body.appendChild(this._propertyPanel);
+        document.body.appendChild(this._header);
+        document.body.appendChild(this._top);
+        document.body.appendChild(this._middle);
+        document.body.appendChild(this._bottom);
+
+        this._middle.appendChild(this._toolbar);
+        this._middle.appendChild(this._main);
+        this._middle.appendChild(this._propertyPanelSpliter);
+        this._middle.appendChild(this._propertyPanel);
+
+        this._main.appendChild(this._documents);
+        this._main.appendChild(this._documentStatusbar);
 
         this._initHeader();
         this._initStatusbar();
@@ -79,50 +96,71 @@ class ActaUILayout {
             minSize: 320
         });
         this._editors = [];
+
+        this._CHANGE$ = new Subject();
+
+        fromEvent<WheelEvent>(this._middle, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => e.preventDefault());
     }
 
     add(editor: Editor) {
         if (this._editors.indexOf(editor) < 0) {
-            this.editorBody.appendChild(editor.el);
+            this._documents.appendChild(editor.el);
             this._editors.push(editor);
         }
         this.active = editor;
+        this._CHANGE$.next({ action: 'add', value: this._activeEditor });
     }
 
-    set active(editor: Editor | number) {
-        let validEditor;
-        if (typeof(editor) === 'number') {
-            if (!this._editors[editor]) return;
-            validEditor = this._editors[editor];
-        } else {
-            if (this._editors.indexOf(editor) < 0) return;
-            validEditor = editor;
-        }
-        this._activeEditor = validEditor;
+    remove(editor: Editor) {
+        const pos = this._editors.indexOf(editor);
+        if (pos < 0) return;
 
+        if (this.active === editor) {
+            if (this._editors.length === 1) {
+                this.active = undefined;
+            } else {
+                let nextEditor = this._editors[pos + 1];
+                if (!nextEditor) nextEditor = this._editors[pos - 1];
+                this.active = nextEditor;
+            }
+        }
+        this._editors.splice(pos, 1);
+
+        this._CHANGE$.next({ action: 'remove', value: editor });
+    }
+
+    set active(editor: Editor | undefined) {
+        if (editor) {
+            if (this._editors.indexOf(editor) < 0) editor = undefined;
+        }
         for (const e of this._editors) {
-            if (e === validEditor) {
+            if (e === editor) {
                 e.el.classList.add('active');
             } else {
                 e.el.classList.remove('active');
             }
         }
-    }
+        this._activeEditor = editor;
 
-    get active() {
-        return this._activeEditor ? this._activeEditor : 0;
+        this._CHANGE$.next({ action: 'active', value: this._activeEditor });
     }
+    get active() { return this._activeEditor; }
 
-    get topbar() { return this._topbar; }
+    get headerMenubar() { return this._header.getElementsByTagName('ul')[0]; }
+    get topbar() { return this._top; }
     get toolbar() { return this._toolbar; }
+    get documentStatusbar() { return this._documentStatusbar; }
     get propertyPanel() { return this._propertyPanel; }
-
-    get editorBody() { return this._article; }
 
     get title() { return this._title; }
     get status() { return this._status; }
 
-    get headerMenubar() { return this._header.getElementsByTagName('ul')[0]; }
+    get editors() {
+        const ret = [];
+        for (const e of this._editors) ret.push(e);
+        return ret;
+    }
+    get observable() { return this._CHANGE$; }
 
     set title(title: string) {
         this._title = title;
@@ -132,7 +170,7 @@ class ActaUILayout {
 
     set status(status: string) {
         this._status = status;
-        this._statusbar.getElementsByTagName('h5')[0].innerHTML = status;
+        this._bottom.getElementsByTagName('h5')[0].innerHTML = status;
     }
 }
 export default ActaUILayout.getInstance();
