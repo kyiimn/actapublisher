@@ -10,8 +10,12 @@ $layoutHeaderFunctionDisableColor: #505050;
 $layoutHeaderFunctionHoverColor: #ffffff;
 $layoutSeparaterColor: #535353;
 $layoutToolbarColor: #979797;
-$layoutToolbarDisableColor: #505050;
+$layoutToolbarSelectColor: #ffffff;
+$layoutToolbarSelectBackgroundColor: #888;
 $layoutToolbarHoverColor: #ffffff;
+$layoutToolbarDisableColor: #505050;
+$layoutToolbarDisableSelectBackgroundColor: #555;
+$layoutToolbarDisableSelectColor: #999;
 $layoutTopbarColor: #979797;
 $layoutTopbarDisableColor: #505050;
 $layoutTopbarHoverColor: #ffffff;
@@ -195,7 +199,7 @@ body {
                     justify-content: center;
                     outline: none;
                     padding: 0;
-                    transition: color .2s;
+                    transition: background-color .2s, color .2s;
                     user-select: none;
                     width: calc(1.5em - 4px);
 
@@ -266,14 +270,16 @@ body {
                     button {
                         background-color: transparent;
                         border: 0;
+                        border-radius: 3px;
                         color: $layoutToolbarColor;
                         font-size: 1em;
-                        height: 100%;
+                        height: calc(100% - 8px);
+                        margin: 4px;
                         outline: none;
                         padding: 0;
-                        transition: color .2s;
+                        transition: background-color .2s, color .2s;
                         user-select: none;
-                        width: 100%;
+                        width: calc(100% - 8px);
 
                         &:disabled {
                             color: $layoutToolbarDisableColor;
@@ -282,6 +288,16 @@ body {
                         &:hover:not(:disabled) {
                             color: $layoutToolbarHoverColor;
                         }
+                        
+                        &.selected {
+                            background-color: $layoutToolbarSelectBackgroundColor;
+                            color: $layoutToolbarSelectColor;
+                        }
+    
+                        &:disabled.selected {
+                            background-color: $layoutToolbarDisableSelectBackgroundColor;
+                            color: $layoutToolbarDisableSelectColor;
+                        }    
                     }
                 }
 
