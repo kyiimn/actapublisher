@@ -7,23 +7,9 @@ import U from '../util/units';
 
 import { TextAlign } from '../pageobject/textstyle/textstyle';
 import { ParagraphVAlign} from '../pageobject/paragraph';
+import { IActaEditorTextAttribute } from '../editor/editor';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { textChangeRangeIsUnchanged } from 'typescript';
-
-interface IActaToolbarTextData {
-    textStyleName?: string,
-    fontName?: string,
-    fontSize?: number,
-    indent?: number,
-    xscale?: number,
-    letterSpacing?: number,
-    lineHeight?: number,
-    underline?: boolean,
-    strikeline?: boolean,
-    textAlign?: TextAlign,
-    textVAlign?: ParagraphVAlign
-};
 
 class ActaToolbarText {
     private _toolbar: HTMLUListElement;
@@ -47,7 +33,7 @@ class ActaToolbarText {
 
     private _disabled: boolean;
 
-    private _CHANGE$: Subject<IActaToolbarTextData>;
+    private _CHANGE$: Subject<IActaEditorTextAttribute>;
 
     constructor() {
         this._CHANGE$ = new Subject();
@@ -233,7 +219,7 @@ class ActaToolbarText {
         this._disabled = true;
     }
 
-    set data(data: IActaToolbarTextData) {
+    set data(data: IActaEditorTextAttribute) {
         const unit = accountInfo.prefTextUnitType;
 
         if (data.textStyleName !== undefined) {
@@ -263,7 +249,7 @@ class ActaToolbarText {
     }
 
     get data() {
-        const data: IActaToolbarTextData = {};
+        const data: IActaEditorTextAttribute = {};
         const unit = accountInfo.prefTextUnitType;
 
         data.textStyleName = this._itemTextStyle.value;

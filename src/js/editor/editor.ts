@@ -1,19 +1,69 @@
 import ActaPage from '../pageobject/page';
 import ActaGuide from '../pageobject/guide';
 import { IActaCodePageSize } from '../info/code';
+import { TextAlign } from '../pageobject/textstyle/textstyle';
+import { ParagraphVAlign} from '../pageobject/paragraph';
 
-import '../../css/editor.scss';
 import { fromEvent, Subject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
+import '../../css/editor.scss';
+
+export enum EditorTool {
+    SELECT,
+    FRAME_EDIT_MODE,
+    FRAME_MOVE_MODE,
+    TEXT_MODE,
+    DRAW_EMPTY_FRAME,
+    DRAW_TITLE_FRAME,
+    DRAW_TEXT_FRAME,
+    DRAW_IMAGE_FRAME,
+    DRAW_LINE
+};
+
+export interface IActaEditorTextAttribute {
+    textStyleName?: string,
+    fontName?: string,
+    fontSize?: number,
+    indent?: number,
+    xscale?: number,
+    letterSpacing?: number,
+    lineHeight?: number,
+    underline?: boolean,
+    strikeline?: boolean,
+    textAlign?: TextAlign,
+    textVAlign?: ParagraphVAlign
+};
+
 export default class ActaEditor {
     private _element: HTMLElement;
-    private _page;
+    private _tool: EditorTool;
+    private _page: ActaPage;
+    private _readonly: boolean;
 
     private _CHANGE$: Subject<{ action: string, value: any }>;
 
+    private static _emitedPosition(e: MouseEvent) {
+        let left = e.offsetX, top = e.offsetY;
+        if (e.target) {
+            let nowEl: HTMLElement | null = e.target as HTMLElement;
+            if (nowEl.nodeName !== 'X-PAGE') {
+                while (true) {
+                    if (!nowEl || nowEl.nodeName === 'X-PAGE') break;
+                    left += nowEl.offsetLeft;
+                    top += nowEl.offsetTop;
+                    nowEl = nowEl.offsetParent as HTMLElement | null;
+                }
+            }
+        }
+        return { left, top };
+    }
+
     constructor(pageSize: IActaCodePageSize) {
         this._CHANGE$ = new Subject();
+
+        this._tool = EditorTool.SELECT;
+        this._readonly = false;
 
         this._element = document.createElement('div');
         this._element.classList.add('editor');
@@ -46,11 +96,25 @@ export default class ActaEditor {
 
             this._CHANGE$.next({ action: 'scale', value: scale });
         });
+
+        fromEvent<MouseEvent>(this._page, 'mousedown').subscribe(e => this._onMouseDown(e));
     }
+
+    private _onMouseDown(e: MouseEvent) {
+        const pos = ActaEditor._emitedPosition(e);
+        console.log(pos.left, pos.top);
+        e.stopPropagation();
+    }
+
     set scale(scale: number) { this._page.scale = scale; }
+    set tool(tool: EditorTool) { this._tool = tool; }
+    set readonly(value: boolean) { this._readonly = value; }
+
+    get scale() { return this._page.scale; }
+    get tool() { return this._tool; }
+    get readonly() { return this._readonly; }
 
     get observable() { return this._CHANGE$; }
-    get scale() { return this._page.scale; }
     get page() { return this._page; }
     get el() { return this._element; }
 }

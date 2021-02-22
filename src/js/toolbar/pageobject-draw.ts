@@ -1,5 +1,6 @@
 import message from '../ui/message';
 import formbuilder from '../ui/form';
+import { EditorTool } from '../editor/editor';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -17,7 +18,7 @@ class ActaToolbarPageObjectDraw {
 
     private _disabled: boolean;
 
-    private _SELECT$: Subject<string>;
+    private _SELECT$: Subject<EditorTool>;
 
     constructor() {
         this._SELECT$ = new Subject();
@@ -31,7 +32,7 @@ class ActaToolbarPageObjectDraw {
         this._itemSelect = formbuilder.iconButton({ attr: { action: 'select' }, icon: 'mouse-pointer', label: message.TOOLBAR.PAGEOBJECT_DRAW_SELECT });
         this._itemFrameEditMode = formbuilder.iconButton({ attr: { action: 'frame-mode' }, icon: 'draw-polygon', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_DRAW_FRAME_EDITMODE });
         this._itemFrameMoveMode = formbuilder.iconButton({ attr: { action: 'move-mode' }, icon: 'hand-paper', icontype: 'far', label: message.TOOLBAR.PAGEOBJECT_DRAW_FRAME_MOVEMODE });
-        this._itemTextMode = formbuilder.iconButton({ attr: { action: 'text-mode' }, icon: 'edit', label: message.TOOLBAR.PAGEOBJECT_DRAW_TEXTMODE });
+        this._itemTextMode = formbuilder.iconButton({ attr: { action: 'text-mode' }, icon: 'title', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_DRAW_TEXTMODE });
         this._itemEmptyFrame = formbuilder.iconButton({ attr: { action: 'empty-frame' }, icon: 'square', icontype: 'far', label: message.TOOLBAR.PAGEOBJECT_DRAW_EMPTYFRAME });
         this._itemTitleFrame = formbuilder.iconButton({ attr: { action: 'title-frame' }, icon: 'tumblr-square', icontype: 'fab', label: message.TOOLBAR.PAGEOBJECT_DRAW_TITLEFRAME });
         this._itemTextFrame = formbuilder.iconButton({ attr: { action: 'text-frame' }, icon: 'pen-square', label: message.TOOLBAR.PAGEOBJECT_DRAW_TEXTFRAME });
@@ -78,18 +79,7 @@ class ActaToolbarPageObjectDraw {
     }
 
     private _changeValues() {
-        let value = '';
-        if (this._itemSelect.value) value = 'select';
-        else if (this._itemFrameEditMode.value) value = 'frame-edit-mode';
-        else if (this._itemFrameMoveMode.value) value = 'frame-move-mode';
-        else if (this._itemTextMode.value) value = 'text-mode';
-        else if (this._itemEmptyFrame.value) value = 'empty-frame';
-        else if (this._itemTitleFrame.value) value = 'title-frame';
-        else if (this._itemTextFrame.value) value = 'text-frame';
-        else if (this._itemImageFrame.value) value = 'image-frame';
-        else if (this._itemLine.value) value = 'line';
-
-        this._SELECT$.next(value);
+        this._SELECT$.next(this.value);
     }
 
     enable() {
@@ -120,6 +110,20 @@ class ActaToolbarPageObjectDraw {
         this._disabled = true;
     }
 
+    get value() {
+        let value = EditorTool.SELECT;
+        if (this._itemSelect.value) value = EditorTool.SELECT;
+        else if (this._itemFrameEditMode.value) value = EditorTool.FRAME_EDIT_MODE;
+        else if (this._itemFrameMoveMode.value) value = EditorTool.FRAME_MOVE_MODE;
+        else if (this._itemTextMode.value) value = EditorTool.TEXT_MODE;
+        else if (this._itemEmptyFrame.value) value = EditorTool.DRAW_EMPTY_FRAME;
+        else if (this._itemTitleFrame.value) value = EditorTool.DRAW_TITLE_FRAME;
+        else if (this._itemTextFrame.value) value = EditorTool.DRAW_TEXT_FRAME;
+        else if (this._itemImageFrame.value) value = EditorTool.DRAW_IMAGE_FRAME;
+        else if (this._itemLine.value) value = EditorTool.DRAW_LINE;
+        return value;
+    }
+    get observable() { return this._SELECT$; }
     get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }

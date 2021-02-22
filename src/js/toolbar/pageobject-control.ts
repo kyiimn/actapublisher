@@ -194,6 +194,7 @@ class ActaToolbarPageObjectControl {
         this._disabled = true;
     }
 
+    get observable() { return this._CLICK$; }
     get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }

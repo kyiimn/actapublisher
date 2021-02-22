@@ -84,12 +84,19 @@ class Designer {
         this._toolbarText.disable();
         this._toolbarDocStatus.disable();
 
+        this._toolbarPODraw.observable.subscribe(tool => {
+            const editor = this._layout.active;
+            if (editor) editor.tool = tool;
+        });
+
         this._toolbarText.observable.subscribe(data => {
+            const editor = this._layout.active;
             console.log(data);
         });
+ 
         this._toolbarDocStatus.observable.subscribe(data => {
             if (data.action === 'scale') {
-                const editor = this._layout.active as Editor;
+                const editor = this._layout.active;
                 if (editor) editor.scale = (data.value as number) / 100;
             }
         });
@@ -119,6 +126,7 @@ class Designer {
                     this._toolbarDocStatus.data = {
                         scale: Math.round(editor.scale * 100)
                     };
+                    editor.tool = this._toolbarPODraw.value;
                 } else {
                     this._toolbarPODraw.disable();
                     this._toolbarPOCtrl.disable();
