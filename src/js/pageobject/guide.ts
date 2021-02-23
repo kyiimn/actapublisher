@@ -5,8 +5,15 @@ import { Subject, Subscription } from 'rxjs';
 
 import "../../css/pageobject/guide.scss";
 
+interface IActaGuideColumnLineData {
+    lineHeight: number
+    lineCount: number,
+    lineSpacing: number
+}
+
 export default class ActaGuide extends IActaElement {
     private _subscriptionChangePageSize?: Subscription;
+    private _columnLineData?: IActaGuideColumnLineData;
 
     static get observedAttributes() {
         return ['direction', 'column-count', 'column-width', 'innermargin'];
@@ -25,7 +32,9 @@ export default class ActaGuide extends IActaElement {
     private _applyColumnCount(count: number) {
         this.innerHTML = '';
         for (let i = 0; i < count; i++) {
-            this.appendChild(document.createElement('x-guide-col'));
+            const col = document.createElement('x-guide-col') as ActaGuideColumn;
+            col.lineMarker = this._columnLineData;
+            this.appendChild(col);
 
             if (i + 1 >= count) continue;
             this.appendChild(document.createElement('x-guide-margin'));
@@ -103,6 +112,13 @@ export default class ActaGuide extends IActaElement {
     set columnCount(count: number) { this.setAttribute('column-count', Math.max(count, 1).toString()); }
     set columnWidth(widths: string[] | number[]) { this.setAttribute('column-width', widths.join(' ')); }
     set innerMargin(innerMargin: string | number) { this.setAttribute('innermargin', innerMargin.toString()); }
+    set lineMarker(data: IActaGuideColumnLineData | undefined) {
+        const columns = this.querySelectorAll<ActaGuideColumn>('x-guide-col');
+        for (const col of columns) {
+            col.lineMarker = data;
+        }
+        this._columnLineData = data;
+    }
 
     get columnCount() { return parseInt(this.getAttribute('column-count') || '1', 10); }
     get columnWidth() { return (this.getAttribute('column-width') || '').split(' '); }
@@ -142,6 +158,18 @@ class ActaGuideColumn extends IActaElement {
         this._applyWidth(newValue);
     }
 
+    set lineMarker(data: IActaGuideColumnLineData | undefined) {
+        this.innerHTML = '';
+        if (!data) return;
+
+        for (let i = 0; i < data.lineCount; i++) {
+            const marker = document.createElement('x-guide-col-marker');
+            marker.style.height = `${data.lineHeight}px`;
+            marker.style.marginTop = `${i > 0 ? data.lineSpacing : 0}px`;
+            this.appendChild(marker);
+        }
+    }
+
     set width(width: string | number | null) {
         if (width === null) {
             this.removeAttribute('width');
@@ -159,3 +187,7 @@ customElements.define('x-guide-col', ActaGuideColumn);
 // tslint:disable-next-line: max-classes-per-file
 class ActaGuideMargin extends ActaGuideColumn {};
 customElements.define('x-guide-margin', ActaGuideMargin);
+
+// tslint:disable-next-line: max-classes-per-file
+class ActaGuideColumnLineMarker extends HTMLElement {};
+customElements.define('x-guide-col-marker', ActaGuideColumnLineMarker);
