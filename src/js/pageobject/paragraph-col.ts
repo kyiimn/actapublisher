@@ -57,7 +57,7 @@ export default class ActaParagraphColumn extends IActaElement {
     }
 
     clear() {
-        const rect = this.getBoundingClientRect();
+        const rect = this.getScaledBoundingClientRect();
         const style = window.getComputedStyle(this);
 
         this._canvas.setAttribute('width', rect.width > 0 ? (rect.width - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.borderRightWidth) || 0)).toString() : '0');
@@ -95,10 +95,54 @@ export default class ActaParagraphColumn extends IActaElement {
     }
 
     availablePushTextChar(textChar: ActaTextChar) {
-        const rect = this.canvas.getBoundingClientRect();
+        const rect = this.getScaledBoundingClientRect(this._canvas);
         return (this.calcHeight + textChar.height <= (rect.height || 0)) ? true : false;
     }
 
+    getScaledBoundingClientRect(el?: Element): DOMRect {
+        const rect = el ? el.getBoundingClientRect() : this.getBoundingClientRect();
+        let scaleX = 1, scaleY = 1;
+        let nowEl: HTMLElement | null = this;
+        while (true) {
+            if (!nowEl) break;
+            const transform = nowEl.style.transform;
+            for (const v of transform.split(' ')) {
+                if (v.indexOf('scale') < 0) continue;
+
+                const v2 = v.substr(0, v.length - 1).split('(');
+                if (v2.length < 2) continue;
+
+                switch (v2[0].toLowerCase()) {
+                    case 'scale':
+                        if (v2[1].indexOf(',') > -1) {
+                            const v3 = v2[1].split(',');
+                            scaleX *= parseFloat(v3[0]);
+                            scaleY *= parseFloat(v3[1]);
+                        } else {
+                            scaleX *= parseFloat(v2[1]);
+                            scaleY *= parseFloat(v2[1]);
+                        }
+                        break;
+                    case 'scalex':
+                        scaleX *= parseFloat(v2[1]);
+                        break;
+                    case 'scaley':
+                        scaleY *= parseFloat(v2[1]);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            nowEl = nowEl.parentElement;
+        }
+        rect.x /= scaleX;
+        rect.y /= scaleY;
+        rect.width /= scaleX;
+        rect.height /= scaleY;
+
+        return rect;
+    }
+    
     get paragraph() {
         return this.parentElement ? this.parentElement as ActaParagraph : null;
     }

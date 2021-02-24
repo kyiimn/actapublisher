@@ -224,12 +224,12 @@ export default class ActaTextRow {
     }
 
     get limitWidth() {
-        const svgRect = this.column.canvas.getBoundingClientRect();
+        const svgRect = this.column.getScaledBoundingClientRect(this.column.canvas);
         return svgRect.width - this._paddingLeft - this._paddingRight;
     }
 
     get columnWidth() {
-        const svgRect = this.column.canvas.getBoundingClientRect();
+        const svgRect = this.column.getScaledBoundingClientRect(this.column.canvas);
         return svgRect.width;
     }
 

@@ -1,11 +1,12 @@
 import ActaPage from '../pageobject/page';
 import ActaGuide from '../pageobject/guide';
 import IActaFrame from '../pageobject/interface/frame';
+import ActaParagraph, { ParagraphVAlign } from '../pageobject/paragraph';
 import U from '../util/units';
+import accountInfo from '../info/account';
 
 import { IActaCodePageSize } from '../info/code';
 import { TextAlign } from '../pageobject/textstyle/textstyle';
-import ActaParagraph, { ParagraphVAlign} from '../pageobject/paragraph';
 import { fromEvent, Subject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -172,9 +173,11 @@ export default class ActaEditor {
                     case EditorTool.DRAW_EMPTY_FRAME: break;
                     case EditorTool.DRAW_IMAGE_FRAME: break;
                     case EditorTool.DRAW_TEXT_FRAME:
-                        frame = new ActaParagraph(size.x, size.y, size.width, size.height, '본문', '3mm');
+                        frame = new ActaParagraph(size.x, size.y, size.width, size.height, accountInfo.prefDefaultBodyTextStyle, 2, '3mm');
                         break;
-                    case EditorTool.DRAW_TITLE_FRAME: break;
+                    case EditorTool.DRAW_TITLE_FRAME:
+                        frame = new ActaParagraph(size.x, size.y, size.width, size.height, accountInfo.prefDefaultTitleTextStyle);
+                        break;
                     default: break;
                 }
                 if (!frame) return;

@@ -35,6 +35,10 @@ interface IActaAccountDept {
 interface IActaAccountPreference {
     textUnitType: string,
     frameUnitType: string,
+    defaultBodyTextStyleId: number,
+    defaultBodyTextStyleName: string,
+    defaultTitleTextStyleId: number,
+    defaultTitleTextStyleName: string,
     dpi: number,
     options: {
         [key: string]: boolean | number | string
@@ -95,6 +99,8 @@ class ActaAccountInfo {
     }
     get prefFrameUnitType() { return this._preference ? this._preference.frameUnitType : __DEFAULT_ACCOUNT_INFO_FRAME_UNIT_TYPE; }
     get prefTextUnitType() { return this._preference ? this._preference.textUnitType : __DEFAULT_ACCOUNT_INFO_TEXT_UNIT_TYPE; }
+    get prefDefaultBodyTextStyle() { return this._preference ? this._preference.defaultBodyTextStyleName : ''; }
+    get prefDefaultTitleTextStyle() { return this._preference ? this._preference.defaultTitleTextStyleName : ''; }
     get prefDPI() { return this._preference ? this._preference.dpi : __DEFAULT_ACCOUNT_INFO_DPI; }
     get prefOptions() { return this._preference ? this._preference.options : {}; }
 

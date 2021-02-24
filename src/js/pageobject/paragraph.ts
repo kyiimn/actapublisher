@@ -802,7 +802,7 @@ export default class ActaParagraph extends IActaFrame {
     private _getBoundingClientRect(textChar: ActaTextChar) {
         if (!textChar.textRow) return { x: 0, y: 0, width: 0, height: 0 };
 
-        const clientRect = textChar.textRow.column.getBoundingClientRect();
+        const clientRect = textChar.textRow.column.getScaledBoundingClientRect();
         return {
             x: textChar.x + clientRect.left,
             y: textChar.y + clientRect.top,
