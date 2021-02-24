@@ -56,6 +56,11 @@ interface Position {
     top: number
 };
 
+interface Boundary {
+    x: number[],
+    y: number[]
+};
+
 function getOffsetPosition(e: MouseEvent, parentEl?: IActaFrame) {
     let left = e.offsetX, top = e.offsetY;
     if (!e.target) return { left, top };
@@ -147,6 +152,7 @@ export default class ActaEditor {
 
     private _drawEventStartPosition?: { left: number, top: number };
     private _drawGuide?: HTMLElement;
+    private _drawBoundary?: Boundary;
 
     private _onMouseDown(e: MouseEvent) {
         const eveDrawGuide = this._drawGuide;
@@ -157,6 +163,28 @@ export default class ActaEditor {
                 this._drawGuide = document.createElement('div');
                 this._drawGuide.classList.add('draw-guide');
                 this._page.appendChild(this._drawGuide);
+
+                const guides = this._page.guide?.querySelectorAll('x-guide-col, x-guide-margin');
+                if (guides && guides.length > 0) {
+                    const guideTop = U.px(this._page.paddingTop);
+                    const guideLeft = U.px(this._page.paddingLeft);
+
+                    this._drawBoundary = { x: [guideLeft], y: [guideTop] };
+                    for (const guide of guides) {
+                        const style = window.getComputedStyle(guide);
+                        const width = parseFloat(style.width);
+                        const lastVal = this._drawBoundary.x[this._drawBoundary.x.length - 1];
+                        this._drawBoundary.x.push(lastVal + width);
+                    }
+                    for (const line of guides[0].querySelectorAll<HTMLElement>('x-guide-col-marker')) {
+                        const style = window.getComputedStyle(line);
+                        const marginTop = parseFloat(style.marginTop);
+                        const height = parseFloat(style.height);
+                        const lastVal = this._drawBoundary.y[this._drawBoundary.y.length - 1];
+                        if (marginTop) this._drawBoundary.y.push(lastVal + marginTop);
+                        this._drawBoundary.y.push(lastVal + marginTop + height);
+                    }
+                }
             }
         } finally {
             if (eveDrawGuide) eveDrawGuide.remove();
@@ -185,13 +213,12 @@ export default class ActaEditor {
                 this._page.appendChild(frame);
             }
         } finally {
-            if (this._drawGuide) {
-                this._drawGuide.remove();
-                this._drawGuide = undefined;
-            }
-            if (this._drawEventStartPosition) {
-                this._drawEventStartPosition = undefined;
-            }
+            if (this._drawGuide) this._drawGuide.remove();
+
+            this._drawGuide = undefined;
+            this._drawEventStartPosition = undefined;
+            this._drawBoundary = undefined;
+
             e.preventDefault();
             e.stopPropagation();
         }
