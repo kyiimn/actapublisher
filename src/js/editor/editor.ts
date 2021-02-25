@@ -53,7 +53,9 @@ export interface IActaEditorTextAttribute {
 
 interface Position {
     left: number,
-    top: number
+    top: number,
+    xIndex?: number,
+    yIndex?: number
 };
 
 interface Boundary {
@@ -83,12 +85,54 @@ function getOffsetPosition(e: MouseEvent, parentEl?: IActaFrame) {
     return { left, top };
 }
 
-function getBoxSize(spos: Position, epos: Position) {
+function applyMagnet(pos: Position, magnet?: Boundary, open?: boolean) {
+    if (!magnet) return pos;
+
+    if (magnet.x.length > ((open === undefined) ? 0 : 1)) {
+        let dx = Number.MAX_SAFE_INTEGER;
+        let idx = -1;
+        for (let i = ((open === undefined || open === true) ? 0 : 1); i < magnet.x.length; i += ((open === undefined) ? 1 : 2)) {
+            const x = magnet.x[i];
+            if (Math.abs(dx) > Math.abs(pos.left - x)) {
+                dx = pos.left - x;
+                idx = i;
+            }
+        }
+        pos.left -= dx;
+        pos.xIndex = (idx + ((open === false) ? 1 : 0)) / 2;
+    }
+    if (magnet.y.length > ((open === undefined) ? 0 : 1)) {
+        let dy = Number.MAX_SAFE_INTEGER;
+        let idx = -1;
+        for (let i = ((open === undefined || open === true) ? 0 : 1); i < magnet.y.length; i += ((open === undefined) ? 1 : 2)) {
+            const y = magnet.y[i];
+            if (Math.abs(dy) > Math.abs(pos.top - y)) {
+                dy = pos.top - y;
+                idx = i;
+            }
+        }
+        pos.top -= dy;
+        pos.yIndex = (idx + ((open === false) ? 1 : 0)) / 2;
+    }
+    return pos;
+}
+
+function getBoxSize(spos: Position, epos: Position, magnetData?: Boundary) {
+    const x1 = Math.min(spos.left, epos.left);
+    const y1 = Math.min(spos.top, epos.top);
+    const x2 = Math.max(spos.left, epos.left);
+    const y2 = Math.max(spos.top, epos.top);
+
+    const nspos = applyMagnet({ left: x1, top: y1 }, magnetData, true);
+    const nepos = applyMagnet({ left: x2, top: y2 }, magnetData, false); 
+
     return {
-        x: Math.min(spos.left, epos.left),
-        y: Math.min(spos.top, epos.top),
-        width: Math.max(spos.left, epos.left) - Math.min(spos.left, epos.left),
-        height: Math.max(spos.top, epos.top) - Math.min(spos.top, epos.top)
+        x: nspos.left,
+        y: nspos.top,
+        width: nepos.left - nspos.left,
+        height: nepos.top - nspos.top,
+        columnCount: (nepos.xIndex || 0) - (nspos.xIndex || 0),
+        lineCount: (nepos.yIndex || 0) - (nspos.yIndex || 0)
     };
 }
 
@@ -158,12 +202,6 @@ export default class ActaEditor {
         const eveDrawGuide = this._drawGuide;
         try {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
-                const pos = getOffsetPosition(e);
-                this._drawEventStartPosition = pos;
-                this._drawGuide = document.createElement('div');
-                this._drawGuide.classList.add('draw-guide');
-                this._page.appendChild(this._drawGuide);
-
                 const guides = this._page.guide?.querySelectorAll('x-guide-col, x-guide-margin');
                 if (guides && guides.length > 0) {
                     const guideTop = U.px(this._page.paddingTop);
@@ -179,12 +217,18 @@ export default class ActaEditor {
                     for (const line of guides[0].querySelectorAll<HTMLElement>('x-guide-col-marker')) {
                         const style = window.getComputedStyle(line);
                         const marginTop = parseFloat(style.marginTop);
-                        const height = parseFloat(style.height);
+                        const height = parseFloat(style.height) + 2;
                         const lastVal = this._drawBoundary.y[this._drawBoundary.y.length - 1];
                         if (marginTop) this._drawBoundary.y.push(lastVal + marginTop);
                         this._drawBoundary.y.push(lastVal + marginTop + height);
                     }
                 }
+
+                const pos = getOffsetPosition(e);
+                this._drawEventStartPosition = pos;
+                this._drawGuide = document.createElement('div');
+                this._drawGuide.classList.add('draw-guide');
+                this._page.appendChild(this._drawGuide);
             }
         } finally {
             if (eveDrawGuide) eveDrawGuide.remove();
@@ -195,13 +239,15 @@ export default class ActaEditor {
     private _onMouseUp(e: MouseEvent) {
         try {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._drawGuide && this._drawEventStartPosition) {
-                const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e));
+                const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e), this._drawBoundary);
                 let frame: IActaFrame | undefined;
+                if (size.columnCount === 1 || size.lineCount === 0) return;
+
                 switch (this._tool) {
                     case EditorTool.DRAW_EMPTY_FRAME: break;
                     case EditorTool.DRAW_IMAGE_FRAME: break;
                     case EditorTool.DRAW_TEXT_FRAME:
-                        frame = new ActaParagraph(size.x, size.y, size.width, size.height, accountInfo.prefDefaultBodyTextStyle, 2, '3mm');
+                        frame = new ActaParagraph(size.x, size.y, size.width, size.height, accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin);
                         break;
                     case EditorTool.DRAW_TITLE_FRAME:
                         frame = new ActaParagraph(size.x, size.y, size.width, size.height, accountInfo.prefDefaultTitleTextStyle);
@@ -236,7 +282,7 @@ export default class ActaEditor {
                 body.scrollLeft -= mx;
                 body.scrollTop -= my;
             } else if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._drawGuide && this._drawEventStartPosition) {
-                const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e));
+                const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e), this._drawBoundary);
                 this._drawGuide.style.left = `${size.x}px`;
                 this._drawGuide.style.top = `${size.y}px`;
                 this._drawGuide.style.width = `${size.width}px`;
@@ -248,6 +294,15 @@ export default class ActaEditor {
             e.preventDefault();
             e.stopPropagation();
         }
+    }
+
+    cancel() {
+        if (!this._drawGuide && !this._drawEventStartPosition) return;
+
+        if (this._drawGuide) this._drawGuide.remove();
+        this._drawGuide = undefined;
+        this._drawEventStartPosition = undefined;
+        this._drawBoundary = undefined;
     }
 
     set scale(scale: number) { this._page.scale = scale; }
