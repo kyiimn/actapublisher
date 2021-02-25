@@ -6,11 +6,13 @@ import U from '../../util/units';
 import { Subject, Subscription } from 'rxjs';
 
 import "../../../css/pageobject/frame.scss";
+import { textChangeRangeIsUnchanged } from 'typescript';
 
 export default abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
     private _overlapFrames: IActaFrame[];
     private _margin: number | string;
+    private _focused: boolean;
 
     protected _preflightProfiles: IActaPreflightProfile[];
 
@@ -99,12 +101,15 @@ export default abstract class IActaFrame extends IActaElement {
 
     protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(); }
 
+    protected get isFocused() { return this._focused; }
+
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
 
         this._overlapFrames = [];
         this._preflightProfiles = [];
         this._margin = 0;
+        this._focused = false;
 
         this._CHANGE_SIZE$ = new Subject();
         this._OVERLAP$ = new Subject();
@@ -175,9 +180,11 @@ export default abstract class IActaFrame extends IActaElement {
             if (src === this) {
                 if (this.classList.contains('focus')) return;
                 this.classList.add('focus');
+                this._focused = true;
                 this._onFocus();
             } else {
                 this.classList.remove('focus');
+                this._focused = false;
                 this._onBlur();
             }
         });

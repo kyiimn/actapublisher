@@ -82,7 +82,7 @@ enum InputCharType {
 };
 
 enum Keycode {
-    BACKSPACE = 8, TAB = 9, ENTER = 13, SHIFT = 16, CONTROL = 17, ALT = 18, HANGUL = 21, HANJA = 25, SPACE = 32, END = 35, HOME = 36, LEFT = 37, UP = 38, RIGHT = 39, DOWN = 40, INSERT = 45, DELETE = 46
+    BACKSPACE = 8, TAB = 9, ENTER = 13, SHIFT = 16, CONTROL = 17, ALT = 18, HANGUL = 21, HANJA = 25, ESCAPE = 27, SPACE = 32, END = 35, HOME = 36, LEFT = 37, UP = 38, RIGHT = 39, DOWN = 40, INSERT = 45, DELETE = 46
 };
 
 enum CursorMode {
@@ -128,6 +128,7 @@ export default class ActaParagraph extends IActaFrame {
     private _cursor: number | null;
     private _cursorMode: CursorMode;
     private _defaultTextStyleName: string | null;
+    private _readonly: boolean;
     private _editable: boolean;
     private _inputChar: string;
     private _innerMargin: string | number;
@@ -267,6 +268,15 @@ export default class ActaParagraph extends IActaFrame {
 
         // 컨트롤, 시프트, 알트키는 무시
         if ([Keycode.CONTROL, Keycode.SHIFT, Keycode.ALT].indexOf(e.keyCode) > -1) return;
+
+        // 이스케이프는 편집모드에서 탈출
+        if ([Keycode.ESCAPE].indexOf(e.keyCode) > -1) {
+            this.editable = false;
+            this._cursor = null;
+            this._cursorMode = CursorMode.NONE;
+            this._EMIT_REPAINT_CURSOR();
+            return false;
+        }
 
         // 커서 이동
         if ([Keycode.HOME, Keycode.END, Keycode.UP, Keycode.DOWN, Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
@@ -870,6 +880,19 @@ export default class ActaParagraph extends IActaFrame {
         return canvas;
     }
 
+    private set editable(value) {
+        this._editable = value;
+        if (this._editable) {
+            this.classList.add('editable');
+        } else {
+            this.classList.remove('editable');
+        }
+    }
+
+    private get editable() {
+        return this._editable;
+    }
+
     protected _onOverlap() {
         this._EMIT_REPAINT();
     }
@@ -880,6 +903,7 @@ export default class ActaParagraph extends IActaFrame {
 
     protected _onBlur() {
         this._selectionStart = null;
+        this.editable = false;
         this._hideCursor();
     }
 
@@ -900,7 +924,8 @@ export default class ActaParagraph extends IActaFrame {
         this._textStore = new ActaTextStore();
         this._defaultTextStyleName = defaultTextStyleName;
 
-        this._editable = true;
+        this._readonly = false;
+        this._editable = false;
         this._selectionStart = null;
         this._cursorMode = CursorMode.NONE;
         this._cursor = null;
@@ -917,15 +942,36 @@ export default class ActaParagraph extends IActaFrame {
 
         this._CHANGE_SIZE$.subscribe(() => this._EMIT_REPAINT());
 
-        fromEvent<KeyboardEvent>(this, 'keydown').subscribe(e => {
+        fromEvent<KeyboardEvent>(this, 'keydown').pipe(filter(e => {
+            if (!this.editable) return false;
+            return true;
+        })).subscribe(e => {
             if (this._onKeyPress(e) !== false) return;
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        fromEvent<MouseEvent>(this, 'dblclick').pipe(filter(e => {
+            if (this.readonly || this.editable) return false;
+            return true;
+        })).subscribe(e => {
+            const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
+            this._cursorMode = CursorMode.EDIT;
+            this.editable = true;
+            this._setCursor(textChar, e.offsetX);
+            this._EMIT_REPAINT_CURSOR();
+            this.focus({ preventScroll: true });
+
             e.preventDefault();
             e.stopPropagation();
         });
 
         let waitTripleClickTimer: boolean = false;
         fromEvent<MouseEvent>(this, 'mousedown').pipe(filter(e => {
-            if (!this._editable) return false;
+            if (!this.editable) {
+                if (!this.readonly) this.focus({ preventScroll: true });
+                return false;
+            }
             if (!(e.target instanceof ActaParagraphColumn)) return false;
             return true;
         })).subscribe(e => {
@@ -967,7 +1013,7 @@ export default class ActaParagraph extends IActaFrame {
         });
 
         fromEvent<MouseEvent>(this, 'mousemove').pipe(filter(e => {
-            if (!this._editable) return false;
+            if (!this.editable) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
             if (!(e.target instanceof ActaParagraphColumn)) return false;
             if (e.buttons !== 1) return false;
@@ -983,7 +1029,7 @@ export default class ActaParagraph extends IActaFrame {
         });
 
         fromEvent<MouseEvent>(this, 'mouseup').pipe(filter(e => {
-            if (!this._editable) return false;
+            if (!this.editable) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
             if (!(e.target instanceof ActaParagraphColumn)) return false;
             return true;
@@ -1086,6 +1132,17 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
+    edit() {
+        if (this.readonly) return false;
+
+        this._cursor = 0;
+        this._cursorMode = CursorMode.EDIT;
+        this.editable = true;
+        this._EMIT_REPAINT_CURSOR();
+
+        this.focus({ preventScroll: true });
+    }
+
     set value(text: string) {
         if (this._textStore) this._textStore.remove();
         this._textStore = ActaTextStore.import(this.defaultTextStyleName, text);
@@ -1123,8 +1180,8 @@ export default class ActaParagraph extends IActaFrame {
         if (this._textStore) this._textStore.defaultTextStyleName = styleName;
     }
 
-    set editable(val: boolean) {
-        this._editable = val;
+    set readonly(val: boolean) {
+        this._readonly = val;
     }
 
     get columnCount() { return this._columnCount; }
@@ -1132,7 +1189,7 @@ export default class ActaParagraph extends IActaFrame {
     get value() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
     get defaultTextStyle() { return textstylemgr.get(this.defaultTextStyleName); }
-    get editable() { return this._editable; }
+    get readonly() { return this._readonly; }
 
     get textChars() {
         return this._textStore ? this._textStore.toArray() : [];

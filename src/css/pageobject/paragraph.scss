@@ -22,6 +22,10 @@ x-paragraph {
             width: 100%;
         }
     }
+
+    &.focus.editable {
+        box-shadow: inset 4px 0 0 0 #0022aa, inset -4px 0 0 0 #0022aa, inset 0 4px 0 0 #0022aa, inset 0 -4px 0 0 #0022aa !important;
+    }
 }
 
 x-paragraph-col {

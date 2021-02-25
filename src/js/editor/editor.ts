@@ -223,7 +223,6 @@ export default class ActaEditor {
                         this._drawBoundary.y.push(lastVal + marginTop + height);
                     }
                 }
-
                 const pos = getOffsetPosition(e);
                 this._drawEventStartPosition = pos;
                 this._drawGuide = document.createElement('div');
@@ -241,7 +240,7 @@ export default class ActaEditor {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._drawGuide && this._drawEventStartPosition) {
                 const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e), this._drawBoundary);
                 let frame: IActaFrame | undefined;
-                if (size.columnCount === 1 || size.lineCount === 0) return;
+                if (size.columnCount < 1 || size.lineCount < 1) return;
 
                 switch (this._tool) {
                     case EditorTool.DRAW_EMPTY_FRAME: break;
