@@ -1013,7 +1013,7 @@ export default class ActaParagraph extends IActaFrame {
         });
 
         fromEvent<MouseEvent>(this, 'mousemove').pipe(filter(e => {
-            if (!this.editable) return false;
+            if (!this.editable || this.readonly) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
             if (!(e.target instanceof ActaParagraphColumn)) return false;
             if (e.buttons !== 1) return false;
@@ -1029,7 +1029,7 @@ export default class ActaParagraph extends IActaFrame {
         });
 
         fromEvent<MouseEvent>(this, 'mouseup').pipe(filter(e => {
-            if (!this.editable) return false;
+            if (!this.editable || this.readonly) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
             if (!(e.target instanceof ActaParagraphColumn)) return false;
             return true;
