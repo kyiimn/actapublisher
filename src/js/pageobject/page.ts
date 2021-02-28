@@ -24,19 +24,21 @@ export default class ActaPage extends IActaElement {
     }
 
     private _applyAttribute(name: string, value: string | null) {
-        const num = U.px(value);
-        switch (name) {
-            case 'width': this.style.width = !isNaN(num) ? (num + 'px') : ''; break;
-            case 'height': this.style.height = !isNaN(num) ? (num + 'px') : ''; break;
-            case 'padding-top': this.style.paddingTop = !isNaN(num) ? (num + 'px') : ''; break;
-            case 'padding-bottom': this.style.paddingBottom = !isNaN(num) ? (num + 'px') : ''; break;
-            case 'padding-left': this.style.paddingLeft = !isNaN(num) ? (num + 'px') : ''; break;
-            case 'padding-right': this.style.paddingRight = !isNaN(num) ? (num + 'px') : ''; break;
-            case 'scale':
-                this.style.transform = !isNaN(num) ? `scale(${num})` : '';
-                this._CHANGE_SCALE$.next({ width: this.scaledWidth, height: this.scaledHeight });
-                break;
-            default: break;
+        if (name === 'scale') {
+            const num = parseFloat(value || '1');
+            this.style.transform = !isNaN(num) ? `scale(${num})` : '';
+            this._CHANGE_SCALE$.next({ width: this.scaledWidth, height: this.scaledHeight });
+        } else {
+            const num = U.px(value);
+            switch (name) {
+                case 'width': this.style.width = !isNaN(num) ? (num + 'px') : ''; break;
+                case 'height': this.style.height = !isNaN(num) ? (num + 'px') : ''; break;
+                case 'padding-top': this.style.paddingTop = !isNaN(num) ? (num + 'px') : ''; break;
+                case 'padding-bottom': this.style.paddingBottom = !isNaN(num) ? (num + 'px') : ''; break;
+                case 'padding-left': this.style.paddingLeft = !isNaN(num) ? (num + 'px') : ''; break;
+                case 'padding-right': this.style.paddingRight = !isNaN(num) ? (num + 'px') : ''; break;
+                default: break;
+            }
         }
     }
 

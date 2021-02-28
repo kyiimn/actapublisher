@@ -2,7 +2,7 @@ import ToolbarPODraw from './toolbar/pageobject-draw';
 import ToolbarPOControl from './toolbar/pageobject-control';
 import ToolbarText from './toolbar/text';
 import ToolbarDocStatus from './toolbar/document-status';
-import Editor from './editor/editor';
+import Editor, { EditorTool } from './editor/editor';
 
 import NewTemplate from './designer/dialog/newtemplate';
 
@@ -140,8 +140,16 @@ class Designer {
                         this._toolbarDocStatus.data = {
                             scale: Math.round(rdata.value * 100)
                         };
+                    } else if (rdata.action === 'append') {
+                        // implement
+                    } else if (rdata.action === 'changetool') {
+                        this._toolbarPODraw.value = rdata.value as EditorTool;
                     }
                 });
+                editor.scale = parseFloat(((this._layout.documents.clientHeight - 48) / editor.el.clientHeight).toFixed(2));
+                this._toolbarDocStatus.data = {
+                    scale: Math.round(editor.scale * 100)
+                };
             } else if (data.action === 'remove') {
                 const editor = this._layout.active as Editor;
                 editor.observable.unsubscribe();

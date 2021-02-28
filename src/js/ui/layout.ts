@@ -149,6 +149,7 @@ class ActaUILayout {
     get headerMenubar() { return this._header.getElementsByTagName('ul')[0]; }
     get topbar() { return this._top; }
     get toolbar() { return this._toolbar; }
+    get documents() { return this._documents; }
     get documentStatusbar() { return this._documentStatusbar; }
     get propertyPanel() { return this._propertyPanel; }
 

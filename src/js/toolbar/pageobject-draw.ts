@@ -110,6 +110,20 @@ class ActaToolbarPageObjectDraw {
         this._disabled = true;
     }
 
+    set value(value: EditorTool) {
+        this._itemSelect.value = value === EditorTool.SELECT ? true : false;
+        this._itemFrameEditMode.value = value === EditorTool.FRAME_EDIT_MODE ? true : false;
+        this._itemFrameMoveMode.value = value === EditorTool.FRAME_MOVE_MODE ? true : false;
+        this._itemTextMode.value = value === EditorTool.TEXT_MODE ? true : false;
+        this._itemEmptyFrame.value = value === EditorTool.DRAW_EMPTY_FRAME ? true : false;
+        this._itemTitleFrame.value = value === EditorTool.DRAW_TITLE_FRAME ? true : false;
+        this._itemTextFrame.value = value === EditorTool.DRAW_TEXT_FRAME ? true : false;
+        this._itemImageFrame.value = value === EditorTool.DRAW_IMAGE_FRAME ? true : false;
+        this._itemLine.value = value === EditorTool.DRAW_LINE ? true : false;
+
+        this._changeValues();
+    }
+
     get value() {
         let value = EditorTool.SELECT;
         if (this._itemSelect.value) value = EditorTool.SELECT;

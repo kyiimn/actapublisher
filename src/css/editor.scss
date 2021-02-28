@@ -1,31 +1,40 @@
+$editorPageGuideBorderColor: #969696;
+$editorPageFrameBorderColor: #333333;
+$editorDrawGuideBackgroundColor: #ff000011;
+$editorDrawGuideBorderColor: red;
+
 .editor {
     background-color: #ffffff;
     box-shadow: 4px 4px 12px #000000; 
-    display: inline-block;
+    display: none;
     overflow: hidden;
     margin: 24px;
 
+    &.active {
+        display: inline-block;
+    }
+
     x-page {
         x-guide {
-            border-color: #000000;
+            border-color: $editorPageGuideBorderColor;
         }
 
         x-guide-col {
-            border-color: #000000;
+            border-color: $editorPageGuideBorderColor;
         }
 
         x-guide-margin {
-            border-color: #000000;
+            border-color: $editorPageGuideBorderColor;
         }
 
         .frame {
-            border-color: #888888;
+            border-color: $editorPageFrameBorderColor;
             border-style: solid;
         }
 
         .draw-guide {
-            background-color: #ff000011;
-            border-color: red;
+            background-color: $editorDrawGuideBackgroundColor;
+            border-color: $editorDrawGuideBorderColor;
             border-style: solid;
             border-width: 1px;
             box-sizing: border-box;

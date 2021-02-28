@@ -165,7 +165,7 @@ class ActaGuideColumn extends IActaElement {
         for (let i = 0; i < data.lineCount; i++) {
             const marker = document.createElement('x-guide-col-marker');
             marker.style.height = `${data.lineHeight}px`;
-            marker.style.marginTop = `${i > 0 ? data.lineSpacing : 0}px`;
+            marker.style.marginTop = `${i > 0 ? data.lineSpacing : -1}px`;
             this.appendChild(marker);
         }
     }

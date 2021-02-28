@@ -2,6 +2,7 @@ import ActaPage from '../pageobject/page';
 import ActaGuide from '../pageobject/guide';
 import IActaFrame from '../pageobject/interface/frame';
 import ActaParagraph, { ParagraphVAlign } from '../pageobject/paragraph';
+import ActaImage from '../pageobject/image';
 import U from '../util/units';
 import accountInfo from '../info/account';
 
@@ -176,7 +177,7 @@ export default class ActaEditor {
             this._element.style.width = `${size.width}px`;
             this._element.style.height = `${size.height}px`;
         });
-        this._page.scale = 0.15;
+        this._page.scale = 1;
 
         fromEvent<WheelEvent>(this._element, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => {
             e.preventDefault();
@@ -217,9 +218,9 @@ export default class ActaEditor {
                     for (const line of guides[0].querySelectorAll<HTMLElement>('x-guide-col-marker')) {
                         const style = window.getComputedStyle(line);
                         const marginTop = parseFloat(style.marginTop);
-                        const height = parseFloat(style.height) + 2;
+                        const height = parseFloat(style.height);
                         const lastVal = this._drawBoundary.y[this._drawBoundary.y.length - 1];
-                        if (marginTop) this._drawBoundary.y.push(lastVal + marginTop);
+                        if (marginTop > 0) this._drawBoundary.y.push(lastVal + marginTop);
                         this._drawBoundary.y.push(lastVal + marginTop + height);
                     }
                 }
@@ -240,22 +241,30 @@ export default class ActaEditor {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._drawGuide && this._drawEventStartPosition) {
                 const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e), this._drawBoundary);
                 let frame: IActaFrame | undefined;
+                let changetool: EditorTool | undefined;
                 if (size.columnCount < 1 || size.lineCount < 1) return;
 
                 switch (this._tool) {
                     case EditorTool.DRAW_EMPTY_FRAME: break;
-                    case EditorTool.DRAW_IMAGE_FRAME: break;
+                    case EditorTool.DRAW_IMAGE_FRAME:
+                        frame = new ActaImage(U.pt(`${size.x}px`), U.pt(`${size.y}px`), U.pt(`${size.width}px`), U.pt(`${size.height}px`));
+                        changetool = EditorTool.SELECT;
+                        break;
                     case EditorTool.DRAW_TEXT_FRAME:
-                        frame = new ActaParagraph(size.x, size.y, size.width, size.height, accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin);
+                        frame = new ActaParagraph(U.pt(`${size.x}px`), U.pt(`${size.y}px`), U.pt(`${size.width}px`), U.pt(`${size.height}px`), accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin);
+                        changetool = EditorTool.TEXT_MODE;
                         break;
                     case EditorTool.DRAW_TITLE_FRAME:
-                        frame = new ActaParagraph(size.x, size.y, size.width, size.height, accountInfo.prefDefaultTitleTextStyle);
+                        frame = new ActaParagraph(U.pt(`${size.x}px`), U.pt(`${size.y}px`), U.pt(`${size.width}px`), U.pt(`${size.height}px`), accountInfo.prefDefaultTitleTextStyle);
+                        changetool = EditorTool.TEXT_MODE;
                         break;
                     default: break;
                 }
                 if (!frame) return;
 
                 this._page.appendChild(frame);
+                this._CHANGE$.next({ action: 'append', value: frame });
+                if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
             }
         } finally {
             if (this._drawGuide) this._drawGuide.remove();

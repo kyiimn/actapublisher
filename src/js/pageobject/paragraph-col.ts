@@ -142,7 +142,7 @@ export default class ActaParagraphColumn extends IActaElement {
 
         return rect;
     }
-    
+
     get paragraph() {
         return this.parentElement ? this.parentElement as ActaParagraph : null;
     }
