@@ -24,7 +24,7 @@ x-paragraph {
     }
 
     &.focus.editable {
-        box-shadow: 4px 0 0 0 #0022aa, -4px 0 0 0 #0022aa, 0 4px 0 0 #0022aa, 0 -4px 0 0 #0022aa !important;
+        box-shadow: -4px 4px 0 0 #0022aa, -4px -4px 0 0 #0022aa, 4px 4px 0 0 #0022aa, 4px -4px 0 0 #0022aa !important
     }
 }
 

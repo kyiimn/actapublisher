@@ -62,14 +62,14 @@ class ActaFontInfo {
             if (!fontmgr.get(textstyle.fontName)) continue;
 
             const t = new ActaTextStyle(textstyle.fontName);
-            t.fontSize = U.px(textstyle.fontSize + 'mm');
+            t.fontSize = U.px(textstyle.fontSize, U.MM);
             t.xscale = textstyle.xscale;
-            t.letterSpacing = U.px(textstyle.letterSpacing + 'mm');
+            t.letterSpacing = U.px(textstyle.letterSpacing, U.MM);
             t.lineHeight = textstyle.lineHeight;
             t.textAlign = textstyle.textAlign;
             t.underline = textstyle.underline;
             t.strikeline = textstyle.strikeline;
-            t.indent = U.px(textstyle.indent + 'mm');
+            t.indent = U.px(textstyle.indent, U.MM);
             t.colorId = textstyle.colorId;
 
             textstylemgr.add(textstyle.name, t);

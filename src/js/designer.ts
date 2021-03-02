@@ -91,9 +91,9 @@ class Designer {
 
         this._toolbarText.observable.subscribe(data => {
             const editor = this._layout.active;
-            console.log(data);
+            if (editor) editor.setTextStyle(data);
         });
- 
+
         this._toolbarDocStatus.observable.subscribe(data => {
             if (data.action === 'scale') {
                 const editor = this._layout.active;
@@ -135,17 +135,7 @@ class Designer {
                 }
             } else if (data.action === 'add') {
                 const editor = this._layout.active as Editor;
-                editor.observable.subscribe(rdata => {
-                    if (rdata.action === 'scale' && this._layout.active === editor) {
-                        this._toolbarDocStatus.data = {
-                            scale: Math.round(rdata.value * 100)
-                        };
-                    } else if (rdata.action === 'append') {
-                        // implement
-                    } else if (rdata.action === 'changetool') {
-                        this._toolbarPODraw.value = rdata.value as EditorTool;
-                    }
-                });
+                editor.observable.subscribe(rdata => this.initEditorEvent(editor, rdata.action, rdata.value));
                 editor.scale = parseFloat(((this._layout.documents.clientHeight - 48) / editor.el.clientHeight).toFixed(2));
                 this._toolbarDocStatus.data = {
                     scale: Math.round(editor.scale * 100)
@@ -155,6 +145,21 @@ class Designer {
                 editor.observable.unsubscribe();
             }
         });
+    }
+
+    initEditorEvent(editor: Editor, action: string, value: any) {
+        const isActive = this._layout.active === editor;
+        if (action === 'scale' && isActive) {
+            this._toolbarDocStatus.data = {
+                scale: Math.round(value * 100)
+            };
+        } else if (action === 'append') {
+            // implement
+        } else if (action === 'changetool') {
+            this._toolbarPODraw.value = value;
+        } else if (action === 'textstyle') {
+            this._toolbarText.data = value;
+        }
     }
 
     async run() {

@@ -1,10 +1,12 @@
 import ActaPage from '../pageobject/page';
 import ActaGuide from '../pageobject/guide';
-import IActaFrame from '../pageobject/interface/frame';
 import ActaParagraph, { ParagraphVAlign } from '../pageobject/paragraph';
+import ActaTextStyleInherit from '../pageobject/textstyle/textstyle-inherit';
+import ActaTextStyleManager from '../pageobject/textstyle/textstylemgr';
 import ActaImage from '../pageobject/image';
-import U from '../util/units';
+import IActaFrame from '../pageobject/interface/frame';
 import accountInfo from '../info/account';
+import U from '../util/units';
 
 import { IActaCodePageSize } from '../info/code';
 import { TextAlign } from '../pageobject/textstyle/textstyle';
@@ -125,7 +127,7 @@ function getBoxSize(spos: Position, epos: Position, magnetData?: Boundary) {
     const y2 = Math.max(spos.top, epos.top);
 
     const nspos = applyMagnet({ left: x1, top: y1 }, magnetData, true);
-    const nepos = applyMagnet({ left: x2, top: y2 }, magnetData, false); 
+    const nepos = applyMagnet({ left: x2, top: y2 }, magnetData, false);
 
     return {
         x: nspos.left,
@@ -240,30 +242,38 @@ export default class ActaEditor {
         try {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._drawGuide && this._drawEventStartPosition) {
                 const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e), this._drawBoundary);
-                let frame: IActaFrame | undefined;
+                let frame;
                 let changetool: EditorTool | undefined;
                 if (size.columnCount < 1 || size.lineCount < 1) return;
 
                 switch (this._tool) {
                     case EditorTool.DRAW_EMPTY_FRAME: break;
                     case EditorTool.DRAW_IMAGE_FRAME:
-                        frame = new ActaImage(U.pt(`${size.x}px`), U.pt(`${size.y}px`), U.pt(`${size.width}px`), U.pt(`${size.height}px`));
+                        frame = new ActaImage(U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX));
                         changetool = EditorTool.SELECT;
                         break;
                     case EditorTool.DRAW_TEXT_FRAME:
-                        frame = new ActaParagraph(U.pt(`${size.x}px`), U.pt(`${size.y}px`), U.pt(`${size.width}px`), U.pt(`${size.height}px`), accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin);
+                        frame = new ActaParagraph(
+                            U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
+                            accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
+                        );
+                        frame.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
                         changetool = EditorTool.TEXT_MODE;
                         break;
                     case EditorTool.DRAW_TITLE_FRAME:
-                        frame = new ActaParagraph(U.pt(`${size.x}px`), U.pt(`${size.y}px`), U.pt(`${size.width}px`), U.pt(`${size.height}px`), accountInfo.prefDefaultTitleTextStyle);
+                        frame = new ActaParagraph(
+                            U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
+                            accountInfo.prefDefaultTitleTextStyle
+                        );
+                        frame.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
                         changetool = EditorTool.TEXT_MODE;
                         break;
                     default: break;
                 }
                 if (!frame) return;
 
-                this._page.appendChild(frame);
-                this._CHANGE$.next({ action: 'append', value: frame });
+                this._page.appendChild(frame as IActaFrame);
+                this._CHANGE$.next({ action: 'append', value: frame as IActaFrame });
                 if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
             }
         } finally {
@@ -302,6 +312,42 @@ export default class ActaEditor {
             e.preventDefault();
             e.stopPropagation();
         }
+    }
+
+    private _onParagraphMoveCursor(paragraph: ActaParagraph, cursor: number) {
+        const textStyle = paragraph.getTextStyleAtCursor();
+        const tbData: IActaEditorTextAttribute = {};
+
+        if (textStyle.fontName !== null) tbData.fontName = textStyle.fontName;
+        if (textStyle.fontSize !== null) tbData.fontSize = textStyle.fontSize;
+        if (textStyle.indent !== null) tbData.indent = textStyle.indent;
+        if (textStyle.xscale !== null) tbData.xscale = textStyle.xscale;
+        if (textStyle.letterSpacing !== null) tbData.letterSpacing = textStyle.letterSpacing;
+        if (textStyle.lineHeight !== null) tbData.lineHeight = textStyle.lineHeight;
+        if (textStyle.underline !== null) tbData.underline = textStyle.underline;
+        if (textStyle.strikeline !== null) tbData.strikeline = textStyle.strikeline;
+        if (textStyle.textAlign !== null) tbData.textAlign = textStyle.textAlign;
+
+        this._CHANGE$.next({ action: "textstyle", value: tbData });
+    }
+
+    setTextStyle(tbData: IActaEditorTextAttribute) {
+        const paragraph = this._page.querySelector<ActaParagraph>('x-paragraph.focus.editable');
+        if (!paragraph) return;
+
+        const textStyle = new ActaTextStyleInherit();
+        if (tbData.textStyleName) textStyle.copy(ActaTextStyleManager.get(tbData.textStyleName));
+        if (tbData.fontName) textStyle.fontName = tbData.fontName;
+        if (tbData.fontSize) textStyle.fontSize = tbData.fontSize;
+        if (tbData.xscale) textStyle.xscale = tbData.xscale;
+        if (tbData.letterSpacing) textStyle.letterSpacing = tbData.letterSpacing;
+        if (tbData.lineHeight) textStyle.lineHeight = tbData.lineHeight;
+        if (tbData.textAlign) textStyle.textAlign = tbData.textAlign;
+        if (tbData.underline) textStyle.underline = tbData.underline;
+        if (tbData.strikeline) textStyle.strikeline = tbData.strikeline;
+        if (tbData.indent) textStyle.indent = tbData.indent;
+
+        paragraph.setTextStyleAtCursor(textStyle);
     }
 
     cancel() {

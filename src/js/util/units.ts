@@ -10,6 +10,14 @@ export default class Unit {
     private static get _GUB() { return Unit._INCH / 0.00984251968503937; } // 급
     private static get _BAE() { return (this.pt(this._LINESPACING_SIZE) || 1) * (this._LINESPACING_RATIO / 100); } // 배
 
+    static readonly CM = 'CM';
+    static readonly MM = 'MM';
+    static readonly INCH = 'INCH';
+    static readonly GUB = 'GUB';
+    static readonly PX = 'PX';
+    static readonly BAE = 'BAE';
+    static readonly POINT = 'POINT';
+
     static set LINESPACING_SIZE(size: string | number) { this._LINESPACING_SIZE = size; }
     static get LINESPACING_SIZE() { return this._LINESPACING_SIZE; }
     static set LINESPACING_RATIO(ratio: number) { this._LINESPACING_RATIO = ratio; }
@@ -20,13 +28,13 @@ export default class Unit {
     static convert(returnUnit: string, value: string | number | null | undefined, inputUnit?: string): number {
         let returnValue: number;
         switch (returnUnit) {
-            case 'CM': returnValue = this.cm(value, inputUnit); break;
-            case 'MM': returnValue = this.mm(value, inputUnit); break;
-            case 'INCH': returnValue = this.in(value, inputUnit); break;
-            case 'GUB': returnValue = this.gu(value, inputUnit); break;
-            case 'BAE': returnValue = this.ba(value, inputUnit); break;
-            case 'PX': returnValue = this.px(value, inputUnit); break;
-            case 'POINT':
+            case this.CM: returnValue = this.cm(value, inputUnit); break;
+            case this.MM: returnValue = this.mm(value, inputUnit); break;
+            case this.INCH: returnValue = this.in(value, inputUnit); break;
+            case this.GUB: returnValue = this.gu(value, inputUnit); break;
+            case this.BAE: returnValue = this.ba(value, inputUnit); break;
+            case this.PX: returnValue = this.px(value, inputUnit); break;
+            case this.POINT:
             default: returnValue = this.pt(value, inputUnit); break;
         }
         return returnValue;
@@ -34,10 +42,10 @@ export default class Unit {
 
     static pt(value: string | number | null | undefined, inputUnit?: string): number {
         if (value === undefined || value === null) return NaN;
-        if (typeof(value) === 'number') {
+        if (typeof(value) === 'number' && !inputUnit) {
             return value;
         } else {
-            value = value.toLowerCase();
+            value = typeof(value) !== 'number' ? value.toLowerCase() : value.toString();
             if (value === '') return NaN;
             if (parseFloat(value).toString() === value && !inputUnit) {
                 return parseFloat(value);
@@ -45,13 +53,13 @@ export default class Unit {
                 let unit, num;
                 if (inputUnit) {
                     switch (inputUnit) {
-                        case 'PX': unit = 'px'; break;
-                        case 'CM': unit = 'cm'; break;
-                        case 'MM': unit = 'mm'; break;
-                        case 'INCH': unit = 'in'; break;
-                        case 'GUB': unit = 'gu'; break;
-                        case 'BAE': unit = 'ba'; break;
-                        case 'POINT':
+                        case this.PX: unit = 'px'; break;
+                        case this.CM: unit = 'cm'; break;
+                        case this.MM: unit = 'mm'; break;
+                        case this.INCH: unit = 'in'; break;
+                        case this.GUB: unit = 'gu'; break;
+                        case this.BAE: unit = 'ba'; break;
+                        case this.POINT:
                         default: unit = 'pt'; break;
                     }
                     num = parseFloat(value);
