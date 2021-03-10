@@ -93,7 +93,7 @@ enum InputMethod {
     EN, KO
 };
 
-export enum ParagraphVAlign {
+export enum ParagraphVerticalAlign {
     TOP = 0, MIDDLE, BOTTOM, JUSTIFY
 }
 
@@ -209,9 +209,9 @@ export default class ActaParagraph extends IActaFrame {
             if (!textNode) return;
             insertPos = textNode.length;
         } else {
-            const textChar = this._getTextCharAtCursor();
+            const textChar = this._getTextCharAtCursor(true);
             if (!textChar) { this._cursorMode = CursorMode.EDIT; return; }
-            insertPos = textChar.indexOfNode;
+            insertPos = textChar.indexOfNode + 1;
             textNode = textChar.textNode;
         }
         if (ActaParagraph.INPUT_METHOD === InputMethod.KO && ActaParagraph.GET_CHAR_TYPE(e) === InputCharType.TEXT) {
@@ -473,11 +473,38 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
-    private _setTextStyle(textChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
-        const textNodes = this._toTextNodes(textChars);
+    private _setTextStyle(targetTextChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
+        const textNodes = this._toTextNodes(targetTextChars);
         for (const textNode of textNodes) {
             textNode.modifiedTextStyle.merge(textStyle);
         }
+    }
+
+    private _setTextAlign(targetTextChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
+        const breakType = [CharType.RETURN];
+        const modifyTextChars: ActaTextChar[] = [];
+        let startPos: number = -1;
+        let endPos: number = -1;
+
+        if (targetTextChars.length < 1 || textStyle.textAlign === null) return;
+
+        const textChars = this.textChars;
+        for (let i = textChars.indexOf(targetTextChars[0]); i >= 0; i--) {
+            if (breakType.indexOf(textChars[i].type) > -1) break;
+            startPos = i;
+        }
+        for (let i = textChars.indexOf(targetTextChars[targetTextChars.length - 1]); i < textChars.length; i++) {
+            if (breakType.indexOf(textChars[i].type) > -1) break;
+            endPos = i + 1;
+        }
+        if (startPos < 0 || endPos < 0) return;
+        for (let i = startPos; i < endPos; i++) {
+            modifyTextChars.push(textChars[i]);
+        }
+        const textStyleAlign = new ActaTextStyleInherit();
+        textStyleAlign.textAlign = textStyle.textAlign;
+
+        this._setTextStyle(modifyTextChars, textStyleAlign);
     }
 
     private _removeTextChars(textChars: ActaTextChar[]) {
@@ -522,35 +549,37 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
-    private _getTextCharAtCursor() {
+    private _getTextCharAtCursor(frontOfCursor: boolean = false) {
         if (this.cursor === null) return null;
-        return this.textChars[this.cursor];
+        const textChars = this.textChars;
+        return textChars[Math.min(Math.max(this.cursor - (frontOfCursor ? 1 : 0), 0), textChars.length - 1)];
     }
 
-    private _getTextRowAtCursor() {
-        if (this.cursor === null) return null;
-        const textChar = this.textChars[this.cursor];
+    private _getTextRowAtCursor(frontOfCursor: boolean = false) {
+        const textChar = this._getTextCharAtCursor(frontOfCursor);
         return (textChar) ? (textChar.textRow || null) : null;
     }
 
-    private _getUpsideTextRowAtCursor() {
-        const currTextRow = this._getTextRowAtCursor();
+    private _getUpsideTextRowAtCursor(frontOfCursor: boolean = false) {
+        const currTextRow = this._getTextRowAtCursor(frontOfCursor);
         if (!currTextRow) return null;
 
-        const firstTextCharIdx = this.textChars.indexOf(currTextRow.firstTextChar);
-        if (firstTextCharIdx === 0)  return null;
+        const textChars = this.textChars;
+        const firstTextCharIdx = textChars.indexOf(currTextRow.firstTextChar);
+        if (firstTextCharIdx === 0) return null;
 
-        return this.textChars[firstTextCharIdx - 1].textRow;
+        return textChars[firstTextCharIdx - 1].textRow;
     }
 
-    private _getDownsideTextRowAtCursor() {
-        const currTextRow = this._getTextRowAtCursor();
+    private _getDownsideTextRowAtCursor(frontOfCursor: boolean = false) {
+        const currTextRow = this._getTextRowAtCursor(frontOfCursor);
         if (!currTextRow) return null;
 
-        const lastTextCharIdx = this.textChars.indexOf(currTextRow.lastTextChar);
-        if (lastTextCharIdx === this.textChars.length - 1)  return null;
+        const textChars = this.textChars;
+        const lastTextCharIdx = textChars.indexOf(currTextRow.lastTextChar);
+        if (lastTextCharIdx === textChars.length - 1) return null;
 
-        return this.textChars[lastTextCharIdx + 1].textRow;
+        return textChars[lastTextCharIdx + 1].textRow;
     }
 
     private _setCursor(textChar: ActaTextChar | undefined, x?: number, ignoreEvent: boolean = false) {
@@ -1017,7 +1046,7 @@ export default class ActaParagraph extends IActaFrame {
                     if (breakType.indexOf(textChars[i].type) > -1) break;
                     this.selectionStart = i;
                 }
-                for (let i = this.textChars.indexOf(evtTextChar); i < this.textChars.length; i++) {
+                for (let i = textChars.indexOf(evtTextChar); i < textChars.length; i++) {
                     if (breakType.indexOf(textChars[i].type) > -1) break;
                     this.cursor = i + 1;
                 }
@@ -1091,9 +1120,19 @@ export default class ActaParagraph extends IActaFrame {
         this._EMIT_REPAINT();
     }
 
-    setTextStyleAtCursor(textStyle: ActaTextStyleInherit) {
-        const selTextChars = this._getSelectedTextChars();
-        this._setTextStyle(selTextChars, textStyle);
+    setTextStyleAtCursor(textStyle: ActaTextStyleInherit, frontOfCursor: boolean = false) {
+        if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
+            if (textStyle.textAlign !== null) {
+                const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
+                if (cursorTextChar) this._setTextAlign([cursorTextChar], textStyle);
+                // FIXME: 커서 위치에 임시 스타일 지정 구현해야함
+            }
+        } else {
+            const selTextChars = this._getSelectedTextChars();
+            if (selTextChars.length < 1) return;
+            this._setTextStyle(selTextChars, textStyle);
+            if (textStyle.textAlign !== null) this._setTextAlign(selTextChars, textStyle);
+        }
         this._EMIT_REPAINT();
     }
 
@@ -1117,19 +1156,22 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
-    getTextStyleAtCursor() {
+    getTextStyleAtCursor(frontOfCursor: boolean = false) {
         const returnTextStyle = new ActaTextStyleInherit();
         const textNodes: ActaTextNode[] = [];
 
-        const selTextChars = this._getSelectedTextChars();
-        if (selTextChars.length < 1) {
-            const cursorTextChar = this._getTextCharAtCursor();
-            if (cursorTextChar) {
-                textNodes.push(cursorTextChar.textNode);
-            }
+        if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
+            const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
+            if (cursorTextChar) textNodes.push(cursorTextChar.textNode);
         } else {
-            for (const textChar of selTextChars) {
-                if (textNodes.indexOf(textChar.textNode) < 0) textNodes.push(textChar.textNode);
+            const selTextChars = this._getSelectedTextChars();
+            if (selTextChars.length < 1) {
+                const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
+                if (cursorTextChar) textNodes.push(cursorTextChar.textNode);
+            } else {
+                for (const textChar of selTextChars) {
+                    if (textNodes.indexOf(textChar.textNode) < 0) textNodes.push(textChar.textNode);
+                }
             }
         }
         if (textNodes.length < 1) {

@@ -6,7 +6,6 @@ import accountInfo from '../info/account';
 import U from '../util/units';
 
 import { TextAlign } from '../pageobject/textstyle/textstyle';
-import { ParagraphVAlign} from '../pageobject/paragraph';
 import { IActaEditorTextAttribute } from '../editor/editor';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -26,10 +25,6 @@ class ActaToolbarText {
     private _itemAlignCenter;
     private _itemAlignRight;
     private _itemAlignJustify;
-    private _itemVAlignTop;
-    private _itemVAlignMiddle;
-    private _itemVAlignBottom;
-    private _itemVAlignJustify;
 
     private _disabled: boolean;
 
@@ -57,13 +52,8 @@ class ActaToolbarText {
         this._itemAlignCenter = formbuilder.iconButton({ icon: 'format_align_center', icontype: 'material', label: message.TOOLBAR.TEXT_ALIGN_CENTER });
         this._itemAlignRight = formbuilder.iconButton({ icon: 'format_align_right', icontype: 'material', label: message.TOOLBAR.TEXT_ALIGN_RIGHT });
         this._itemAlignJustify = formbuilder.iconButton({ icon: 'format_align_justify', icontype: 'material', label: message.TOOLBAR.TEXT_ALIGN_JUSTIFY });
-        this._itemVAlignTop = formbuilder.iconButton({ icon: 'vertical_align_top', icontype: 'material', label: message.TOOLBAR.TEXT_VALIGN_TOP });
-        this._itemVAlignMiddle = formbuilder.iconButton({ icon: 'vertical_align_center', icontype: 'material', label: message.TOOLBAR.TEXT_VALIGN_MIDDLE });
-        this._itemVAlignBottom = formbuilder.iconButton({ icon: 'vertical_align_bottom', icontype: 'material', label: message.TOOLBAR.TEXT_VALIGN_BOTTOM });
-        this._itemVAlignJustify = formbuilder.iconButton({ icon: 'vertical_distribute', icontype: 'material', label: message.TOOLBAR.TEXT_VALIGN_JUSTIFY });
 
         this._itemAlignLeft.value = true;
-        this._itemVAlignTop.value = true;
 
         this._toolbar.appendChild(this._itemTextStyle.el);
         this._toolbar.appendChild(this._itemFont.el);
@@ -81,11 +71,6 @@ class ActaToolbarText {
         this._toolbar.appendChild(this._itemAlignCenter.el);
         this._toolbar.appendChild(this._itemAlignRight.el);
         this._toolbar.appendChild(this._itemAlignJustify.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemVAlignTop.el);
-        this._toolbar.appendChild(this._itemVAlignMiddle.el);
-        this._toolbar.appendChild(this._itemVAlignBottom.el);
-        this._toolbar.appendChild(this._itemVAlignJustify.el);
 
         fontmgr.observable.subscribe(list => {
             this._itemFont.input.innerHTML = '';
@@ -139,16 +124,6 @@ class ActaToolbarText {
             this._itemAlignRight.value = align === TextAlign.RIGHT ? true : false;
             this._changeValues();
         });
-        merge(
-            this._itemVAlignTop.observable.pipe(map(_ => ParagraphVAlign.TOP)), this._itemVAlignMiddle.observable.pipe(map(_ => ParagraphVAlign.MIDDLE)),
-            this._itemVAlignBottom.observable.pipe(map(_ => ParagraphVAlign.BOTTOM)), this._itemVAlignJustify.observable.pipe(map(_ => ParagraphVAlign.JUSTIFY))
-        ).subscribe(align => {
-            this._itemVAlignTop.value = align === ParagraphVAlign.TOP ? true : false;
-            this._itemVAlignMiddle.value = align === ParagraphVAlign.MIDDLE ? true : false;
-            this._itemVAlignBottom.value = align === ParagraphVAlign.BOTTOM ? true : false;
-            this._itemVAlignJustify.value = align === ParagraphVAlign.JUSTIFY ? true : false;
-            this._changeValues();
-        });
     }
 
     private _changeTextStyle(name: string) {
@@ -189,10 +164,6 @@ class ActaToolbarText {
         this._itemAlignCenter.disabled = false;
         this._itemAlignRight.disabled = false;
         this._itemAlignJustify.disabled = false;
-        this._itemVAlignTop.disabled = false;
-        this._itemVAlignMiddle.disabled = false;
-        this._itemVAlignBottom.disabled = false;
-        this._itemVAlignJustify.disabled = false;
 
         this._disabled = false;
     }
@@ -211,10 +182,6 @@ class ActaToolbarText {
         this._itemAlignCenter.disabled = true;
         this._itemAlignRight.disabled = true;
         this._itemAlignJustify.disabled = true;
-        this._itemVAlignTop.disabled = true;
-        this._itemVAlignMiddle.disabled = true;
-        this._itemVAlignBottom.disabled = true;
-        this._itemVAlignJustify.disabled = true;
 
         this._disabled = true;
     }
@@ -240,12 +207,6 @@ class ActaToolbarText {
             this._itemAlignCenter.value = data.textAlign === TextAlign.CENTER ? true : false;
             this._itemAlignRight.value = data.textAlign === TextAlign.RIGHT ? true : false;
         }
-        if (data.textVAlign !== undefined) {
-            this._itemVAlignTop.value = data.textVAlign === ParagraphVAlign.TOP ? true : false;
-            this._itemVAlignMiddle.value = data.textVAlign === ParagraphVAlign.MIDDLE ? true : false;
-            this._itemVAlignBottom.value = data.textVAlign === ParagraphVAlign.BOTTOM ? true : false;
-            this._itemVAlignJustify.value = data.textVAlign === ParagraphVAlign.JUSTIFY ? true : false;
-        }
     }
 
     get data() {
@@ -266,11 +227,6 @@ class ActaToolbarText {
         if (this._itemAlignLeft.value) data.textAlign = TextAlign.LEFT;
         if (this._itemAlignCenter.value) data.textAlign = TextAlign.CENTER;
         if (this._itemAlignRight.value) data.textAlign = TextAlign.RIGHT;
-
-        if (this._itemVAlignTop.value) data.textVAlign = ParagraphVAlign.TOP;
-        if (this._itemVAlignMiddle.value) data.textVAlign = ParagraphVAlign.MIDDLE;
-        if (this._itemVAlignBottom.value) data.textVAlign = ParagraphVAlign.BOTTOM;
-        if (this._itemVAlignJustify.value) data.textVAlign = ParagraphVAlign.JUSTIFY;
 
         return data;
     }

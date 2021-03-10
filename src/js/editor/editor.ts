@@ -1,6 +1,6 @@
 import ActaPage from '../pageobject/page';
 import ActaGuide from '../pageobject/guide';
-import ActaParagraph, { ParagraphVAlign } from '../pageobject/paragraph';
+import ActaParagraph, { ParagraphVerticalAlign as ParagraphVerticalAlign } from '../pageobject/paragraph';
 import ActaTextStyleInherit from '../pageobject/textstyle/textstyle-inherit';
 import ActaTextStyleManager from '../pageobject/textstyle/textstylemgr';
 import ActaImage from '../pageobject/image';
@@ -50,8 +50,7 @@ export interface IActaEditorTextAttribute {
     lineHeight?: number,
     underline?: boolean,
     strikeline?: boolean,
-    textAlign?: TextAlign,
-    textVAlign?: ParagraphVAlign
+    textAlign?: TextAlign
 };
 
 interface Position {
@@ -315,7 +314,7 @@ export default class ActaEditor {
     }
 
     private _onParagraphMoveCursor(paragraph: ActaParagraph, cursor: number) {
-        const textStyle = paragraph.getTextStyleAtCursor();
+        const textStyle = paragraph.getTextStyleAtCursor(true);
         const tbData: IActaEditorTextAttribute = {};
 
         if (textStyle.fontName !== null) tbData.fontName = textStyle.fontName;
