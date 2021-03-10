@@ -202,7 +202,7 @@ body {
                     transition: background-color .2s, color .2s;
                     user-select: none;
                     width: calc(1.5em - 4px);
-
+                    
                     &:disabled {
                         color: $layoutTopbarButtonDisableColor;
                     }
@@ -268,12 +268,15 @@ body {
                     width: 2em;
 
                     button {
+                        align-items: center;
                         background-color: transparent;
                         border: 0;
                         border-radius: 3px;
                         color: $layoutToolbarColor;
+                        display: inline-flex;
                         font-size: 1em;
                         height: calc(100% - 8px);
+                        justify-content: center;
                         margin: 4px;
                         outline: none;
                         padding: 0;

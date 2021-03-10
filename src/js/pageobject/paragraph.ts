@@ -283,7 +283,7 @@ export default class ActaParagraph extends IActaFrame {
         if ([Keycode.HOME, Keycode.END, Keycode.UP, Keycode.DOWN, Keycode.LEFT, Keycode.RIGHT].indexOf(e.keyCode) > -1) {
             // Shift키를 누르고 커서이동시 셀럭션모드
             if (e.shiftKey) {
-                if (this._cursorMode !== CursorMode.SELECTION) this._selectionStart = this.cursor;
+                if (this._cursorMode !== CursorMode.SELECTION) this.selectionStart = this.cursor;
                 this._cursorMode = CursorMode.SELECTION;
             } else {
                 this._cursorMode = CursorMode.EDIT;
@@ -349,7 +349,7 @@ export default class ActaParagraph extends IActaFrame {
         } else if (e.keyCode === Keycode.HANJA) {
             const textChar = this.textChars[this.cursor - 1];
             if (textChar) {
-                this._selectionStart = this.cursor - 1;
+                this.selectionStart = this.cursor - 1;
                 this._cursorMode = CursorMode.SELECTION;
                 this._EMIT_REPAINT_CURSOR();
 
@@ -412,7 +412,7 @@ export default class ActaParagraph extends IActaFrame {
             for (let i = 0; i < textChars.length && textChars[i].isVisable; i++) {
                 this.cursor = i + 1;
             }
-            this._selectionStart = 0;
+            this.selectionStart = 0;
             this._cursorMode = CursorMode.SELECTION;
             this._EMIT_REPAINT_CURSOR();
             return false;
@@ -553,7 +553,7 @@ export default class ActaParagraph extends IActaFrame {
         return this.textChars[lastTextCharIdx + 1].textRow;
     }
 
-    private _setCursor(textChar: ActaTextChar | undefined, x?: number) {
+    private _setCursor(textChar: ActaTextChar | undefined, x?: number, ignoreEvent: boolean = false) {
         let position = 0;
         if (textChar) {
             position = this.textChars.indexOf(textChar);
@@ -567,16 +567,19 @@ export default class ActaParagraph extends IActaFrame {
         } else {
             position = this.textChars.length;
         }
-        this.cursor = position;
-
+        if (ignoreEvent) {
+            this._cursor = position;
+        } else {
+            this.cursor = position;
+        }
         return this.cursor;
     };
 
     private _getSelectedTextChars() {
         const textChars: ActaTextChar[] = [];
         if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1) {
-            if (this._selectionStart !== null && this.cursor !== null) {
-                let startpos = this._selectionStart;
+            if (this.selectionStart !== null && this.cursor !== null) {
+                let startpos = this.selectionStart;
                 let endpos = this.cursor;
 
                 if (startpos > endpos) [startpos, endpos] = [endpos, startpos];
@@ -602,7 +605,7 @@ export default class ActaParagraph extends IActaFrame {
         this._hideCursor();
         if (this.cursor === null) return;
 
-        if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this.cursor !== this._selectionStart) {
+        if ([CursorMode.SELECTIONSTART, CursorMode.SELECTION].indexOf(this._cursorMode) > -1 && this.cursor !== this.selectionStart) {
             let currColumn: ActaParagraphColumn | undefined;
             let currLine = -1, startx = 0;
             let selBlock;
@@ -838,8 +841,8 @@ export default class ActaParagraph extends IActaFrame {
             cursorMode: this._cursorMode,
             cursorIndex: this.cursor,
             cursorCharID: (this.cursor && this.cursor < textChars.length) ? textChars[this.cursor].id : null,
-            selectionStartIndex: this._selectionStart,
-            selectionStartCharID: (this._selectionStart && this._selectionStart < textChars.length) ? textChars[this._selectionStart].id : null,
+            selectionStartIndex: this.selectionStart,
+            selectionStartCharID: (this.selectionStart !== null && this.selectionStart < textChars.length) ? textChars[this.selectionStart].id : null,
             timestamp: force ? (new Date()).getTime() : 0
         };
         this._REPAINT_CURSOR$.next(JSON.stringify(state));
@@ -890,6 +893,15 @@ export default class ActaParagraph extends IActaFrame {
         if (pos) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
     }
 
+    private set selectionStart(pos) {
+        this._selectionStart = pos;
+        if (pos) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
+    }
+
+    private get selectionStart() {
+        return this._selectionStart;
+    }
+
     private set editable(value) {
         this._editable = value;
         if (this._editable) {
@@ -912,7 +924,7 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     protected _onBlur() {
-        this._selectionStart = null;
+        this.selectionStart = null;
         this.editable = false;
         this._hideCursor();
     }
@@ -1003,7 +1015,7 @@ export default class ActaParagraph extends IActaFrame {
                 const textChars = this.textChars;
                 for (let i = textChars.indexOf(evtTextChar); i >= 0; i--) {
                     if (breakType.indexOf(textChars[i].type) > -1) break;
-                    this._selectionStart = i;
+                    this.selectionStart = i;
                 }
                 for (let i = this.textChars.indexOf(evtTextChar); i < this.textChars.length; i++) {
                     if (breakType.indexOf(textChars[i].type) > -1) break;
@@ -1015,7 +1027,7 @@ export default class ActaParagraph extends IActaFrame {
                 const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
                 this._cursorMode = CursorMode.SELECTIONSTART;
                 this.cursor = null;
-                this._selectionStart = this._setCursor(textChar, e.offsetX);
+                this.selectionStart = this._setCursor(textChar, e.offsetX, true);
                 this._EMIT_REPAINT_CURSOR();
             }
             this.focus({ preventScroll: true });
@@ -1032,7 +1044,7 @@ export default class ActaParagraph extends IActaFrame {
             return true;
         })).subscribe(e => {
             const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
-            if (this._selectionStart != null) {
+            if (this.selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
                 this._EMIT_REPAINT_CURSOR();
             }
@@ -1047,14 +1059,14 @@ export default class ActaParagraph extends IActaFrame {
             return true;
         })).subscribe(e => {
             const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
-            if (this._selectionStart != null) {
+            if (this.selectionStart != null) {
                 this._setCursor(textChar, e.offsetX);
                 this._EMIT_REPAINT_CURSOR();
             }
             if (this.cursor === null) {
                 this._cursorMode = CursorMode.NONE;
                 return false;
-            } else if (this.cursor !== this._selectionStart && this._selectionStart) {
+            } else if (this.cursor !== this.selectionStart && this.selectionStart) {
                 this._cursorMode = CursorMode.SELECTION;
             } else {
                 this._cursorMode = CursorMode.EDIT;
