@@ -729,24 +729,24 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     private _getTextCharAtPosition(column: ActaParagraphColumn, x: number, y: number) {
-        let textChar: ActaTextChar | undefined;
+        let retTextChar: ActaTextChar | undefined;
 
-        for (const fTextChar of this.textChars) {
-            if (!fTextChar.isVisable || fTextChar.x < 0) continue;
-            if (!fTextChar.textRow) continue;
-            if (fTextChar.textRow.column !== column) continue;
+        for (const textChar of this.textChars) {
+            if (!textChar.isVisable || textChar.x < 0) continue;
+            if (!textChar.textRow) continue;
+            if (textChar.textRow.column !== column) continue;
 
-            const itemX1 = fTextChar.x;
-            const itemX2 = fTextChar.x + fTextChar.calcWidth;
-            const itemY1 = fTextChar.y;
-            const itemY2 = fTextChar.y + fTextChar.height + fTextChar.textRow.maxLeading;
+            const itemX1 = textChar.x;
+            const itemX2 = textChar.x + textChar.calcWidth;
+            const itemY1 = textChar.y;
+            const itemY2 = textChar.y + textChar.textRow.maxHeight + textChar.textRow.maxLeading;
             if (itemX1 <= x && itemX2 >= x && itemY1 <= y && itemY2 >= y) {
-                textChar = fTextChar;
+                retTextChar = textChar;
                 break;
             }
         }
 
-        if (!textChar) {
+        if (!retTextChar) {
             const textRows: ActaTextRow[] = column.textRows;
             for (const textRow of textRows) {
                 if (textRow.offsetTop === undefined) continue;
@@ -756,12 +756,12 @@ export default class ActaParagraph extends IActaFrame {
                 if (itemY1 < y && itemY2 > y) {
                     let maxWidth = 0;
                     for (const textChars of textRow.items) maxWidth += textChars.calcWidth;
-                    textChar = maxWidth <= x ? textRow.lastTextChar : textRow.firstTextChar;
+                    retTextChar = maxWidth <= x ? textRow.lastTextChar : textRow.firstTextChar;
                     break;
                 }
             }
         }
-        return textChar;
+        return retTextChar;
     }
 
     private _computTextCharPosition() {
@@ -801,7 +801,7 @@ export default class ActaParagraph extends IActaFrame {
             textStyle = this.defaultTextStyle;
             if (!textStyle || !textStyle.font || !textStyle.fontSize) return;
 
-            const dummyRow = new ActaTextRow(this.columns[indexOfColumn], textStyle.indent || 0);
+            const dummyRow = new ActaTextRow(this.columns[indexOfColumn], U.px(textStyle.indent) || 0);
             this.computeTextRowPaddingSize(dummyRow);
         }
     }
@@ -1086,7 +1086,7 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     computeTextRowPaddingSize(textRow: ActaTextRow, textChar?: ActaTextChar) {
-        const textHeight = textChar ? textChar.height : this.defaultTextStyle.textHeight;
+        const textHeight = textChar ? textChar.height : U.px(this.defaultTextStyle.textHeight);
         const broken = this._getOverlapAreaWithOtherFrames(textRow, textHeight);
         if (broken) {
             if (broken[0] <= 0) {

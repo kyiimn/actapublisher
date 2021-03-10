@@ -254,10 +254,10 @@ class ActaToolbarText {
 
         data.textStyleName = this._itemTextStyle.value;
         data.fontName = this._itemFont.value;
-        data.fontSize = U.px(this._itemFontSize.value, unit);
-        data.indent = U.px(this._itemIndent.value, unit);
+        data.fontSize = U.pt(this._itemFontSize.value, unit);
+        data.indent = U.pt(this._itemIndent.value, unit);
         data.xscale = parseFloat(this._itemXScale.value) / 100;
-        data.letterSpacing = U.px(this._itemLetterSpacing.value, unit);
+        data.letterSpacing = U.pt(this._itemLetterSpacing.value, unit);
         data.lineHeight = parseFloat(this._itemLineHeight.value) / 100;
         data.underline = this._itemUnderline.value;
         data.strikeline = this._itemStrikeline.value;

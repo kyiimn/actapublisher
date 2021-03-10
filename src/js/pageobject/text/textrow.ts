@@ -1,6 +1,6 @@
 import ActaParagraphColumn from '../paragraph-col';
-import ActaTextChar from './textchar';
-import { CharType } from './textchar';
+import ActaTextChar, { CharType } from './textchar';
+import U from '../../util/units';
 import { TextAlign } from '../textstyle/textstyle';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -68,11 +68,10 @@ export default class ActaTextRow {
 
         const textStyle = textChar.textStyle;
 
-        this.maxHeight = textStyle.textHeight;
-        this.maxLeading = textStyle.leading;
+        this.maxHeight = U.px(textStyle.textHeight);
+        this.maxLeading = U.px(textStyle.leading);
         this.textAlign = textStyle.textAlign;
 
-        const lastChar = this.lastTextChar;
         this._items.push(textChar);
 
         textChar.textRow = this;
@@ -187,7 +186,7 @@ export default class ActaTextRow {
             if (this.paragraph) {
                 const lastTextChar = this.paragraph.visableLastTextChar;
                 const textStyle = (lastTextChar) ? lastTextChar.textStyle : this.paragraph.defaultTextStyle;
-                height = textStyle.textHeight;
+                height = U.px(textStyle.textHeight);
             }
         }
         return height;
@@ -199,7 +198,7 @@ export default class ActaTextRow {
             if (this.paragraph) {
                 const lastTextChar = this.paragraph.visableLastTextChar;
                 const textStyle = (lastTextChar) ? lastTextChar.textStyle : this.paragraph.defaultTextStyle;
-                leading = textStyle.leading;
+                leading = U.px(textStyle.leading);
             }
         }
         return leading;

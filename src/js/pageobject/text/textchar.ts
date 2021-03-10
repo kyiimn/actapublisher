@@ -1,6 +1,7 @@
 import ActaTextNode from "./textnode";
 import ActaTextRow from './textrow';
 import colormgr from '../color/colormgr';
+import U from '../../util/units';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,7 +26,6 @@ export default class ActaTextChar {
     private _drawOffsetY: number;
     private _width: number;
     private _realWidth: number;
-    private _calcWidth: number;
     private _marginWidth: number;
 
     private _drawable: boolean;
@@ -41,19 +41,20 @@ export default class ActaTextChar {
 
     private _createSVGPath() {
         const textStyle = this.textNode.textStyle;
+        const fontSizePX = U.px(textStyle.fontSize);
         if (this._type === CharType.SPACE) {
-            const width = (textStyle.fontSize !== null) ? textStyle.fontSize / 3 : 0;
+            const width = (fontSizePX !== null) ? fontSizePX / 3 : 0;
             if (this._width !== width) {
                 this._width = width;
                 this._modified = true;
             }
         } else if (this._type === CharType.CHAR) {
-            const font = textStyle.font.font, size = textStyle.fontSize;
+            const font = textStyle.font.font;
             const glyph = font.charToGlyph(this._char);
-            const unitsPerSize = font.unitsPerEm / size;
+            const unitsPerSize = font.unitsPerEm / fontSizePX;
             const yMin = font.tables.head.yMin / unitsPerSize;
             const height = this.height;
-            const path = glyph.getPath(0, height, size);
+            const path = glyph.getPath(0, height, fontSizePX);
             const pathData = path.toPathData(3);
 
             this._invalidFont = (glyph.unicode === undefined) ? true : false;
@@ -91,7 +92,6 @@ export default class ActaTextChar {
         this._drawOffsetX = 0;
         this._drawOffsetY = 0;
         this._width = 0;
-        this._calcWidth = 0;
         this._realWidth = 0;
         this._marginWidth = 0;
 
@@ -116,19 +116,20 @@ export default class ActaTextChar {
 
     update() {
         const textStyle = this.textNode.textStyle;
+        const letterSpacingPX = U.px(textStyle.letterSpacing);
         if (!this.textRow || !this.modified) return;
 
         this._oldOffsetX = this.offsetLeft;
         this._oldMarginWidth = this.marginWidth;
         this._oldOffsetY = this.textRow.offsetTop;
         this._oldMaxHeight = this.textRow.maxHeight;
-        this._oldLetterSpacing = textStyle.letterSpacing;
+        this._oldLetterSpacing = letterSpacingPX;
 
         for (const textDecoration of this._textDecorations) if (textDecoration) textDecoration.remove();
         this._textDecorations = [];
 
         let transform = 'translate(';
-        transform += `${(this.drawOffsetX || 0) + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX}px`;
+        transform += `${(this.drawOffsetX || 0) + ((letterSpacingPX || 0) / 2) + this._oldOffsetX}px`;
         transform += ', ';
         transform += `${(this.drawOffsetY || 0) + this._oldOffsetY - this.textRow.maxHeight + ((this.textRow.maxHeight - (this.height || 0)) * 2)}px`;
         transform += ') ';
@@ -161,8 +162,8 @@ export default class ActaTextChar {
             const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             strikeline.setAttribute('data-id', this.id);
             strikeline.setAttribute('data-textnode', this._textNode.id);
-            strikeline.setAttribute('x1', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX).toString());
-            strikeline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
+            strikeline.setAttribute('x1', (this.drawOffsetX + ((letterSpacingPX || 0) / 2) + this._oldOffsetX).toString());
+            strikeline.setAttribute('x2', (this.drawOffsetX + ((letterSpacingPX || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
             strikeline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
             strikeline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
             strikeline.style.stroke = colormgr.getRGBCode(textStyle.colorId);
@@ -176,8 +177,8 @@ export default class ActaTextChar {
             const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             underline.setAttribute('data-id', this.id);
             underline.setAttribute('data-textnode', this._textNode.id);
-            underline.setAttribute('x1', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX).toString());
-            underline.setAttribute('x2', (this.drawOffsetX + ((textStyle.letterSpacing || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
+            underline.setAttribute('x1', (this.drawOffsetX + ((letterSpacingPX || 0) / 2) + this._oldOffsetX).toString());
+            underline.setAttribute('x2', (this.drawOffsetX + ((letterSpacingPX || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
             underline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY).toString());
             underline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY).toString());
             underline.style.stroke = colormgr.getRGBCode(textStyle.colorId);
@@ -197,10 +198,10 @@ export default class ActaTextChar {
 
     initWidth() {
         const textStyle = this.textStyle;
+        const letterSpacingPX = U.px(textStyle.letterSpacing);
         const scaledWidth = textStyle.xscale * this.width;
 
-        this._realWidth = scaledWidth + (textStyle.letterSpacing || 0);
-        this._calcWidth = this.isDrawable ? this._realWidth : 0;
+        this._realWidth = scaledWidth + (letterSpacingPX || 0);
         this._marginWidth = 0;
     }
 
@@ -254,7 +255,7 @@ export default class ActaTextChar {
     get textNode() { return this._textNode; }
     get textRow() { return this._textRow || null; }
     get textStyle() { return this.textNode.textStyle; }
-    get height() { return this.textStyle.textHeight; }
+    get height() { return U.px(this.textStyle.textHeight); }
     get leading() { return this.textStyle.leading; }
 
     get x() { return this._oldOffsetX !== undefined ? this._oldOffsetX : -1; }
@@ -316,7 +317,7 @@ export default class ActaTextChar {
         if (this._oldOffsetX !== this.offsetLeft || this._oldOffsetY !== this.textRow.offsetTop) return true;
         if (this._oldMarginWidth !== this.marginWidth) return true;
         if (this._oldMaxHeight !== this.textRow.maxHeight) return true;
-        if (this._oldLetterSpacing !== this.textStyle.letterSpacing) return true;
+        if (this._oldLetterSpacing !== U.px(this.textStyle.letterSpacing)) return true;
 
         return false;
     }

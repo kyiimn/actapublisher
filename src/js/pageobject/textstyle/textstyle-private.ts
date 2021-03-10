@@ -1,5 +1,6 @@
 import ActaFont from '../font/font';
 import fontmgr from '../font/fontmgr';
+import U from '../../util/units';
 
 import { Subject } from 'rxjs';
 
@@ -78,7 +79,7 @@ export default class ActaTextStylePrivate {
         if (this.fontSize !== null) returnValue += `font-size="${this.fontSize}" `;
         if (this.xscale !== null) returnValue += `xscale="${this.xscale}" `;
         if (this.letterSpacing !== null) returnValue += `letter-spacing="${this.letterSpacing}" `;
-        if (this.lineHeight !== null) returnValue += `font-size="${this.lineHeight}" `;
+        if (this.lineHeight !== null) returnValue += `line-height="${this.lineHeight}" `;
         if (this.indent !== null) returnValue += `indent="${this.indent}" `;
         if (this.colorId !== null) returnValue += `color-id="${this.colorId}" `;
         if (this.underline !== null) returnValue += `underline="${this.underline ? 'yes' : 'no'}" `;
@@ -171,10 +172,10 @@ export default class ActaTextStylePrivate {
     get textHeight() {
         if (this.font === null || this.fontSize === null) return 0;
 
-        const font = this.font.font, size = this.fontSize;
+        const font = this.font.font, size = U.px(this.fontSize);
         const unitsPerSize = font.unitsPerEm / size;
 
-        return (font.tables.os2.usWinAscent + font.tables.os2.usWinDescent) / unitsPerSize;
+        return U.pt((font.tables.os2.usWinAscent + font.tables.os2.usWinDescent) / unitsPerSize, U.PX);
     }
 
     get font() { return this._font; }
