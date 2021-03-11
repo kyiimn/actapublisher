@@ -1233,15 +1233,24 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
-    edit() {
+    switchEditable(val: boolean) {
         if (this.readonly) return false;
 
-        this.cursor = 0;
-        this._cursorMode = CursorMode.EDIT;
-        this.editable = true;
-        this._EMIT_REPAINT_CURSOR();
+        if (val) {
+            this.cursor = 0;
+            this._cursorMode = CursorMode.EDIT;
+            this.editable = true;
+            this._EMIT_REPAINT_CURSOR();
 
-        this.focus({ preventScroll: true });
+            this.focus({ preventScroll: true });
+        } else {
+            this.cursor = 0;
+            this._cursorMode = CursorMode.EDIT;
+            this.editable = true;
+            this._EMIT_REPAINT_CURSOR();
+
+            this.blur();
+        }
     }
 
     set value(text: string) {
