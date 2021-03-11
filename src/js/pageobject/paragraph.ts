@@ -136,6 +136,8 @@ export default class ActaParagraph extends IActaFrame {
     private _selectionStart: number | null;
     private _textStore: ActaTextStore;
 
+    private _insertTextStyle?: ActaTextStyleInherit;
+
     private _REPAINT$: Subject<undefined>;
     private _REPAINT_CURSOR$: Subject<string>;
     private _MOVE_CURSOR$: Subject<{ paragraph: ActaParagraph, cursor: number}>;
@@ -187,6 +189,7 @@ export default class ActaParagraph extends IActaFrame {
 
     private _onKeyPressInputChar(e: KeyboardEvent) {
         const char = ActaParagraph.GET_CHAR(e);
+        let inputChar;
 
         if ([CursorMode.EDIT, CursorMode.SELECTION, CursorMode.INPUT].indexOf(this._cursorMode) < 0) return;
         if (this.cursor === null) { this._cursorMode = CursorMode.NONE; return; }
@@ -221,12 +224,28 @@ export default class ActaParagraph extends IActaFrame {
                 this._onKeyPressInputHangulChar();
             } else {
                 this._inputChar = char;
+                if (this._insertTextStyle) {
+                    inputChar = new ActaTextNode();
+                    inputChar.modifiedTextStyle.merge(this._insertTextStyle);
+                    inputChar.insert(0, this._inputChar);
+                    this._insertTextStyle = undefined;
+                } else {
+                    inputChar = this._inputChar;
+                }
                 this.cursor++;
-                textNode.insert(insertPos, this._inputChar);
+                textNode.insert(insertPos, inputChar);
             }
             if (this._inputChar !== '') this._cursorMode = CursorMode.INPUT;
         } else {
-            textNode.insert(insertPos, char);
+            if (this._insertTextStyle) {
+                inputChar = new ActaTextNode();
+                inputChar.modifiedTextStyle.merge(this._insertTextStyle);
+                inputChar.insert(0, char);
+                this._insertTextStyle = undefined;
+            } else {
+                inputChar = char;
+            }
+            textNode.insert(insertPos, inputChar);
             this._inputChar = '';
             this._cursorMode = CursorMode.EDIT;
             this.cursor++;
@@ -474,6 +493,8 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     private _setTextStyle(targetTextChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
+        if (targetTextChars.length < 1) return;
+
         const textNodes = this._toTextNodes(targetTextChars);
         for (const textNode of textNodes) {
             textNode.modifiedTextStyle.merge(textStyle);
@@ -494,8 +515,8 @@ export default class ActaParagraph extends IActaFrame {
             startPos = i;
         }
         for (let i = textChars.indexOf(targetTextChars[targetTextChars.length - 1]); i < textChars.length; i++) {
-            if (breakType.indexOf(textChars[i].type) > -1) break;
             endPos = i + 1;
+            if (breakType.indexOf(textChars[i].type) > -1) break;
         }
         if (startPos < 0 || endPos < 0) return;
         for (let i = startPos; i < endPos; i++) {
@@ -918,13 +939,15 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     private set cursor(pos) {
+        if (pos !== null && this._cursor !== pos) this._insertTextStyle = undefined;
         this._cursor = pos;
-        if (pos) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
+        if (pos !== null) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
     }
 
     private set selectionStart(pos) {
+        if (pos !== null && this._selectionStart !== pos) this._insertTextStyle = undefined;
         this._selectionStart = pos;
-        if (pos) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
+        if (pos !== null) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
     }
 
     private get selectionStart() {
@@ -1026,6 +1049,10 @@ export default class ActaParagraph extends IActaFrame {
                 return false;
             }
             if (!(e.target instanceof ActaParagraphColumn)) return false;
+            if (document.activeElement !== this) {
+                if (!this.readonly) this.focus({ preventScroll: true });
+                return false;
+            }
             return true;
         })).subscribe(e => {
             if ((e && e.detail === 2) || waitTripleClickTimer) {
@@ -1125,13 +1152,13 @@ export default class ActaParagraph extends IActaFrame {
             if (textStyle.textAlign !== null) {
                 const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
                 if (cursorTextChar) this._setTextAlign([cursorTextChar], textStyle);
-                // FIXME: 커서 위치에 임시 스타일 지정 구현해야함
+                this._insertTextStyle = textStyle;
             }
         } else {
-            const selTextChars = this._getSelectedTextChars();
-            if (selTextChars.length < 1) return;
-            this._setTextStyle(selTextChars, textStyle);
-            if (textStyle.textAlign !== null) this._setTextAlign(selTextChars, textStyle);
+            this._setTextStyle(this._getSelectedTextChars(), textStyle);
+            if (textStyle.textAlign !== null) {
+                this._setTextAlign(this._getSelectedTextChars(), textStyle);
+            }
         }
         this._EMIT_REPAINT();
     }
@@ -1192,6 +1219,8 @@ export default class ActaParagraph extends IActaFrame {
             if (returnTextStyle.indent !== textStyle.indent) returnTextStyle.indent = null;
             if (returnTextStyle.colorId !== textStyle.colorId) returnTextStyle.colorId = null;
         }
+        if (this._insertTextStyle) returnTextStyle.merge(this._insertTextStyle);
+
         return returnTextStyle;
     }
 
@@ -1257,7 +1286,10 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     set onMoveCursor(func: (data: { paragraph: ActaParagraph, cursor: number }) => void) {
-        this._MOVE_CURSOR$.pipe(filter(pos => [CursorMode.INPUT, CursorMode.NONE].indexOf(this._cursorMode) < 0 && this.isFocused && this.editable), distinctUntilChanged((p, n) => p === n, v => v.cursor)).subscribe(func);
+        this._MOVE_CURSOR$.pipe(
+            filter(pos => [CursorMode.INPUT, CursorMode.NONE].indexOf(this._cursorMode) < 0 && this.isFocused && this.editable),
+            distinctUntilChanged((p, n) => p === n, v => v.cursor)
+        ).subscribe(func);
     }
 
     get columnCount() { return this._columnCount; }
