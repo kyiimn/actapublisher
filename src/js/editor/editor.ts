@@ -65,7 +65,7 @@ interface Boundary {
     y: number[]
 };
 
-function getOffsetPosition(e: MouseEvent, parentEl?: IActaFrame) {
+function GET_OFFSET_POSITION(e: MouseEvent, parentEl?: IActaFrame) {
     let left = e.offsetX, top = e.offsetY;
     if (!e.target) return { left, top };
 
@@ -87,7 +87,7 @@ function getOffsetPosition(e: MouseEvent, parentEl?: IActaFrame) {
     return { left, top };
 }
 
-function applyMagnet(pos: Position, magnet?: Boundary, open?: boolean) {
+function APPLY_MAGNET(pos: Position, magnet?: Boundary, open?: boolean) {
     if (!magnet) return pos;
 
     if (magnet.x.length > ((open === undefined) ? 0 : 1)) {
@@ -119,14 +119,14 @@ function applyMagnet(pos: Position, magnet?: Boundary, open?: boolean) {
     return pos;
 }
 
-function getBoxSize(spos: Position, epos: Position, magnetData?: Boundary) {
+function GET_BOX_SIZE(spos: Position, epos: Position, magnetData?: Boundary) {
     const x1 = Math.min(spos.left, epos.left);
     const y1 = Math.min(spos.top, epos.top);
     const x2 = Math.max(spos.left, epos.left);
     const y2 = Math.max(spos.top, epos.top);
 
-    const nspos = applyMagnet({ left: x1, top: y1 }, magnetData, true);
-    const nepos = applyMagnet({ left: x2, top: y2 }, magnetData, false);
+    const nspos = APPLY_MAGNET({ left: x1, top: y1 }, magnetData, true);
+    const nepos = APPLY_MAGNET({ left: x2, top: y2 }, magnetData, false);
 
     return {
         x: nspos.left,
@@ -138,13 +138,27 @@ function getBoxSize(spos: Position, epos: Position, magnetData?: Boundary) {
     };
 }
 
+function GET_FRAME(el: HTMLElement) {
+    let nowEl: HTMLElement | null = el;
+    while (true) {
+        if (!nowEl) break;
+        if (nowEl instanceof IActaFrame) break;
+        nowEl = nowEl.parentElement;
+    }
+    return nowEl instanceof IActaFrame ? nowEl as IActaFrame : null;
+}
+
 export default class ActaEditor {
     private _element: HTMLElement;
     private _tool: EditorTool;
     private _page: ActaPage;
     private _readonly: boolean;
 
-    private _eveEventMouseMove?: MouseEvent;
+    private _mouseEventDragGuide?: HTMLElement;
+    private _mouseMovePreviousEvent?: MouseEvent;
+    private _mouseEventStartPosition?: { left: number, top: number };
+    private _mouseEventTarget?: IActaFrame;
+    private _pageGuideBoundary?: Boundary;
 
     private _CHANGE$: Subject<{ action: string, value: any }>;
 
@@ -191,58 +205,92 @@ export default class ActaEditor {
             this._CHANGE$.next({ action: 'scale', value: scale });
         });
 
-        fromEvent<MouseEvent>(this._page, 'mousedown').subscribe(e => this._onMouseDown(e));
-        fromEvent<MouseEvent>(this._page, 'mousemove').subscribe(e => this._onMouseMove(e));
-        fromEvent<MouseEvent>(this._page, 'mouseup').subscribe(e => this._onMouseUp(e));
+        fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => this._onMouseDown(e));
+        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 1)).subscribe(e => this._onMouseMove(e));
+        fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => this._onMouseUp(e));
+
+        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 4)).subscribe(e => this._onScrollMove(e));
     }
 
-    private _drawEventStartPosition?: { left: number, top: number };
-    private _drawGuide?: HTMLElement;
-    private _drawBoundary?: Boundary;
+    private _calcGuideBoundary() {
+        const guides = this._page.guide?.querySelectorAll('x-guide-col, x-guide-margin');
+        if (guides && guides.length > 0) {
+            const guideTop = U.px(this._page.paddingTop);
+            const guideLeft = U.px(this._page.paddingLeft);
+
+            this._pageGuideBoundary = { x: [guideLeft], y: [guideTop] };
+            for (const guide of guides) {
+                const style = window.getComputedStyle(guide);
+                const width = parseFloat(style.width);
+                const lastVal = this._pageGuideBoundary.x[this._pageGuideBoundary.x.length - 1];
+                this._pageGuideBoundary.x.push(lastVal + width);
+            }
+            for (const line of guides[0].querySelectorAll<HTMLElement>('x-guide-col-marker')) {
+                const style = window.getComputedStyle(line);
+                const marginTop = parseFloat(style.marginTop);
+                const height = parseFloat(style.height);
+                const lastVal = this._pageGuideBoundary.y[this._pageGuideBoundary.y.length - 1];
+                if (marginTop > 0) this._pageGuideBoundary.y.push(lastVal + marginTop);
+                this._pageGuideBoundary.y.push(lastVal + marginTop + height);
+            }
+        } else {
+            this._pageGuideBoundary = undefined;
+        }
+    }
 
     private _onMouseDown(e: MouseEvent) {
-        const eveDrawGuide = this._drawGuide;
-        try {
-            if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
-                const guides = this._page.guide?.querySelectorAll('x-guide-col, x-guide-margin');
-                if (guides && guides.length > 0) {
-                    const guideTop = U.px(this._page.paddingTop);
-                    const guideLeft = U.px(this._page.paddingLeft);
+        const previousDragGuide = this._mouseEventDragGuide;
 
-                    this._drawBoundary = { x: [guideLeft], y: [guideTop] };
-                    for (const guide of guides) {
-                        const style = window.getComputedStyle(guide);
-                        const width = parseFloat(style.width);
-                        const lastVal = this._drawBoundary.x[this._drawBoundary.x.length - 1];
-                        this._drawBoundary.x.push(lastVal + width);
-                    }
-                    for (const line of guides[0].querySelectorAll<HTMLElement>('x-guide-col-marker')) {
-                        const style = window.getComputedStyle(line);
-                        const marginTop = parseFloat(style.marginTop);
-                        const height = parseFloat(style.height);
-                        const lastVal = this._drawBoundary.y[this._drawBoundary.y.length - 1];
-                        if (marginTop > 0) this._drawBoundary.y.push(lastVal + marginTop);
-                        this._drawBoundary.y.push(lastVal + marginTop + height);
-                    }
-                }
-                const pos = getOffsetPosition(e);
-                this._drawEventStartPosition = pos;
-                this._drawGuide = document.createElement('div');
-                this._drawGuide.classList.add('draw-guide');
-                this._page.appendChild(this._drawGuide);
+        this._mouseEventDragGuide = undefined;
+        this._mouseEventTarget = undefined;
+
+        try {
+            const pos = GET_OFFSET_POSITION(e);
+            this._calcGuideBoundary();
+            if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
+                this._mouseEventStartPosition = pos;
+                this._mouseEventDragGuide = document.createElement('div');
+                this._mouseEventDragGuide.classList.add('draw-guide');
+                this._page.appendChild(this._mouseEventDragGuide);
+            } else if (this._tool === EditorTool.FRAME_MOVE_MODE) {
+                const frame = GET_FRAME(e.target as HTMLElement);
+                if (!frame) return;
+                this._mouseEventStartPosition = pos;
+                this._mouseEventTarget = frame;
+                this._mouseEventTarget.focus();
             }
         } finally {
-            if (eveDrawGuide) eveDrawGuide.remove();
+            if (previousDragGuide) previousDragGuide.remove();
+            e.stopPropagation();
+        }
+    }
+
+    private _onScrollMove(e: MouseEvent) {
+        try {
+            if (!this._mouseMovePreviousEvent) return;
+
+            const mx = e.clientX - this._mouseMovePreviousEvent.clientX;
+            const my = e.clientY - this._mouseMovePreviousEvent.clientY;
+            const body = this._element.parentElement;
+            if (!body) return;
+
+            body.scrollLeft -= mx;
+            body.scrollTop -= my;
+        } finally {
+            this._mouseMovePreviousEvent = e;
+
+            e.preventDefault();
             e.stopPropagation();
         }
     }
 
     private _onMouseUp(e: MouseEvent) {
         try {
-            if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._drawGuide && this._drawEventStartPosition) {
-                const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e), this._drawBoundary);
-                let frame;
-                let changetool: EditorTool | undefined;
+            if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
+                if (!this._mouseEventDragGuide || !this._mouseEventStartPosition) return;
+
+                const size = GET_BOX_SIZE(this._mouseEventStartPosition, GET_OFFSET_POSITION(e), this._pageGuideBoundary);
+                let frame, changetool: EditorTool | undefined;
                 if (size.columnCount < 1 || size.lineCount < 1) return;
 
                 switch (this._tool) {
@@ -276,11 +324,12 @@ export default class ActaEditor {
                 if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
             }
         } finally {
-            if (this._drawGuide) this._drawGuide.remove();
+            if (this._mouseEventDragGuide) this._mouseEventDragGuide.remove();
 
-            this._drawGuide = undefined;
-            this._drawEventStartPosition = undefined;
-            this._drawBoundary = undefined;
+            this._mouseEventDragGuide = undefined;
+            this._mouseEventStartPosition = undefined;
+            this._mouseMovePreviousEvent = undefined;
+            this._pageGuideBoundary = undefined;
 
             e.preventDefault();
             e.stopPropagation();
@@ -289,24 +338,15 @@ export default class ActaEditor {
 
     private _onMouseMove(e: MouseEvent) {
         try {
-            if (e.buttons !== 1 || this._eveEventMouseMove?.buttons !== 1) return;
-            if (this._tool === EditorTool.SELECT && e.ctrlKey) {
-                if (!this._eveEventMouseMove?.ctrlKey || this._eveEventMouseMove?.buttons !== 1) return;
-                const mx = e.clientX - this._eveEventMouseMove.clientX;
-                const my = e.clientY - this._eveEventMouseMove.clientY;
-                const body = this._element.parentElement;
-                if (!body) return;
-                body.scrollLeft -= mx;
-                body.scrollTop -= my;
-            } else if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._drawGuide && this._drawEventStartPosition) {
-                const size = getBoxSize(this._drawEventStartPosition, getOffsetPosition(e), this._drawBoundary);
-                this._drawGuide.style.left = `${size.x}px`;
-                this._drawGuide.style.top = `${size.y}px`;
-                this._drawGuide.style.width = `${size.width}px`;
-                this._drawGuide.style.height = `${size.height}px`;
+            if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._mouseEventDragGuide && this._mouseEventStartPosition) {
+                const size = GET_BOX_SIZE(this._mouseEventStartPosition, GET_OFFSET_POSITION(e), this._pageGuideBoundary);
+                this._mouseEventDragGuide.style.left = `${size.x}px`;
+                this._mouseEventDragGuide.style.top = `${size.y}px`;
+                this._mouseEventDragGuide.style.width = `${size.width}px`;
+                this._mouseEventDragGuide.style.height = `${size.height}px`;
             }
         } finally {
-            this._eveEventMouseMove = e;
+            this._mouseMovePreviousEvent = e;
 
             e.preventDefault();
             e.stopPropagation();
@@ -328,6 +368,10 @@ export default class ActaEditor {
         if (textStyle.textAlign !== null) tbData.textAlign = textStyle.textAlign;
 
         this._CHANGE$.next({ action: "textstyle", value: tbData });
+
+        if (this._tool !== EditorTool.TEXT_MODE) {
+            this._CHANGE$.next({ action: 'changetool', value: EditorTool.TEXT_MODE });
+        }
     }
 
     setTextStyle(tbData: IActaEditorTextAttribute) {
@@ -350,16 +394,34 @@ export default class ActaEditor {
     }
 
     cancel() {
-        if (!this._drawGuide && !this._drawEventStartPosition) return;
+        if (!this._mouseEventDragGuide && !this._mouseEventStartPosition) return;
 
-        if (this._drawGuide) this._drawGuide.remove();
-        this._drawGuide = undefined;
-        this._drawEventStartPosition = undefined;
-        this._drawBoundary = undefined;
+        if (this._mouseEventDragGuide) this._mouseEventDragGuide.remove();
+        this._mouseEventDragGuide = undefined;
+        this._mouseEventStartPosition = undefined;
+        this._pageGuideBoundary = undefined;
+    }
+
+    set tool(tool: EditorTool) {
+        this._tool = tool;
+        if (this._tool === EditorTool.TEXT_MODE) {
+            const focusedPara = this._page.querySelector<ActaParagraph>('x-paragraph.focus');
+            if (!focusedPara) return;
+            if (focusedPara.classList.contains('editable')) return;
+            focusedPara.switchEditable(true);
+        } else if (this._tool === EditorTool.FRAME_EDIT_MODE) {
+            const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
+            if (editablePara) editablePara.switchEditable(false);
+        } else if (this._tool === EditorTool.FRAME_MOVE_MODE) {
+            const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
+            if (editablePara) editablePara.switchEditable(false);
+        } else if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
+            const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
+            if (editablePara) editablePara.switchEditable(false);
+        }
     }
 
     set scale(scale: number) { this._page.scale = scale; }
-    set tool(tool: EditorTool) { this._tool = tool; }
     set readonly(value: boolean) { this._readonly = value; }
 
     get scale() { return this._page.scale; }

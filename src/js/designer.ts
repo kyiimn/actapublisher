@@ -2,7 +2,7 @@ import ToolbarPODraw from './toolbar/pageobject-draw';
 import ToolbarPOControl from './toolbar/pageobject-control';
 import ToolbarText from './toolbar/text';
 import ToolbarDocStatus from './toolbar/document-status';
-import Editor, { EditorTool } from './editor/editor';
+import Editor from './editor/editor';
 
 import NewTemplate from './designer/dialog/newtemplate';
 
