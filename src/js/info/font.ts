@@ -1,4 +1,4 @@
-import ActaTextStyle from '../pageobject/textstyle/textstyle';
+import ActaTextAttributeAbsolute from '../pageobject/textstyle/textattribute-absolute';
 import fontmgr from '../pageobject/font/fontmgr';
 import textstylemgr from '../pageobject/textstyle/textstylemgr';
 import api from '../util/api';
@@ -61,7 +61,7 @@ class ActaFontInfo {
             const textstyle: IActaTextStyle = code;
             if (!fontmgr.get(textstyle.fontName)) continue;
 
-            const t = new ActaTextStyle(textstyle.fontName);
+            const t = new ActaTextAttributeAbsolute(textstyle.fontName);
             t.fontSize = U.pt(textstyle.fontSize, U.MM);
             t.xscale = textstyle.xscale;
             t.letterSpacing = U.pt(textstyle.letterSpacing, U.MM);

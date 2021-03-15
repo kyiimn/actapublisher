@@ -6,7 +6,7 @@ import { ImageFitType, ImageOverlapMethod } from './pageobject/image';
 import fontmgr from './pageobject/font/fontmgr';
 import colormgr from './pageobject/color/colormgr';
 import textstylemgr from './pageobject/textstyle/textstylemgr';
-import ActaTextStyle from './pageobject/textstyle/textstyle';
+import ActaTextAttributeAbsolute from './pageobject/textstyle/textattribute-absolute';
 import U from './util/units';
 
 import '../css/pageobject.scss';
@@ -18,17 +18,17 @@ const main = async () => {
     colormgr.add({id: 1, name: 'red', colorType: 'RGB', code: '#ff0000', rgbCode: '#ff0000' });
 
     let s;
-    s = new ActaTextStyle('중앙신문명조');
+    s = new ActaTextAttributeAbsolute('중앙신문명조');
     s.fontSize = U.px('9pt');
     textstylemgr.add('본문1', s);
 
-    s = new ActaTextStyle('중앙세고딕');
+    s = new ActaTextAttributeAbsolute('중앙세고딕');
     s.fontSize = U.px('9pt');
     s.letterSpacing = 1;
     s.colorId = 1;
     textstylemgr.add('본문2', s);
 
-    s = new ActaTextStyle('중앙신문명조');
+    s = new ActaTextAttributeAbsolute('중앙신문명조');
     s.fontSize = U.px('9pt');
     s.indent = 8;
     textstylemgr.add('본문3', s);

@@ -1,5 +1,5 @@
 import ActaTextNode from './textnode';
-import { TextAlign } from '../textstyle/textstyle';
+import { TextAlign } from '../textstyle/textattribute-absolute';
 import Stack from '../../util/stack';
 import U from '../../util/units';
 
@@ -38,7 +38,7 @@ export default class ActaTextStore extends ActaTextNode {
                         if (tagname === 'x-style') {
                             if (str.length > 0) { currentnode.push(str); str = ''; }
                             const newnode = new ActaTextNode(tagname);
-                            const textStyle = newnode.modifiedTextStyle;
+                            const textAttr = newnode.modifiedTextAttribute;
 
                             currentnode.push(newnode);
                             node.push(currentnode);
@@ -50,17 +50,17 @@ export default class ActaTextStore extends ActaTextNode {
                                 val = val.toLowerCase();
                                 switch (tt[0].toLowerCase()) {
                                     case 'name': newnode.defaultTextStyleName = val; break;
-                                    case 'color-id': textStyle.colorId = !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : null; break;
-                                    case 'underline': textStyle.underline = val === 'yes' ? true : false; break;
-                                    case 'strikeline': textStyle.strikeline = val === 'yes' ? true : false; break;
-                                    case 'xscale': textStyle.xscale = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
-                                    case 'line-height': textStyle.lineHeight = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
-                                    case 'letter-spacing': textStyle.letterSpacing = U.pt(val); break;
-                                    case 'indent': textStyle.indent = U.pt(val); break;
-                                    case 'font-size': textStyle.fontSize = U.pt(val); break;
-                                    case 'font-name': textStyle.fontName = val; break;
+                                    case 'color-id': textAttr.colorId = !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : null; break;
+                                    case 'underline': textAttr.underline = val === 'yes' ? true : false; break;
+                                    case 'strikeline': textAttr.strikeline = val === 'yes' ? true : false; break;
+                                    case 'xscale': textAttr.xscale = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'line-height': textAttr.lineHeight = !isNaN(parseFloat(val)) ? parseFloat(val) : null; break;
+                                    case 'letter-spacing': textAttr.letterSpacing = U.pt(val); break;
+                                    case 'indent': textAttr.indent = U.pt(val); break;
+                                    case 'font-size': textAttr.fontSize = U.pt(val); break;
+                                    case 'font-name': textAttr.fontName = val; break;
                                     case 'text-align':
-                                        textStyle.textAlign =
+                                        textAttr.textAlign =
                                             (val === 'center' ? TextAlign.CENTER :
                                             (val === 'left' ? TextAlign.LEFT :
                                             (val === 'right' ? TextAlign.RIGHT :
@@ -70,7 +70,7 @@ export default class ActaTextStore extends ActaTextNode {
                                     default: break;
                                 }
                             }
-                            newnode.modifiedTextStyle = textStyle;
+                            newnode.modifiedTextAttribute = textAttr;
                             currentnode = newnode;
                         } else {
                             switch (tagname) {
@@ -102,7 +102,7 @@ export default class ActaTextStore extends ActaTextNode {
         for (const item of this.value) {
             returnValue += item.markupText;
         }
-        const styleText = this.modifiedTextStyle.toString();
+        const styleText = this.modifiedTextAttribute.toString();
         if (styleText !== '') returnValue = `<${this.tagName} ${styleText}>${returnValue}</${this.tagName}>`;
 
         return returnValue;

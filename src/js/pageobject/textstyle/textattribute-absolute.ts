@@ -1,12 +1,12 @@
 import ActaFont from '../font/font';
-import ActaTextStylePrivate from './textstyle-private';
-import ActaTextStyleInherit from './textstyle-inherit';
+import IActaTextAttribute from '../interface/textattribute';
+import ActaTextAttribute from './textattribute';
 
 export enum TextAlign {
     JUSTIFY = 0, LEFT, RIGHT, CENTER
 }
 
-export default class ActaTextStyle extends ActaTextStylePrivate {
+export default class ActaTextAttributeAbsolute extends IActaTextAttribute {
     private _name?: string;
 
     constructor(fontName: string) {
@@ -24,12 +24,12 @@ export default class ActaTextStyle extends ActaTextStylePrivate {
         this.colorId = 0;
     }
 
-    merge(textStyle: ActaTextStyle | ActaTextStyleInherit) {
-        super.merge(textStyle);
+    merge(textAttr: IActaTextAttribute) {
+        super.merge(textAttr);
     }
 
-    copy(textStyle: ActaTextStyle) {
-        super.copy(textStyle);
+    copy(textAttr: ActaTextAttributeAbsolute) {
+        super.copy(textAttr);
     }
 
     set name(name: string) { this._name = name; }

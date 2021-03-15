@@ -1,7 +1,7 @@
 import ActaPage from '../pageobject/page';
 import ActaGuide from '../pageobject/guide';
 import ActaParagraph, { ParagraphVerticalAlign as ParagraphVerticalAlign } from '../pageobject/paragraph';
-import ActaTextStyleInherit from '../pageobject/textstyle/textstyle-inherit';
+import ActaTextAttribute from '../pageobject/textstyle/textattribute';
 import ActaTextStyleManager from '../pageobject/textstyle/textstylemgr';
 import ActaImage from '../pageobject/image';
 import IActaFrame from '../pageobject/interface/frame';
@@ -9,7 +9,7 @@ import accountInfo from '../info/account';
 import U from '../util/units';
 
 import { IActaCodePageSize } from '../info/code';
-import { TextAlign } from '../pageobject/textstyle/textstyle';
+import { TextAlign } from '../pageobject/textstyle/textattribute-absolute';
 import { fromEvent, Subject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -198,7 +198,7 @@ export default class ActaEditor {
             e.preventDefault();
 
             let scale = this._page.scale;
-            if (e.deltaY < 0) scale += 0.01; else scale -= 0.01;
+            if (e.deltaY < 0) scale += 0.05; else scale -= 0.05;
             scale = Math.max(0.05, scale);
             this._page.scale = scale;
 
@@ -238,6 +238,25 @@ export default class ActaEditor {
         }
     }
 
+    private _onScrollMove(e: MouseEvent) {
+        try {
+            if (!this._mouseMovePreviousEvent) return;
+
+            const mx = e.clientX - this._mouseMovePreviousEvent.clientX;
+            const my = e.clientY - this._mouseMovePreviousEvent.clientY;
+            const body = this._element.parentElement;
+            if (!body) return;
+
+            body.scrollLeft -= mx;
+            body.scrollTop -= my;
+        } finally {
+            this._mouseMovePreviousEvent = e;
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
     private _onMouseDown(e: MouseEvent) {
         const previousDragGuide = this._mouseEventDragGuide;
 
@@ -265,17 +284,15 @@ export default class ActaEditor {
         }
     }
 
-    private _onScrollMove(e: MouseEvent) {
+    private _onMouseMove(e: MouseEvent) {
         try {
-            if (!this._mouseMovePreviousEvent) return;
-
-            const mx = e.clientX - this._mouseMovePreviousEvent.clientX;
-            const my = e.clientY - this._mouseMovePreviousEvent.clientY;
-            const body = this._element.parentElement;
-            if (!body) return;
-
-            body.scrollLeft -= mx;
-            body.scrollTop -= my;
+            if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._mouseEventDragGuide && this._mouseEventStartPosition) {
+                const size = GET_BOX_SIZE(this._mouseEventStartPosition, GET_OFFSET_POSITION(e), this._pageGuideBoundary);
+                this._mouseEventDragGuide.style.left = `${size.x}px`;
+                this._mouseEventDragGuide.style.top = `${size.y}px`;
+                this._mouseEventDragGuide.style.width = `${size.width}px`;
+                this._mouseEventDragGuide.style.height = `${size.height}px`;
+            }
         } finally {
             this._mouseMovePreviousEvent = e;
 
@@ -336,36 +353,19 @@ export default class ActaEditor {
         }
     }
 
-    private _onMouseMove(e: MouseEvent) {
-        try {
-            if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._mouseEventDragGuide && this._mouseEventStartPosition) {
-                const size = GET_BOX_SIZE(this._mouseEventStartPosition, GET_OFFSET_POSITION(e), this._pageGuideBoundary);
-                this._mouseEventDragGuide.style.left = `${size.x}px`;
-                this._mouseEventDragGuide.style.top = `${size.y}px`;
-                this._mouseEventDragGuide.style.width = `${size.width}px`;
-                this._mouseEventDragGuide.style.height = `${size.height}px`;
-            }
-        } finally {
-            this._mouseMovePreviousEvent = e;
-
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }
-
-    private _onParagraphMoveCursor(paragraph: ActaParagraph, cursor: number) {
-        const textStyle = paragraph.getTextStyleAtCursor(true);
+    private _onParagraphMoveCursor(paragraph: ActaParagraph, _: number) {
+        const textAttr = paragraph.getTextAttributeAtCursor(true);
         const tbData: IActaEditorTextAttribute = {};
 
-        if (textStyle.fontName !== null) tbData.fontName = textStyle.fontName;
-        if (textStyle.fontSize !== null) tbData.fontSize = textStyle.fontSize;
-        if (textStyle.indent !== null) tbData.indent = textStyle.indent;
-        if (textStyle.xscale !== null) tbData.xscale = textStyle.xscale;
-        if (textStyle.letterSpacing !== null) tbData.letterSpacing = textStyle.letterSpacing;
-        if (textStyle.lineHeight !== null) tbData.lineHeight = textStyle.lineHeight;
-        if (textStyle.underline !== null) tbData.underline = textStyle.underline;
-        if (textStyle.strikeline !== null) tbData.strikeline = textStyle.strikeline;
-        if (textStyle.textAlign !== null) tbData.textAlign = textStyle.textAlign;
+        if (textAttr.fontName !== null) tbData.fontName = textAttr.fontName;
+        if (textAttr.fontSize !== null) tbData.fontSize = textAttr.fontSize;
+        if (textAttr.indent !== null) tbData.indent = textAttr.indent;
+        if (textAttr.xscale !== null) tbData.xscale = textAttr.xscale;
+        if (textAttr.letterSpacing !== null) tbData.letterSpacing = textAttr.letterSpacing;
+        if (textAttr.lineHeight !== null) tbData.lineHeight = textAttr.lineHeight;
+        if (textAttr.underline !== null) tbData.underline = textAttr.underline;
+        if (textAttr.strikeline !== null) tbData.strikeline = textAttr.strikeline;
+        if (textAttr.textAlign !== null) tbData.textAlign = textAttr.textAlign;
 
         this._CHANGE$.next({ action: "textstyle", value: tbData });
 
@@ -378,19 +378,19 @@ export default class ActaEditor {
         const paragraph = this._page.querySelector<ActaParagraph>('x-paragraph.focus.editable');
         if (!paragraph) return;
 
-        const textStyle = new ActaTextStyleInherit();
-        if (tbData.textStyleName) textStyle.copy(ActaTextStyleManager.get(tbData.textStyleName));
-        if (tbData.fontName) textStyle.fontName = tbData.fontName;
-        if (tbData.fontSize) textStyle.fontSize = tbData.fontSize;
-        if (tbData.xscale) textStyle.xscale = tbData.xscale;
-        if (tbData.letterSpacing) textStyle.letterSpacing = tbData.letterSpacing;
-        if (tbData.lineHeight) textStyle.lineHeight = tbData.lineHeight;
-        if (tbData.textAlign) textStyle.textAlign = tbData.textAlign;
-        if (tbData.underline) textStyle.underline = tbData.underline;
-        if (tbData.strikeline) textStyle.strikeline = tbData.strikeline;
-        if (tbData.indent) textStyle.indent = tbData.indent;
+        const textAttr = new ActaTextAttribute();
+        if (tbData.textStyleName) textAttr.copy(ActaTextStyleManager.get(tbData.textStyleName));
+        if (tbData.fontName) textAttr.fontName = tbData.fontName;
+        if (tbData.fontSize) textAttr.fontSize = tbData.fontSize;
+        if (tbData.xscale) textAttr.xscale = tbData.xscale;
+        if (tbData.letterSpacing) textAttr.letterSpacing = tbData.letterSpacing;
+        if (tbData.lineHeight) textAttr.lineHeight = tbData.lineHeight;
+        if (tbData.textAlign) textAttr.textAlign = tbData.textAlign;
+        if (tbData.underline) textAttr.underline = tbData.underline;
+        if (tbData.strikeline) textAttr.strikeline = tbData.strikeline;
+        if (tbData.indent) textAttr.indent = tbData.indent;
 
-        paragraph.setTextStyleAtCursor(textStyle);
+        paragraph.setTextAttributeAtCursor(textAttr);
     }
 
     cancel() {
@@ -409,15 +409,11 @@ export default class ActaEditor {
             if (!focusedPara) return;
             if (focusedPara.classList.contains('editable')) return;
             focusedPara.switchEditable(true);
-        } else if (this._tool === EditorTool.FRAME_EDIT_MODE) {
-            const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
-            if (editablePara) editablePara.switchEditable(false);
-        } else if (this._tool === EditorTool.FRAME_MOVE_MODE) {
-            const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
-            if (editablePara) editablePara.switchEditable(false);
-        } else if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
-            const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
-            if (editablePara) editablePara.switchEditable(false);
+        } else {
+            if ([EditorTool.FRAME_EDIT_MODE, EditorTool.FRAME_MOVE_MODE].concat(EditorToolDrawFrames).indexOf(this._tool) > -1) {
+                const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
+                if (editablePara) editablePara.switchEditable(false);
+            }
         }
     }
 

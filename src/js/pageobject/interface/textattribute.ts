@@ -8,7 +8,7 @@ export enum TextAlign {
     JUSTIFY = 0, LEFT, RIGHT, CENTER
 }
 
-export default class ActaTextStylePrivate {
+export default class IActaTextAttribute {
     private _font: ActaFont | null;
     private _fontSize: number | null;
     private _colorId: number | null;
@@ -37,38 +37,38 @@ export default class ActaTextStylePrivate {
         this._CHANGE$ = new Subject<string>();
     }
 
-    protected merge(textStyle: ActaTextStylePrivate) {
+    protected merge(textAttr: IActaTextAttribute) {
         let changed = false;
 
-        if (textStyle.font !== null) { this.font = textStyle.font; changed = true; }
-        if (textStyle.fontSize !== null) { this.fontSize = textStyle.fontSize; changed = true; }
-        if (textStyle.xscale !== null) { this.xscale = textStyle.xscale; changed = true; }
-        if (textStyle.letterSpacing !== null) { this.letterSpacing = textStyle.letterSpacing; changed = true; }
-        if (textStyle.lineHeight !== null) { this.lineHeight = textStyle.lineHeight; changed = true; }
-        if (textStyle.textAlign !== null) { this.textAlign = textStyle.textAlign; changed = true; }
-        if (textStyle.underline !== null) { this.underline = textStyle.underline; changed = true; }
-        if (textStyle.strikeline !== null) { this.strikeline = textStyle.strikeline; changed = true; }
-        if (textStyle.indent !== null) { this.indent = textStyle.indent; changed = true; }
-        if (textStyle.colorId !== null) { this.colorId = textStyle.colorId; changed = true; }
+        if (textAttr.font !== null) { this.font = textAttr.font; changed = true; }
+        if (textAttr.fontSize !== null) { this.fontSize = textAttr.fontSize; changed = true; }
+        if (textAttr.xscale !== null) { this.xscale = textAttr.xscale; changed = true; }
+        if (textAttr.letterSpacing !== null) { this.letterSpacing = textAttr.letterSpacing; changed = true; }
+        if (textAttr.lineHeight !== null) { this.lineHeight = textAttr.lineHeight; changed = true; }
+        if (textAttr.textAlign !== null) { this.textAlign = textAttr.textAlign; changed = true; }
+        if (textAttr.underline !== null) { this.underline = textAttr.underline; changed = true; }
+        if (textAttr.strikeline !== null) { this.strikeline = textAttr.strikeline; changed = true; }
+        if (textAttr.indent !== null) { this.indent = textAttr.indent; changed = true; }
+        if (textAttr.colorId !== null) { this.colorId = textAttr.colorId; changed = true; }
 
         if (changed) this.emitChange('merge');
     }
 
-    protected emitChange(styleName: string = '') {
-        this._CHANGE$.next(styleName);
+    protected emitChange(attrName: string = '') {
+        this._CHANGE$.next(attrName);
     }
 
-    copy(textStyle: ActaTextStylePrivate) {
-        this._font = textStyle.font;
-        this._fontSize = textStyle.fontSize;
-        this._xscale = textStyle.xscale;
-        this._letterSpacing = textStyle.letterSpacing;
-        this._lineHeight = textStyle.lineHeight;
-        this._textAlign = textStyle.textAlign;
-        this._underline = textStyle.underline;
-        this._strikeline = textStyle.strikeline;
-        this._indent = textStyle.indent;
-        this._colorId = textStyle.colorId;
+    copy(textAttr: IActaTextAttribute) {
+        this._font = textAttr.font;
+        this._fontSize = textAttr.fontSize;
+        this._xscale = textAttr.xscale;
+        this._letterSpacing = textAttr.letterSpacing;
+        this._lineHeight = textAttr.lineHeight;
+        this._textAlign = textAttr.textAlign;
+        this._underline = textAttr.underline;
+        this._strikeline = textAttr.strikeline;
+        this._indent = textAttr.indent;
+        this._colorId = textAttr.colorId;
 
         this.emitChange('copy');
     }

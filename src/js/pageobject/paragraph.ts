@@ -6,8 +6,8 @@ import ActaParagraphColumn from './paragraph-col';
 import ActaParagraphMargin from './paragraph-margin';
 import ActaTextStore from './text/textstore';
 import ActaTextNode from './text/textnode';
-import ActaTextStyle from './textstyle/textstyle';
-import ActaTextStyleInherit from './textstyle/textstyle-inherit';
+import ActaTextAttributeAbsolute from './textstyle/textattribute-absolute';
+import ActaTextAttribute from './textstyle/textattribute';
 import ActaTextRow from './text/textrow';
 import ActaTextChar from './text/textchar';
 import textstylemgr from './textstyle/textstylemgr';
@@ -127,7 +127,7 @@ export default class ActaParagraph extends IActaFrame {
     private _columnCount: number;
     private _cursor: number | null;
     private _cursorMode: CursorMode;
-    private _defaultTextStyleName: string | null;
+    private _defaultTextStyleName: string;
     private _readonly: boolean;
     private _editable: boolean;
     private _inputChar: string;
@@ -136,7 +136,7 @@ export default class ActaParagraph extends IActaFrame {
     private _selectionStart: number | null;
     private _textStore: ActaTextStore;
 
-    private _insertTextStyle?: ActaTextStyleInherit;
+    private _cursorTextAttribute?: ActaTextAttribute;
 
     private _REPAINT$: Subject<undefined>;
     private _REPAINT_CURSOR$: Subject<string>;
@@ -224,11 +224,11 @@ export default class ActaParagraph extends IActaFrame {
                 this._onKeyPressInputHangulChar();
             } else {
                 this._inputChar = char;
-                if (this._insertTextStyle) {
+                if (this._cursorTextAttribute) {
                     inputChar = new ActaTextNode();
-                    inputChar.modifiedTextStyle.merge(this._insertTextStyle);
+                    inputChar.modifiedTextAttribute.merge(this._cursorTextAttribute);
                     inputChar.insert(0, this._inputChar);
-                    this._insertTextStyle = undefined;
+                    this._cursorTextAttribute = undefined;
                 } else {
                     inputChar = this._inputChar;
                 }
@@ -237,11 +237,11 @@ export default class ActaParagraph extends IActaFrame {
             }
             if (this._inputChar !== '') this._cursorMode = CursorMode.INPUT;
         } else {
-            if (this._insertTextStyle) {
+            if (this._cursorTextAttribute) {
                 inputChar = new ActaTextNode();
-                inputChar.modifiedTextStyle.merge(this._insertTextStyle);
+                inputChar.modifiedTextAttribute.merge(this._cursorTextAttribute);
                 inputChar.insert(0, char);
-                this._insertTextStyle = undefined;
+                this._cursorTextAttribute = undefined;
             } else {
                 inputChar = char;
             }
@@ -436,12 +436,12 @@ export default class ActaParagraph extends IActaFrame {
             this._EMIT_REPAINT_CURSOR();
             return false;
         } else if (e.altKey && e.key === 'd') {
-            const aa = new ActaTextStyleInherit();
+            const aa = new ActaTextAttribute();
             aa.fontSize = 15;
-            this.setTextStyleAtCursor(aa);
+            this.setTextAttributeAtCursor(aa);
             return false;
         } else if (e.altKey && e.key === 'c') {
-            this.setPredefineTextStyleAtCursor('본문2');
+            this.setTextStyleAtCursor('본문2');
             return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onKeyPressInputChar(e) : undefined;
@@ -480,34 +480,34 @@ export default class ActaParagraph extends IActaFrame {
         return retTextNodes.reverse();
     }
 
-    private _setPredefineTextStyle(textChars: ActaTextChar[], textStyleName: string) {
+    private _setTextStyle(textChars: ActaTextChar[], textStyleName: string) {
         if (!textstylemgr.get(textStyleName)) return;
         const textNodes = this._toTextNodes(textChars);
         for (const textNode of textNodes) {
             textNode.defaultTextStyleName = textStyleName;
-            textNode.modifiedTextStyle = new ActaTextStyleInherit();
+            textNode.modifiedTextAttribute = new ActaTextAttribute();
             for (const textChar of textNode.value) {
                 if (textChar instanceof ActaTextChar) textChar.modified = true;
             }
         }
     }
 
-    private _setTextStyle(targetTextChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
+    private _setTextAttribute(targetTextChars: ActaTextChar[], textAttr: ActaTextAttribute) {
         if (targetTextChars.length < 1) return;
 
         const textNodes = this._toTextNodes(targetTextChars);
         for (const textNode of textNodes) {
-            textNode.modifiedTextStyle.merge(textStyle);
+            textNode.modifiedTextAttribute.merge(textAttr);
         }
     }
 
-    private _setTextAlign(targetTextChars: ActaTextChar[], textStyle: ActaTextStyleInherit) {
+    private _setTextAlign(targetTextChars: ActaTextChar[], textAttr: ActaTextAttribute) {
         const breakType = [CharType.RETURN];
         const modifyTextChars: ActaTextChar[] = [];
         let startPos: number = -1;
         let endPos: number = -1;
 
-        if (targetTextChars.length < 1 || textStyle.textAlign === null) return;
+        if (targetTextChars.length < 1 || textAttr.textAlign === null) return;
 
         const textChars = this.textChars;
         for (let i = textChars.indexOf(targetTextChars[0]); i >= 0; i--) {
@@ -522,10 +522,10 @@ export default class ActaParagraph extends IActaFrame {
         for (let i = startPos; i < endPos; i++) {
             modifyTextChars.push(textChars[i]);
         }
-        const textStyleAlign = new ActaTextStyleInherit();
-        textStyleAlign.textAlign = textStyle.textAlign;
+        const textAttrAlign = new ActaTextAttribute();
+        textAttrAlign.textAlign = textAttr.textAlign;
 
-        this._setTextStyle(modifyTextChars, textStyleAlign);
+        this._setTextAttribute(modifyTextChars, textAttrAlign);
     }
 
     private _removeTextChars(textChars: ActaTextChar[]) {
@@ -817,7 +817,7 @@ export default class ActaParagraph extends IActaFrame {
         return retTextChar;
     }
 
-    private _computTextCharPosition() {
+    private _computeTextCharPosition() {
         let colIdx = 0;
 
         this.columns.forEach(col => col.clear());
@@ -845,16 +845,16 @@ export default class ActaParagraph extends IActaFrame {
             if (this.lastTextChar.type === CharType.RETURN) lastCharIsNewline = true;
         }
         if (this.textChars.length < 1 || lastCharIsNewline) {
-            let textStyle: ActaTextStyle | undefined;
+            let textAttr: ActaTextAttributeAbsolute | undefined;
             let indexOfColumn = 0;
             if (lastCharIsNewline && this.lastTextChar !== null) {
-                textStyle = this.lastTextChar.textStyle;
+                textAttr = this.lastTextChar.textAttribute;
                 indexOfColumn = this.lastTextChar.textRow ? this.lastTextChar.indexOfColumn : 0;
             }
-            textStyle = this.defaultTextStyle;
-            if (!textStyle || !textStyle.font || !textStyle.fontSize) return;
+            textAttr = textstylemgr.get(this.defaultTextStyleName);
+            if (!textAttr || !textAttr.font || !textAttr.fontSize) return;
 
-            const dummyRow = new ActaTextRow(this.columns[indexOfColumn], U.px(textStyle.indent) || 0);
+            const dummyRow = new ActaTextRow(this.columns[indexOfColumn], U.px(textAttr.indent) || 0);
             this.computeTextRowPaddingSize(dummyRow);
         }
     }
@@ -876,7 +876,7 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     private _repaint() {
-        this._computTextCharPosition();
+        this._computeTextCharPosition();
         this._drawTextChars();
         this._EMIT_REPAINT_CURSOR(true);
     }
@@ -939,13 +939,13 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     private set cursor(pos) {
-        if (pos !== null && this._cursor !== pos) this._insertTextStyle = undefined;
+        if (pos !== null && this._cursor !== pos) this._cursorTextAttribute = undefined;
         this._cursor = pos;
         if (pos !== null) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
     }
 
     private set selectionStart(pos) {
-        if (pos !== null && this._selectionStart !== pos) this._insertTextStyle = undefined;
+        if (pos !== null && this._selectionStart !== pos) this._cursorTextAttribute = undefined;
         this._selectionStart = pos;
         if (pos !== null) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
     }
@@ -977,13 +977,14 @@ export default class ActaParagraph extends IActaFrame {
 
     protected _onBlur() {
         this.selectionStart = null;
+        this.cursor = null;
         this.editable = false;
         this._hideCursor();
     }
 
     constructor(
         x: string | number, y: string | number, width: string | number, height: string | number,
-        defaultTextStyleName: string | null, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []
+        defaultTextStyleName: string, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []
     ) {
         super(x, y, width, height);
 
@@ -998,6 +999,8 @@ export default class ActaParagraph extends IActaFrame {
         this._columnCount = 1;
         this._innerMargin = 0;
         this._textStore = new ActaTextStore();
+
+        if (!textstylemgr.get(defaultTextStyleName)) throw new Error(`Invalid TextStyle Name. "${defaultTextStyleName}"`);
         this._defaultTextStyleName = defaultTextStyleName;
 
         this._readonly = false;
@@ -1141,30 +1144,9 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
-    setPredefineTextStyleAtCursor(textStyleName: string) {
-        const selTextChars = this._getSelectedTextChars();
-        this._setPredefineTextStyle(selTextChars, textStyleName);
-        this._EMIT_REPAINT();
-    }
-
-    setTextStyleAtCursor(textStyle: ActaTextStyleInherit, frontOfCursor: boolean = false) {
-        if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
-            if (textStyle.textAlign !== null) {
-                const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
-                if (cursorTextChar) this._setTextAlign([cursorTextChar], textStyle);
-                this._insertTextStyle = textStyle;
-            }
-        } else {
-            this._setTextStyle(this._getSelectedTextChars(), textStyle);
-            if (textStyle.textAlign !== null) {
-                this._setTextAlign(this._getSelectedTextChars(), textStyle);
-            }
-        }
-        this._EMIT_REPAINT();
-    }
-
     computeTextRowPaddingSize(textRow: ActaTextRow, textChar?: ActaTextChar) {
-        const textHeight = textChar ? textChar.height : U.px(this.defaultTextStyle.textHeight);
+        const defaultTextStyle = textstylemgr.get(this.defaultTextStyleName);
+        const textHeight = textChar ? textChar.height : U.px(defaultTextStyle.textHeight);
         const broken = this._getOverlapAreaWithOtherFrames(textRow, textHeight);
         if (broken) {
             if (broken[0] <= 0) {
@@ -1183,8 +1165,30 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
-    getTextStyleAtCursor(frontOfCursor: boolean = false) {
-        const returnTextStyle = new ActaTextStyleInherit();
+    setTextStyleAtCursor(textStyleName: string) {
+        const selTextChars = this._getSelectedTextChars();
+        this._setTextStyle(selTextChars, textStyleName);
+        this._EMIT_REPAINT();
+    }
+
+    setTextAttributeAtCursor(textAttr: ActaTextAttribute, frontOfCursor: boolean = false) {
+        if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
+            if (textAttr.textAlign !== null) {
+                const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
+                if (cursorTextChar) this._setTextAlign([cursorTextChar], textAttr);
+                this._cursorTextAttribute = textAttr;
+            }
+        } else {
+            this._setTextAttribute(this._getSelectedTextChars(), textAttr);
+            if (textAttr.textAlign !== null) {
+                this._setTextAlign(this._getSelectedTextChars(), textAttr);
+            }
+        }
+        this._EMIT_REPAINT();
+    }
+
+    getTextAttributeAtCursor(frontOfCursor: boolean = false) {
+        const returnTextAttr = new ActaTextAttribute();
         const textNodes: ActaTextNode[] = [];
 
         if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
@@ -1202,26 +1206,27 @@ export default class ActaParagraph extends IActaFrame {
             }
         }
         if (textNodes.length < 1) {
-            returnTextStyle.copy(this.defaultTextStyle);
-            return returnTextStyle;
+            const defaultTextStyle = textstylemgr.get(this.defaultTextStyleName);
+            returnTextAttr.copy(defaultTextStyle);
+            return returnTextAttr;
         }
-        returnTextStyle.copy(textNodes[0].textStyle);
+        returnTextAttr.copy(textNodes[0].textAttribute);
         for (const textNode of textNodes) {
-            const textStyle = textNode.textStyle;
-            if (returnTextStyle.font !== textStyle.font) returnTextStyle.font = null;
-            if (returnTextStyle.fontSize !== textStyle.fontSize) returnTextStyle.fontSize = null;
-            if (returnTextStyle.xscale !== textStyle.xscale) returnTextStyle.xscale = null;
-            if (returnTextStyle.letterSpacing !== textStyle.letterSpacing) returnTextStyle.letterSpacing = null;
-            if (returnTextStyle.lineHeight !== textStyle.lineHeight) returnTextStyle.lineHeight = null;
-            if (returnTextStyle.textAlign !== textStyle.textAlign) returnTextStyle.textAlign = null;
-            if (returnTextStyle.underline !== textStyle.underline) returnTextStyle.underline = null;
-            if (returnTextStyle.strikeline !== textStyle.strikeline) returnTextStyle.strikeline = null;
-            if (returnTextStyle.indent !== textStyle.indent) returnTextStyle.indent = null;
-            if (returnTextStyle.colorId !== textStyle.colorId) returnTextStyle.colorId = null;
+            const textAttr = textNode.textAttribute;
+            if (returnTextAttr.font !== textAttr.font) returnTextAttr.font = null;
+            if (returnTextAttr.fontSize !== textAttr.fontSize) returnTextAttr.fontSize = null;
+            if (returnTextAttr.xscale !== textAttr.xscale) returnTextAttr.xscale = null;
+            if (returnTextAttr.letterSpacing !== textAttr.letterSpacing) returnTextAttr.letterSpacing = null;
+            if (returnTextAttr.lineHeight !== textAttr.lineHeight) returnTextAttr.lineHeight = null;
+            if (returnTextAttr.textAlign !== textAttr.textAlign) returnTextAttr.textAlign = null;
+            if (returnTextAttr.underline !== textAttr.underline) returnTextAttr.underline = null;
+            if (returnTextAttr.strikeline !== textAttr.strikeline) returnTextAttr.strikeline = null;
+            if (returnTextAttr.indent !== textAttr.indent) returnTextAttr.indent = null;
+            if (returnTextAttr.colorId !== textAttr.colorId) returnTextAttr.colorId = null;
         }
-        if (this._insertTextStyle) returnTextStyle.merge(this._insertTextStyle);
+        if (this._cursorTextAttribute) returnTextAttr.merge(this._cursorTextAttribute);
 
-        return returnTextStyle;
+        return returnTextAttr;
     }
 
     preflight() {
@@ -1299,8 +1304,7 @@ export default class ActaParagraph extends IActaFrame {
     get columnCount() { return this._columnCount; }
     get innerMargin() { return this._innerMargin; }
     get value() { return this._textStore ? this._textStore.markupText : ''; }
-    get defaultTextStyleName() { return this._defaultTextStyleName || ''; }
-    get defaultTextStyle() { return textstylemgr.get(this.defaultTextStyleName); }
+    get defaultTextStyleName() { return this._defaultTextStyleName; }
     get readonly() { return this._readonly; }
 
     get textChars() {

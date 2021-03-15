@@ -1,7 +1,8 @@
 import ActaParagraphColumn from '../paragraph-col';
 import ActaTextChar, { CharType } from './textchar';
 import U from '../../util/units';
-import { TextAlign } from '../textstyle/textstyle';
+import textstylemgr from '../textstyle/textstylemgr';
+import { TextAlign } from '../textstyle/textattribute-absolute';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -66,11 +67,11 @@ export default class ActaTextRow {
     push(textChar: ActaTextChar) {
         if (!this.availablePushTextChar(textChar)) return false;
 
-        const textStyle = textChar.textStyle;
+        const textAttr = textChar.textAttribute;
 
-        this.maxHeight = U.px(textStyle.textHeight);
-        this.maxLeading = U.px(textStyle.leading);
-        this.textAlign = textStyle.textAlign;
+        this.maxHeight = U.px(textAttr.textHeight);
+        this.maxLeading = U.px(textAttr.leading);
+        this.textAlign = textAttr.textAlign;
 
         this._items.push(textChar);
 
@@ -184,9 +185,10 @@ export default class ActaTextRow {
         let height = this._maxHeight;
         if (this.length === 0) {
             if (this.paragraph) {
+                const defaultTextStyle = textstylemgr.get(this.paragraph.defaultTextStyleName);
                 const lastTextChar = this.paragraph.visableLastTextChar;
-                const textStyle = (lastTextChar) ? lastTextChar.textStyle : this.paragraph.defaultTextStyle;
-                height = U.px(textStyle.textHeight);
+                const textAttr = (lastTextChar) ? lastTextChar.textAttribute : defaultTextStyle;
+                height = U.px(textAttr.textHeight);
             }
         }
         return height;
@@ -196,9 +198,10 @@ export default class ActaTextRow {
         let leading = this._maxLeading;
         if (this.length === 0) {
             if (this.paragraph) {
+                const defaultTextStyle = textstylemgr.get(this.paragraph.defaultTextStyleName);
                 const lastTextChar = this.paragraph.visableLastTextChar;
-                const textStyle = (lastTextChar) ? lastTextChar.textStyle : this.paragraph.defaultTextStyle;
-                leading = U.px(textStyle.leading);
+                const textAttr = (lastTextChar) ? lastTextChar.textAttribute : defaultTextStyle;
+                leading = U.px(textAttr.leading);
             }
         }
         return leading;

@@ -5,7 +5,7 @@ import formbuilder from '../ui/form';
 import accountInfo from '../info/account';
 import U from '../util/units';
 
-import { TextAlign } from '../pageobject/textstyle/textstyle';
+import { TextAlign } from '../pageobject/textstyle/textattribute-absolute';
 import { IActaEditorTextAttribute } from '../editor/editor';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';

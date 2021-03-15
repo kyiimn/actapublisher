@@ -40,8 +40,8 @@ export default class ActaTextChar {
     private _textDecorations: SVGLineElement[];
 
     private _createSVGPath() {
-        const textStyle = this.textNode.textStyle;
-        const fontSizePX = U.px(textStyle.fontSize);
+        const textAttr = this.textNode.textAttribute;
+        const fontSizePX = U.px(textAttr.fontSize);
         if (this._type === CharType.SPACE) {
             const width = (fontSizePX !== null) ? fontSizePX / 3 : 0;
             if (this._width !== width) {
@@ -49,7 +49,7 @@ export default class ActaTextChar {
                 this._modified = true;
             }
         } else if (this._type === CharType.CHAR) {
-            const font = textStyle.font.font;
+            const font = textAttr.font.font;
             const glyph = font.charToGlyph(this._char);
             const unitsPerSize = font.unitsPerEm / fontSizePX;
             const yMin = font.tables.head.yMin / unitsPerSize;
@@ -107,7 +107,7 @@ export default class ActaTextChar {
         this.initWidth();
     }
 
-    changeTextStyle() {
+    changeTextAttribute() {
         this._createSVGPath();
         this._oldLetterSpacing = undefined;
 
@@ -115,8 +115,8 @@ export default class ActaTextChar {
     }
 
     update() {
-        const textStyle = this.textNode.textStyle;
-        const letterSpacingPX = U.px(textStyle.letterSpacing);
+        const textAttr = this.textNode.textAttribute;
+        const letterSpacingPX = U.px(textAttr.letterSpacing);
         if (!this.textRow || !this.modified) return;
 
         this._oldOffsetX = this.offsetLeft;
@@ -133,7 +133,7 @@ export default class ActaTextChar {
         transform += ', ';
         transform += `${(this.drawOffsetY || 0) + this._oldOffsetY - this.textRow.maxHeight + ((this.textRow.maxHeight - (this.height || 0)) * 2)}px`;
         transform += ') ';
-        transform += `scaleX(${textStyle.xscale || 1})`;
+        transform += `scaleX(${textAttr.xscale || 1})`;
 
         this._SVGPath.setAttribute('data-id', this.id);
         this._SVGPath.setAttribute('data-textnode', this._textNode.id);
@@ -152,13 +152,13 @@ export default class ActaTextChar {
             this._oldTransform = transform;
             this._SVGPath.style.transform = transform;
         }
-        this._SVGPath.style.fill = this._invalidFont ? 'red' : colormgr.getRGBCode(textStyle.colorId);
+        this._SVGPath.style.fill = this._invalidFont ? 'red' : colormgr.getRGBCode(textAttr.colorId);
 
         if (!this._SVGPath.parentElement || this._SVGPath.parentElement as any as SVGElement !== this.textRow.column.canvas) {
             this.textRow.column.canvas.appendChild(this._SVGPath);
         }
 
-        if (textStyle.strikeline) {
+        if (textAttr.strikeline) {
             const strikeline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             strikeline.setAttribute('data-id', this.id);
             strikeline.setAttribute('data-textnode', this._textNode.id);
@@ -166,14 +166,14 @@ export default class ActaTextChar {
             strikeline.setAttribute('x2', (this.drawOffsetX + ((letterSpacingPX || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
             strikeline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
             strikeline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY - (this.textRow.maxHeight / 3)).toString());
-            strikeline.style.stroke = colormgr.getRGBCode(textStyle.colorId);
+            strikeline.style.stroke = colormgr.getRGBCode(textAttr.colorId);
             strikeline.style.strokeLinecap = 'butt';
             strikeline.style.strokeWidth = '1';
 
             this._textDecorations.push(strikeline);
             this.textRow.column.canvas.appendChild(strikeline);
         }
-        if (textStyle.underline) {
+        if (textAttr.underline) {
             const underline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             underline.setAttribute('data-id', this.id);
             underline.setAttribute('data-textnode', this._textNode.id);
@@ -181,7 +181,7 @@ export default class ActaTextChar {
             underline.setAttribute('x2', (this.drawOffsetX + ((letterSpacingPX || 0) / 2) + this._oldOffsetX + this.calcWidth).toString());
             underline.setAttribute('y1', (this.drawOffsetY + this._oldOffsetY).toString());
             underline.setAttribute('y2', (this.drawOffsetY + this._oldOffsetY).toString());
-            underline.style.stroke = colormgr.getRGBCode(textStyle.colorId);
+            underline.style.stroke = colormgr.getRGBCode(textAttr.colorId);
             underline.style.strokeLinecap = 'butt';
             underline.style.strokeWidth = '1';
 
@@ -197,9 +197,9 @@ export default class ActaTextChar {
     }
 
     initWidth() {
-        const textStyle = this.textStyle;
-        const letterSpacingPX = U.px(textStyle.letterSpacing);
-        const scaledWidth = textStyle.xscale * this.width;
+        const textAttr = this.textAttribute;
+        const letterSpacingPX = U.px(textAttr.letterSpacing);
+        const scaledWidth = textAttr.xscale * this.width;
 
         this._realWidth = scaledWidth + (letterSpacingPX || 0);
         this._marginWidth = 0;
@@ -254,9 +254,9 @@ export default class ActaTextChar {
     get width() { return this._width; }
     get textNode() { return this._textNode; }
     get textRow() { return this._textRow || null; }
-    get textStyle() { return this.textNode.textStyle; }
-    get height() { return U.px(this.textStyle.textHeight); }
-    get leading() { return this.textStyle.leading; }
+    get textAttribute() { return this.textNode.textAttribute; }
+    get height() { return U.px(this.textAttribute.textHeight); }
+    get leading() { return this.textAttribute.leading; }
 
     get x() { return this._oldOffsetX !== undefined ? this._oldOffsetX : -1; }
     get y() { return this._oldOffsetY !== undefined ? this._oldOffsetY : -1; }
@@ -317,7 +317,7 @@ export default class ActaTextChar {
         if (this._oldOffsetX !== this.offsetLeft || this._oldOffsetY !== this.textRow.offsetTop) return true;
         if (this._oldMarginWidth !== this.marginWidth) return true;
         if (this._oldMaxHeight !== this.textRow.maxHeight) return true;
-        if (this._oldLetterSpacing !== U.px(this.textStyle.letterSpacing)) return true;
+        if (this._oldLetterSpacing !== U.px(this.textAttribute.letterSpacing)) return true;
 
         return false;
     }
