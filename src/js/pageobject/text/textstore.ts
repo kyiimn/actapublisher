@@ -10,7 +10,7 @@ export default class ActaTextStore extends ActaTextNode {
         let currentnode: ActaTextStore | ActaTextNode = rootnode;
         let str = '';
 
-        currentnode.defaultTextStyleName = textStyleName;
+        currentnode.textStyleName = textStyleName;
 
         for (let i = 0; i < markupText.length; i++) {
             let char = markupText[i];
@@ -49,7 +49,7 @@ export default class ActaTextStore extends ActaTextNode {
                                 if (val === '') continue;
                                 val = val.toLowerCase();
                                 switch (tt[0].toLowerCase()) {
-                                    case 'name': newnode.defaultTextStyleName = val; break;
+                                    case 'name': newnode.textStyleName = val; break;
                                     case 'color-id': textAttr.colorId = !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : null; break;
                                     case 'underline': textAttr.underline = val === 'yes' ? true : false; break;
                                     case 'strikeline': textAttr.strikeline = val === 'yes' ? true : false; break;

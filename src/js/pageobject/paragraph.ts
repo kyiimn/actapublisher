@@ -484,7 +484,7 @@ export default class ActaParagraph extends IActaFrame {
         if (!textstylemgr.get(textStyleName)) return;
         const textNodes = this._toTextNodes(textChars);
         for (const textNode of textNodes) {
-            textNode.defaultTextStyleName = textStyleName;
+            textNode.textStyleName = textStyleName;
             textNode.modifiedTextAttribute = new ActaTextAttribute();
             for (const textChar of textNode.value) {
                 if (textChar instanceof ActaTextChar) textChar.modified = true;
@@ -1171,6 +1171,33 @@ export default class ActaParagraph extends IActaFrame {
         this._EMIT_REPAINT();
     }
 
+    getTextStyleAtCursor(frontOfCursor: boolean = false) {
+        const textNodes: ActaTextNode[] = [];
+        let returnTextStyleName: string;
+
+        if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
+            const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
+            if (cursorTextChar) textNodes.push(cursorTextChar.textNode);
+        } else {
+            const selTextChars = this._getSelectedTextChars();
+            if (selTextChars.length < 1) {
+                const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
+                if (cursorTextChar) textNodes.push(cursorTextChar.textNode);
+            } else {
+                for (const textChar of selTextChars) {
+                    if (textNodes.indexOf(textChar.textNode) < 0) textNodes.push(textChar.textNode);
+                }
+            }
+        }
+        if (textNodes.length < 1) return this._defaultTextStyleName;
+
+        returnTextStyleName = textNodes[0].textStyleName || this._defaultTextStyleName;
+        for (const textNode of textNodes) {
+            if (returnTextStyleName !== (textNode.textStyleName || this._defaultTextStyleName)) returnTextStyleName = '';
+        }
+        return returnTextStyleName;
+    }
+
     setTextAttributeAtCursor(textAttr: ActaTextAttribute, frontOfCursor: boolean = false) {
         if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
             if (textAttr.textAlign !== null) {
@@ -1287,7 +1314,7 @@ export default class ActaParagraph extends IActaFrame {
 
     set defaultTextStyleName(styleName: string) {
         this._defaultTextStyleName = styleName;
-        if (this._textStore) this._textStore.defaultTextStyleName = styleName;
+        if (this._textStore) this._textStore.textStyleName = styleName;
     }
 
     set readonly(val: boolean) {

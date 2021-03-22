@@ -149,7 +149,7 @@ export default class ActaTextNode {
         return this._cacheTextChars;
     }
 
-    set defaultTextStyle(textAttr: ActaTextAttributeAbsolute | null) {
+    set textStyle(textAttr: ActaTextAttributeAbsolute | null) {
         if (textAttr && this._defaultTextStyle) {
             if (textAttr.name === this._defaultTextStyle.name) return;
         } else if (!textAttr && !this._defaultTextStyle) return;
@@ -164,12 +164,12 @@ export default class ActaTextNode {
         this.changeTextAttribute();
     }
 
-    set defaultTextStyleName(styleName: string | null) {
+    set textStyleName(styleName: string | null) {
         if (!styleName) {
-            this.defaultTextStyle = null;
+            this.textStyle = null;
             return;
         }
-        this.defaultTextStyle = textstylemgr.get(styleName);
+        this.textStyle = textstylemgr.get(styleName);
     }
 
     set modifiedTextAttribute(style: ActaTextAttribute) {
@@ -189,16 +189,16 @@ export default class ActaTextNode {
     }
     get tagName() { return this._tagname; }
     get id() { return this._id; }
-    get defaultTextStyle() { return this._defaultTextStyle; }
-    get defaultTextStyleName() { return this.defaultTextStyle ? this.defaultTextStyle.name : null; }
+    get textStyle() { return this._defaultTextStyle; }
+    get textStyleName() { return this.textStyle ? this.textStyle.name : null; }
     get modifiedTextAttribute() { return this._modifiedTextAttribute; }
     get value() { return this._value; }
     get length() { return this.value.length; }
 
     get textAttribute() {
-        const returnTextStyle = new ActaTextAttributeAbsolute((this.defaultTextStyle ? this.defaultTextStyle.fontName : '') || '');
+        const returnTextStyle = new ActaTextAttributeAbsolute((this.textStyle ? this.textStyle.fontName : '') || '');
         if (this.parentNode) returnTextStyle.merge(this.parentNode.textAttribute);
-        if (this.defaultTextStyle) returnTextStyle.merge(this.defaultTextStyle);
+        if (this.textStyle) returnTextStyle.merge(this.textStyle);
         returnTextStyle.merge(this.modifiedTextAttribute);
         return returnTextStyle;
     }
@@ -209,9 +209,9 @@ export default class ActaTextNode {
             returnValue += item.markupText;
         }
         const styleText = this.modifiedTextAttribute.toString();
-        if (this.defaultTextStyleName || styleText !== '') {
+        if (this.textStyleName || styleText !== '') {
             let tag = `<${this.tagName}`;
-            if (this.defaultTextStyleName) tag += ` name="${this.defaultTextStyleName}"`;
+            if (this.textStyleName) tag += ` name="${this.textStyleName}"`;
             if (styleText !== '') tag += ` ${styleText}`;
             tag += '>';
             returnValue = `${tag}${returnValue}</${this.tagName}>`;

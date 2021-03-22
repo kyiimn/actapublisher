@@ -354,9 +354,11 @@ export default class ActaEditor {
     }
 
     private _onParagraphMoveCursor(paragraph: ActaParagraph, _: number) {
+        const textStyleName = paragraph.getTextStyleAtCursor(true);
         const textAttr = paragraph.getTextAttributeAtCursor(true);
         const tbData: IActaEditorTextAttribute = {};
 
+        tbData.textStyleName = textStyleName;
         if (textAttr.fontName !== null) tbData.fontName = textAttr.fontName;
         if (textAttr.fontSize !== null) tbData.fontSize = textAttr.fontSize;
         if (textAttr.indent !== null) tbData.indent = textAttr.indent;
@@ -390,6 +392,7 @@ export default class ActaEditor {
         if (tbData.strikeline) textAttr.strikeline = tbData.strikeline;
         if (tbData.indent) textAttr.indent = tbData.indent;
 
+        if (tbData.textStyleName) paragraph.setTextStyleAtCursor(tbData.textStyleName);
         paragraph.setTextAttributeAtCursor(textAttr);
     }
 
