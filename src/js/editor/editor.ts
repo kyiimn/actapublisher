@@ -376,6 +376,32 @@ export default class ActaEditor {
         }
     }
 
+    private get _editableParagraph() { return this._page.querySelector<ActaParagraph>('x-paragraph.editable'); }
+    private get _selectedFrames() {
+        return this._page.querySelectorAll<IActaFrame>('.frame.focus');
+    }
+
+    onKeydown(e: KeyboardEvent) {
+        if (this._editableParagraph) {
+            if (e.key === 'Escape') {
+                this._editableParagraph.switchEditable(false);
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        } else {
+            const selected = this._selectedFrames;
+            switch (e.key) {
+                case 'Delete':
+                    for (const frame of selected) frame.remove();
+                    break;
+                default:
+                    return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
     setTextStyle(tbData: IActaEditorTextAttribute) {
         const paragraph = this._page.querySelector<ActaParagraph>('x-paragraph.focus.editable');
         if (!paragraph) return;
@@ -414,7 +440,7 @@ export default class ActaEditor {
             focusedPara.switchEditable(true);
         } else {
             if ([EditorTool.FRAME_EDIT_MODE, EditorTool.FRAME_MOVE_MODE].concat(EditorToolDrawFrames).indexOf(this._tool) > -1) {
-                const editablePara = this._page.querySelector<ActaParagraph>('x-paragraph.editable');
+                const editablePara = this._editableParagraph;
                 if (editablePara) editablePara.switchEditable(false);
             }
         }

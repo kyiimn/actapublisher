@@ -15,12 +15,14 @@ import formbuilder from './ui/form';
 import uialert from './ui/alert';
 import waitbar from './ui/waitbar';
 
-import { merge } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { fromEvent, merge } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 
 import '@fortawesome/fontawesome-free/js/all.js';
 
 class Designer {
+    private static _instance: Designer;
+
     private _toolbarPODraw;
     private _toolbarPOCtrl;
     private _toolbarText;
@@ -34,7 +36,7 @@ class Designer {
     private _headerMenuItemSaveAs;
     private _headerMenuItemLogout;
 
-    constructor() {
+    private constructor() {
         this._toolbarPODraw = new ToolbarPODraw();
         this._toolbarPOCtrl = new ToolbarPOControl();
         this._toolbarText = new ToolbarText();
@@ -134,17 +136,34 @@ class Designer {
                     this._toolbarDocStatus.disable();
                 }
             } else if (data.action === 'add') {
-                const editor = this._layout.active as Editor;
+                const editor = this._layout.active;
+                if (!editor) return;
                 editor.observable.subscribe(rdata => this.initEditorEvent(editor, rdata.action, rdata.value));
                 editor.scale = parseFloat(((this._layout.documents.clientHeight - 48) / editor.el.clientHeight).toFixed(2));
                 this._toolbarDocStatus.data = {
                     scale: Math.round(editor.scale * 100)
                 };
             } else if (data.action === 'remove') {
-                const editor = this._layout.active as Editor;
+                const editor = this._layout.active;
+                if (!editor) return;
                 editor.observable.unsubscribe();
             }
         });
+
+        fromEvent<KeyboardEvent>(document.body, 'keydown').pipe(filter(e => {
+            const activeEditor = this._layout.active;
+            if (!activeEditor) return false;
+
+            const activeEl = document.activeElement;
+            if (activeEl && ['input', 'select', 'button'].indexOf(activeEl.nodeName.toLowerCase()) > -1) return false;
+
+            return true;
+        })).subscribe(e => (this._layout.active as Editor).onKeydown(e));
+    }
+
+    static getInstance() {
+        if (!Designer._instance) Designer._instance = new Designer();
+        return Designer._instance;
     }
 
     initEditorEvent(editor: Editor, action: string, value: any) {
@@ -184,4 +203,4 @@ class Designer {
         }
     }
 }
-(new Designer()).run();
+Designer.getInstance().run();
