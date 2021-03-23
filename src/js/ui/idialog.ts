@@ -2,6 +2,7 @@ import { fromEvent, Observable, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import '../../css/ui/dialog.scss';
 
+import dialogPolyfill from 'dialog-polyfill';
 export default abstract class IActaUIDialog {
     private _titlebar: HTMLDivElement;
     private _body: HTMLDivElement;
@@ -23,6 +24,8 @@ export default abstract class IActaUIDialog {
         this._modal = false;
 
         this._dialog = document.createElement('dialog');
+        dialogPolyfill.registerDialog(this._dialog);
+
         if (className) this._dialog.classList.add(className);
 
         this._dialog.appendChild(this._titlebar);
