@@ -91,6 +91,11 @@ class Designer {
             if (editor) editor.tool = tool;
         });
 
+        this._toolbarPOCtrl.observable.subscribe(ctrl => {
+            const editor = this._layout.active;
+            if (editor) editor.processPageObjectControl(ctrl.action, ctrl.step);
+        });
+
         this._toolbarText.observable.subscribe(data => {
             const editor = this._layout.active;
             if (editor) editor.setTextStyle(data);
@@ -158,7 +163,7 @@ class Designer {
             if (activeEl && ['input', 'select', 'button'].indexOf(activeEl.nodeName.toLowerCase()) > -1) return false;
 
             return true;
-        })).subscribe(e => (this._layout.active as Editor).onKeydown(e));
+        })).subscribe(e => (this._layout.active as Editor).processKeyEvent(e));
     }
 
     static getInstance() {

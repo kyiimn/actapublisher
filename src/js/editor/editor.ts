@@ -381,7 +381,7 @@ export default class ActaEditor {
         return this._page.querySelectorAll<IActaFrame>('.frame.focus');
     }
 
-    onKeydown(e: KeyboardEvent) {
+    processKeyEvent(e: KeyboardEvent) {
         if (this._editableParagraph) {
             if (e.key === 'Escape') {
                 this._editableParagraph.switchEditable(false);
@@ -399,6 +399,37 @@ export default class ActaEditor {
             }
             e.preventDefault();
             e.stopPropagation();
+        }
+    }
+
+    processPageObjectControl(action: string, step?: number) {
+        const selected = this._selectedFrames;
+        if (selected.length < 1) return;
+
+        switch (action) {
+            case 'flip-to-back': break;
+            case 'flip-to-front': break;
+            case 'align-center': break;
+            case 'align-left': break;
+            case 'align-right': break;
+            case 'valign-middle': break;
+            case 'valign-top': break;
+            case 'valign-bottom': break;
+            case 'remove':
+                for (const frame of selected) frame.remove();
+                break;
+
+            case 'move-left': break;
+            case 'move-up': break;
+            case 'move-down': break;
+            case 'move-right': break;
+            case 'move-leftup': break;
+            case 'move-rightup': break;
+            case 'move-rightdown': break;
+            case 'move-leftdown': break;
+            case 'rotate-left': break;
+            case 'rotate-right': break;
+            default: break;
         }
     }
 
