@@ -12,8 +12,8 @@ export default class ActaTextNode {
     private _value: (ActaTextChar | ActaTextNode)[];
     private _parentNode: ActaTextNode | null;
 
-    private _defaultTextStyle: ActaTextAttributeAbsolute | null;
-    private _subscrptionChangeDefaultTextAttribute: Subscription | null;
+    private _textStyle: string | null;
+    private _subscrptionChangeTextStyle: Subscription | null;
 
     private _modifiedTextAttribute: ActaTextAttribute;
 
@@ -30,8 +30,8 @@ export default class ActaTextNode {
         this._value = [];
         this._parentNode = null;
 
-        this._defaultTextStyle = null;
-        this._subscrptionChangeDefaultTextAttribute = null;
+        this._textStyle = null;
+        this._subscrptionChangeTextStyle = null;
 
         this._modifiedTextAttribute = new ActaTextAttribute();
         this._modifiedTextAttribute.subscribe((attr: string) => this.changeTextAttribute(attr));
@@ -149,27 +149,18 @@ export default class ActaTextNode {
         return this._cacheTextChars;
     }
 
-    set textStyle(textAttr: ActaTextAttributeAbsolute | null) {
-        if (textAttr && this._defaultTextStyle) {
-            if (textAttr.name === this._defaultTextStyle.name) return;
-        } else if (!textAttr && !this._defaultTextStyle) return;
+    set textStyle(textStyle: string | null) {
+        if (this._textStyle === textStyle) return;
+        if (this._subscrptionChangeTextStyle) this._subscrptionChangeTextStyle.unsubscribe();
 
-        if (this._subscrptionChangeDefaultTextAttribute) this._subscrptionChangeDefaultTextAttribute.unsubscribe();
-        this._defaultTextStyle = textAttr;
-        if (this._defaultTextStyle) {
-            this._subscrptionChangeDefaultTextAttribute = this._defaultTextStyle.subscribe((attr: string) => this.changeTextAttribute(attr));
+        this._textStyle = textStyle;
+        if (textStyle) {
+            const textAttr = textstylemgr.get(textStyle);
+            this._subscrptionChangeTextStyle = textAttr.subscribe((attr: string) => this.changeTextAttribute(attr));
         } else {
-            this._subscrptionChangeDefaultTextAttribute = null;
+            this._subscrptionChangeTextStyle = null;
         }
         this.changeTextAttribute();
-    }
-
-    set textStyleName(styleName: string | null) {
-        if (!styleName) {
-            this.textStyle = null;
-            return;
-        }
-        this.textStyle = textstylemgr.get(styleName);
     }
 
     set modifiedTextAttribute(style: ActaTextAttribute) {
@@ -189,18 +180,18 @@ export default class ActaTextNode {
     }
     get tagName() { return this._tagname; }
     get id() { return this._id; }
-    get textStyle() { return this._defaultTextStyle; }
-    get textStyleName() { return this.textStyle ? this.textStyle.name : null; }
+    get textStyle() { return this._textStyle || (this._parentNode ? this._parentNode.textStyle : null); }
     get modifiedTextAttribute() { return this._modifiedTextAttribute; }
     get value() { return this._value; }
     get length() { return this.value.length; }
 
     get textAttribute() {
-        const returnTextStyle = new ActaTextAttributeAbsolute((this.textStyle ? this.textStyle.fontName : '') || '');
-        if (this.parentNode) returnTextStyle.merge(this.parentNode.textAttribute);
-        if (this.textStyle) returnTextStyle.merge(this.textStyle);
-        returnTextStyle.merge(this.modifiedTextAttribute);
-        return returnTextStyle;
+        const textStyleAttr = (this.textStyle) ? textstylemgr.get(this.textStyle) : null;
+        const retTextAttr = new ActaTextAttributeAbsolute(textStyleAttr ? textStyleAttr.fontName : '');
+        if (this.parentNode) retTextAttr.merge(this.parentNode.textAttribute);
+        if (textStyleAttr) retTextAttr.merge(textStyleAttr);
+        retTextAttr.merge(this.modifiedTextAttribute);
+        return retTextAttr;
     }
 
     get markupText() {
@@ -209,9 +200,9 @@ export default class ActaTextNode {
             returnValue += item.markupText;
         }
         const styleText = this.modifiedTextAttribute.toString();
-        if (this.textStyleName || styleText !== '') {
+        if (this.textStyle || styleText !== '') {
             let tag = `<${this.tagName}`;
-            if (this.textStyleName) tag += ` name="${this.textStyleName}"`;
+            if (this.textStyle) tag += ` name="${this.textStyle}"`;
             if (styleText !== '') tag += ` ${styleText}`;
             tag += '>';
             returnValue = `${tag}${returnValue}</${this.tagName}>`;

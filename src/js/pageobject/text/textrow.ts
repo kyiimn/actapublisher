@@ -185,7 +185,7 @@ export default class ActaTextRow {
         let height = this._maxHeight;
         if (this.length === 0) {
             if (this.paragraph) {
-                const defaultTextStyle = textstylemgr.get(this.paragraph.defaultTextStyleName);
+                const defaultTextStyle = textstylemgr.get(this.paragraph.defaultTextStyle);
                 const lastTextChar = this.paragraph.visableLastTextChar;
                 const textAttr = (lastTextChar) ? lastTextChar.textAttribute : defaultTextStyle;
                 height = U.px(textAttr.textHeight);
@@ -198,7 +198,7 @@ export default class ActaTextRow {
         let leading = this._maxLeading;
         if (this.length === 0) {
             if (this.paragraph) {
-                const defaultTextStyle = textstylemgr.get(this.paragraph.defaultTextStyleName);
+                const defaultTextStyle = textstylemgr.get(this.paragraph.defaultTextStyle);
                 const lastTextChar = this.paragraph.visableLastTextChar;
                 const textAttr = (lastTextChar) ? lastTextChar.textAttribute : defaultTextStyle;
                 leading = U.px(textAttr.leading);

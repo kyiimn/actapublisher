@@ -127,7 +127,7 @@ export default class ActaParagraph extends IActaFrame {
     private _columnCount: number;
     private _cursor: number | null;
     private _cursorMode: CursorMode;
-    private _defaultTextStyleName: string;
+    private _defaultTextStyle: string;
     private _readonly: boolean;
     private _editable: boolean;
     private _inputChar: string;
@@ -480,11 +480,11 @@ export default class ActaParagraph extends IActaFrame {
         return retTextNodes.reverse();
     }
 
-    private _setTextStyle(textChars: ActaTextChar[], textStyleName: string) {
-        if (!textstylemgr.get(textStyleName)) return;
+    private _setTextStyle(textChars: ActaTextChar[], textStyle: string) {
+        if (!textstylemgr.get(textStyle)) return;
         const textNodes = this._toTextNodes(textChars);
         for (const textNode of textNodes) {
-            textNode.textStyleName = textStyleName;
+            textNode.textStyle = textStyle;
             textNode.modifiedTextAttribute = new ActaTextAttribute();
             for (const textChar of textNode.value) {
                 if (textChar instanceof ActaTextChar) textChar.modified = true;
@@ -851,7 +851,7 @@ export default class ActaParagraph extends IActaFrame {
                 textAttr = this.lastTextChar.textAttribute;
                 indexOfColumn = this.lastTextChar.textRow ? this.lastTextChar.indexOfColumn : 0;
             }
-            textAttr = textstylemgr.get(this.defaultTextStyleName);
+            textAttr = textstylemgr.get(this.defaultTextStyle);
             if (!textAttr || !textAttr.font || !textAttr.fontSize) return;
 
             const dummyRow = new ActaTextRow(this.columns[indexOfColumn], U.px(textAttr.indent) || 0);
@@ -984,7 +984,7 @@ export default class ActaParagraph extends IActaFrame {
 
     constructor(
         x: string | number, y: string | number, width: string | number, height: string | number,
-        defaultTextStyleName: string, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []
+        defaultTextStyle: string, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []
     ) {
         super(x, y, width, height);
 
@@ -1000,8 +1000,8 @@ export default class ActaParagraph extends IActaFrame {
         this._innerMargin = 0;
         this._textStore = new ActaTextStore();
 
-        if (!textstylemgr.get(defaultTextStyleName)) throw new Error(`Invalid TextStyle Name. "${defaultTextStyleName}"`);
-        this._defaultTextStyleName = defaultTextStyleName;
+        if (!textstylemgr.get(defaultTextStyle)) throw new Error(`Invalid TextStyle Name. "${defaultTextStyle}"`);
+        this._defaultTextStyle = defaultTextStyle;
 
         this._readonly = false;
         this._editable = false;
@@ -1145,7 +1145,7 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     computeTextRowPaddingSize(textRow: ActaTextRow, textChar?: ActaTextChar) {
-        const defaultTextStyle = textstylemgr.get(this.defaultTextStyleName);
+        const defaultTextStyle = textstylemgr.get(this.defaultTextStyle);
         const textHeight = textChar ? textChar.height : U.px(defaultTextStyle.textHeight);
         const broken = this._getOverlapAreaWithOtherFrames(textRow, textHeight);
         if (broken) {
@@ -1165,15 +1165,15 @@ export default class ActaParagraph extends IActaFrame {
         }
     }
 
-    setTextStyleAtCursor(textStyleName: string) {
+    setTextStyleAtCursor(textStyle: string) {
         const selTextChars = this._getSelectedTextChars();
-        this._setTextStyle(selTextChars, textStyleName);
+        this._setTextStyle(selTextChars, textStyle);
         this._EMIT_REPAINT();
     }
 
     getTextStyleAtCursor(frontOfCursor: boolean = false) {
         const textNodes: ActaTextNode[] = [];
-        let returnTextStyleName: string;
+        let retTextStyle: string;
 
         if (this._cursorMode === CursorMode.EDIT || this.cursor === this.selectionStart) {
             const cursorTextChar = this._getTextCharAtCursor(frontOfCursor);
@@ -1189,13 +1189,13 @@ export default class ActaParagraph extends IActaFrame {
                 }
             }
         }
-        if (textNodes.length < 1) return this._defaultTextStyleName;
+        if (textNodes.length < 1) return this._defaultTextStyle;
 
-        returnTextStyleName = textNodes[0].textStyleName || this._defaultTextStyleName;
+        retTextStyle = textNodes[0].textStyle || this._defaultTextStyle;
         for (const textNode of textNodes) {
-            if (returnTextStyleName !== (textNode.textStyleName || this._defaultTextStyleName)) returnTextStyleName = '';
+            if (retTextStyle !== (textNode.textStyle || this._defaultTextStyle)) retTextStyle = '';
         }
-        return returnTextStyleName;
+        return retTextStyle;
     }
 
     setTextAttributeAtCursor(textAttr: ActaTextAttribute, frontOfCursor: boolean = false) {
@@ -1233,7 +1233,7 @@ export default class ActaParagraph extends IActaFrame {
             }
         }
         if (textNodes.length < 1) {
-            const defaultTextStyle = textstylemgr.get(this.defaultTextStyleName);
+            const defaultTextStyle = textstylemgr.get(this.defaultTextStyle);
             returnTextAttr.copy(defaultTextStyle);
             return returnTextAttr;
         }
@@ -1282,7 +1282,7 @@ export default class ActaParagraph extends IActaFrame {
 
     set value(text: string) {
         if (this._textStore) this._textStore.remove();
-        this._textStore = ActaTextStore.import(this.defaultTextStyleName, text);
+        this._textStore = ActaTextStore.import(this.defaultTextStyle, text);
         this.cursor = null;
         this._EMIT_REPAINT();
     }
@@ -1312,9 +1312,9 @@ export default class ActaParagraph extends IActaFrame {
         this._EMIT_CHANGE_SIZE();
     }
 
-    set defaultTextStyleName(styleName: string) {
-        this._defaultTextStyleName = styleName;
-        if (this._textStore) this._textStore.textStyleName = styleName;
+    set defaultTextStyle(styleName: string) {
+        this._defaultTextStyle = styleName;
+        if (this._textStore) this._textStore.textStyle = styleName;
     }
 
     set readonly(val: boolean) {
@@ -1331,7 +1331,7 @@ export default class ActaParagraph extends IActaFrame {
     get columnCount() { return this._columnCount; }
     get innerMargin() { return this._innerMargin; }
     get value() { return this._textStore ? this._textStore.markupText : ''; }
-    get defaultTextStyleName() { return this._defaultTextStyleName; }
+    get defaultTextStyle() { return this._defaultTextStyle; }
     get readonly() { return this._readonly; }
 
     get textChars() {

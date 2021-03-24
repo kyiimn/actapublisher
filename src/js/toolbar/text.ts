@@ -189,9 +189,9 @@ class ActaToolbarText {
     set data(data: IActaEditorTextAttribute) {
         const unit = accountInfo.prefTextUnitType;
 
-        if (data.textStyleName !== undefined) {
-            this._itemTextStyle.value = data.textStyleName;
-            this._changeTextStyle(data.textStyleName);
+        if (data.textStyle !== undefined) {
+            this._itemTextStyle.value = data.textStyle;
+            this._changeTextStyle(data.textStyle);
         }
         if (data.fontName !== undefined) this._itemFont.value = data.fontName;
         if (data.fontSize !== undefined) this._itemFontSize.value = U.convert(unit, data.fontSize).toFixed(2);
@@ -213,7 +213,7 @@ class ActaToolbarText {
         const data: IActaEditorTextAttribute = {};
         const unit = accountInfo.prefTextUnitType;
 
-        data.textStyleName = this._itemTextStyle.value;
+        data.textStyle = this._itemTextStyle.value;
         data.fontName = this._itemFont.value;
         data.fontSize = U.pt(this._itemFontSize.value, unit);
         data.indent = U.pt(this._itemIndent.value, unit);

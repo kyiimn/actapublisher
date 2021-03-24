@@ -41,7 +41,7 @@ const EditorToolDrawFrames = [
 ];
 
 export interface IActaEditorTextAttribute {
-    textStyleName?: string,
+    textStyle?: string,
     fontName?: string,
     fontSize?: number,
     indent?: number,
@@ -354,11 +354,11 @@ export default class ActaEditor {
     }
 
     private _onParagraphMoveCursor(paragraph: ActaParagraph, _: number) {
-        const textStyleName = paragraph.getTextStyleAtCursor(true);
+        const textStyle = paragraph.getTextStyleAtCursor(true);
         const textAttr = paragraph.getTextAttributeAtCursor(true);
         const tbData: IActaEditorTextAttribute = {};
 
-        tbData.textStyleName = textStyleName;
+        tbData.textStyle = textStyle;
         if (textAttr.fontName !== null) tbData.fontName = textAttr.fontName;
         if (textAttr.fontSize !== null) tbData.fontSize = textAttr.fontSize;
         if (textAttr.indent !== null) tbData.indent = textAttr.indent;
@@ -406,30 +406,87 @@ export default class ActaEditor {
         const selected = this._selectedFrames;
         if (selected.length < 1) return;
 
-        switch (action) {
-            case 'flip-to-back': break;
-            case 'flip-to-front': break;
-            case 'align-center': break;
-            case 'align-left': break;
-            case 'align-right': break;
-            case 'valign-middle': break;
-            case 'valign-top': break;
-            case 'valign-bottom': break;
-            case 'remove':
-                for (const frame of selected) frame.remove();
-                break;
-
-            case 'move-left': break;
-            case 'move-up': break;
-            case 'move-down': break;
-            case 'move-right': break;
-            case 'move-leftup': break;
-            case 'move-rightup': break;
-            case 'move-rightdown': break;
-            case 'move-leftdown': break;
-            case 'rotate-left': break;
-            case 'rotate-right': break;
-            default: break;
+        const actionType = action.split('-')[0];
+        if (actionType === 'remove') {
+            for (const frame of selected) frame.remove();
+        } else if (step) {
+            if (actionType === 'flip') {
+                const target = action.split('-')[2];
+                switch (target) {
+                    case 'back':
+                    case 'front':
+                    default: break;
+                }
+            } else if (['align', 'valign'].indexOf(actionType) > -1) {
+                const target = action.split('-')[1];
+                if (selected.length < 2) return;
+                switch (target) {
+                    case 'center':
+                    case 'left':
+                    case 'right':
+                    case 'middle':
+                    case 'top':
+                    case 'bottom':
+                    default: break;
+                }
+            } else if (actionType === 'move') {
+                const target = action.split('-')[1];
+                switch (target) {
+                    case 'up':
+                        for (const frame of selected) {
+                            frame.y = Math.max(U.pt(frame.y) - step, 0);
+                        }
+                        break;
+                    case 'down':
+                        for (const frame of selected) {
+                            frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
+                        }
+                        break;
+                    case 'left':
+                        for (const frame of selected) {
+                            frame.x = Math.max(U.pt(frame.x) - step, 0);
+                        }
+                        break;
+                    case 'right':
+                        for (const frame of selected) {
+                            frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
+                        }
+                        break;
+                    case 'leftup':
+                        for (const frame of selected) {
+                            frame.x = Math.max(U.pt(frame.x) - step, 0);
+                            frame.y = Math.max(U.pt(frame.y) - step, 0);
+                        }
+                        break;
+                    case 'leftdown':
+                        for (const frame of selected) {
+                            frame.x = Math.max(U.pt(frame.x) - step, 0);
+                            frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
+                        }
+                        break;
+                    case 'rightup':
+                        for (const frame of selected) {
+                            frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
+                            frame.y = Math.max(U.pt(frame.y) - step, 0);
+                        }
+                        break;
+                    case 'rightdown':
+                        for (const frame of selected) {
+                            frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
+                            frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            } else if (actionType === 'rotate') {
+                const target = action.split('-')[1];
+                switch (target) {
+                    case 'left':
+                    case 'right':
+                    default: break;
+                }
+            }
         }
     }
 
@@ -438,7 +495,7 @@ export default class ActaEditor {
         if (!paragraph) return;
 
         const textAttr = new ActaTextAttribute();
-        if (tbData.textStyleName) textAttr.copy(ActaTextStyleManager.get(tbData.textStyleName));
+        if (tbData.textStyle) textAttr.copy(ActaTextStyleManager.get(tbData.textStyle));
         if (tbData.fontName) textAttr.fontName = tbData.fontName;
         if (tbData.fontSize) textAttr.fontSize = tbData.fontSize;
         if (tbData.xscale) textAttr.xscale = tbData.xscale;
@@ -449,7 +506,7 @@ export default class ActaEditor {
         if (tbData.strikeline) textAttr.strikeline = tbData.strikeline;
         if (tbData.indent) textAttr.indent = tbData.indent;
 
-        if (tbData.textStyleName) paragraph.setTextStyleAtCursor(tbData.textStyleName);
+        if (tbData.textStyle) paragraph.setTextStyleAtCursor(tbData.textStyle);
         paragraph.setTextAttributeAtCursor(textAttr);
     }
 

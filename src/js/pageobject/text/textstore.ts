@@ -4,13 +4,13 @@ import Stack from '../../util/stack';
 import U from '../../util/units';
 
 export default class ActaTextStore extends ActaTextNode {
-    static import(textStyleName: string, markupText: string) {
+    static import(textStyle: string, markupText: string) {
         const node = new Stack();
         const rootnode = new ActaTextStore();
         let currentnode: ActaTextStore | ActaTextNode = rootnode;
         let str = '';
 
-        currentnode.textStyleName = textStyleName;
+        currentnode.textStyle = textStyle;
 
         for (let i = 0; i < markupText.length; i++) {
             let char = markupText[i];
@@ -49,7 +49,7 @@ export default class ActaTextStore extends ActaTextNode {
                                 if (val === '') continue;
                                 val = val.toLowerCase();
                                 switch (tt[0].toLowerCase()) {
-                                    case 'name': newnode.textStyleName = val; break;
+                                    case 'name': newnode.textStyle = val; break;
                                     case 'color-id': textAttr.colorId = !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : null; break;
                                     case 'underline': textAttr.underline = val === 'yes' ? true : false; break;
                                     case 'strikeline': textAttr.strikeline = val === 'yes' ? true : false; break;
