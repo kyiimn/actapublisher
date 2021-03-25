@@ -65,12 +65,6 @@ export default class ActaPage extends IActaElement {
         }
     }
 
-    private get lastFrameOrder() {
-        let lastOrder = 0;
-        for (const f of this.frames) lastOrder = Math.max(lastOrder, f.order);
-        return lastOrder;
-    }
-
     constructor(width?: string | number, height?: string | number) {
         super();
 
@@ -114,7 +108,6 @@ export default class ActaPage extends IActaElement {
                         node.subscribeChangePageSize(this._CHANGE_PAGE_STYLE$);
                     } else if (addedNode instanceof IActaFrame) {
                         const node = addedNode as IActaFrame;
-                        node.order = this.lastFrameOrder + 1;
                         this._updateOverlapFrameList();
                         this._CHANGE_FRAME_STYLE$.next(node);
                         this._OBSERVER_CHANGE_FRAME_STYLE$.observe(node, {

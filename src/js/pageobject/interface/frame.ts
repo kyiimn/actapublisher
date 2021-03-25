@@ -21,7 +21,7 @@ export default abstract class IActaFrame extends IActaElement {
 
     static get observedAttributes() {
         return [
-            'width', 'height', 'x', 'y', 'order',
+            'width', 'height', 'x', 'y', 'rotate',
             'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
             'border-color', 'border-top', 'border-bottom', 'border-left', 'border-right'
         ];
@@ -86,9 +86,9 @@ export default abstract class IActaFrame extends IActaElement {
         this.style.borderRightColor = (border) ? this.getAttribute('border-color') || '#000000' : '';
     }
 
-    private _applyOrder() {
-        const order = this.getAttribute('order') || '0';
-        this.style.zIndex = order;
+    private _applyRotate() {
+        const rotate = this.rotate;
+        this.style.transform = `rotate(${rotate}deg)`;
     }
 
     protected _onFocus() { return; }
@@ -119,8 +119,6 @@ export default abstract class IActaFrame extends IActaElement {
         if (y !== undefined) this.setAttribute('y', y.toString());
         if (width !== undefined) this.setAttribute('width', width.toString());
         if (height !== undefined) this.setAttribute('height', height.toString());
-
-        this.setAttribute('order', '0');
     }
 
     connectedCallback() {
@@ -136,7 +134,7 @@ export default abstract class IActaFrame extends IActaElement {
         this._applyPaddingBottom();
         this._applyPaddingLeft();
         this._applyPaddingRight();
-        this._applyOrder();
+        this._applyRotate();
 
         if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
         this.classList.add('frame');
@@ -159,6 +157,8 @@ export default abstract class IActaFrame extends IActaElement {
             case 'padding-right': this._applyPaddingRight(); this._EMIT_CHANGE_SIZE(); break;
             case 'padding': this._applyPaddingTop(); this._applyPaddingBottom(); this._applyPaddingLeft(); this._applyPaddingRight(); this._EMIT_CHANGE_SIZE(); break;
 
+            case 'rotate': this._applyRotate(); this._EMIT_CHANGE_SIZE(); break;
+
             case 'border-top': this._applyY(); this._applyBorderTop(); this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
             case 'border-bottom': this._applyBorderBottom(); this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
             case 'border-left': this._applyX(); this._applyBorderLeft(); this._applyWidth(); this._EMIT_CHANGE_SIZE(); break;
@@ -168,8 +168,6 @@ export default abstract class IActaFrame extends IActaElement {
                 this._applyWidth(); this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
 
             case 'border-color': this._applyBorderTop(); this._applyBorderLeft(); this._applyBorderLeft(); this._applyBorderRight(); this._EMIT_CHANGE_SIZE(); break;
-
-            case 'order': this._applyOrder(); this._EMIT_CHANGE_SIZE(); break;
 
             default: break;
         }
@@ -226,7 +224,7 @@ export default abstract class IActaFrame extends IActaElement {
     set paddingBottom(padding: string | number) { this.setAttribute('padding-bottom', padding.toString()); }
     set paddingLeft(padding: string | number) { this.setAttribute('padding-left', padding.toString()); }
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
-    set order(order: number) { this.setAttribute('order', order.toString()); }
+    set rotate(rotate: number) { this.setAttribute('rotate', rotate.toString()); }
     set overlapFrames(list: IActaFrame[]) { this._overlapFrames = list; }
     set margin(margin: number | string) {
         let changed = false;
@@ -247,11 +245,19 @@ export default abstract class IActaFrame extends IActaElement {
     get paddingBottom() { return this.getAttribute('padding-bottom') || '0'; }
     get paddingLeft() { return this.getAttribute('padding-left') || '0'; }
     get paddingRight() { return this.getAttribute('padding-right') || '0'; }
-    get order() { return parseInt(this.getAttribute('order') || '0', 10); }
+    get rotate() { return parseFloat(this.getAttribute('rotate') || '0'); }
     get overlapFrames() { return this._overlapFrames; }
     get overlapObservable() { return this._OVERLAP$; }
     get preflightProfiles() { return this._preflightProfiles; }
     get margin() { return this._margin; }
+
+    get order() {
+        const parentElement = this.parentElement;
+        if (!parentElement) return -1;
+
+        const children = [... parentElement.children];
+        return children.indexOf(this) + 1;
+    }
 
     abstract preflight(): void;
     abstract get type(): string;

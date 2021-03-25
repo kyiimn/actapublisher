@@ -344,6 +344,12 @@ export default class ActaEditor {
                 if (!frame) return;
 
                 this._page.appendChild(frame as IActaFrame);
+                
+                // *** 임시***
+                const focusedFrame = this._focusedFrame;
+                if (focusedFrame) focusedFrame.blur();
+                frame.classList.add('focus');
+
                 this._CHANGE$.next({ action: 'append', value: frame as IActaFrame });
                 if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
             }
@@ -386,6 +392,14 @@ export default class ActaEditor {
     private get _editableParagraph() { return this._page.querySelector<ActaParagraph>('x-paragraph.editable'); }
     private get _selectedFrames() {
         return this._page.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected');
+    }
+
+    private get _focusedParagraph() {
+        return this._page.querySelector<ActaParagraph>('x-paragraph.focus');
+    }
+
+    private get _focusedFrame() {
+        return this._page.querySelector<IActaFrame>('.frame.focus');
     }
 
     processKeyEvent(e: KeyboardEvent) {
@@ -432,8 +446,13 @@ export default class ActaEditor {
                 const target = action.split('-')[1];
                 switch (target) {
                     case 'left':
+                        for (const frame of selected) frame.rotate -= step;
+                        break;
                     case 'right':
-                    default: break;
+                        for (const frame of selected) frame.rotate += step;
+                        break;
+                    default:
+                        break;
                 }
             }
         } else {
@@ -442,12 +461,18 @@ export default class ActaEditor {
                 switch (target) {
                     case 'back':
                         for (const frame of selected) {
-
+                            if (frame.previousElementSibling) {
+                                const prevEl = frame.previousElementSibling;
+                                if (prevEl) this._page.insertBefore(frame, prevEl);
+                            }
                         }
                         break;
                     case 'front':
                         for (const frame of selected) {
-
+                            if (frame.nextElementSibling) {
+                                const nextEl = frame.nextElementSibling;
+                                if (nextEl) this._page.insertBefore(frame, nextEl.nextElementSibling);
+                            }
                         }
                         break;
                     default:
@@ -534,7 +559,7 @@ export default class ActaEditor {
             }
         }
         if (this._tool === EditorTool.TEXT_MODE) {
-            const focusedPara = this._page.querySelector<ActaParagraph>('x-paragraph.focus');
+            const focusedPara = this._focusedParagraph;
             if (!focusedPara) return;
             if (focusedPara.classList.contains('editable')) return;
             focusedPara.switchEditable(true);
