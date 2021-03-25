@@ -7,7 +7,7 @@
     overflow: hidden;
     transition: 0.2s outline;
 
-    &.focus {
+    &.focus, &.selected {
         box-shadow: inset 2px 0 0 0 #0022aa, inset -2px 0 0 0 #0022aa, inset 0 2px 0 0 #0022aa, inset 0 -2px 0 0 #0022aa;
     }
 }

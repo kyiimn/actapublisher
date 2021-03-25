@@ -138,7 +138,7 @@ function GET_BOX_SIZE(spos: Position, epos: Position, magnetData?: Boundary) {
     };
 }
 
-function GET_FRAME(el: HTMLElement) {
+function GET_FRAME(el: HTMLElement | null) {
     let nowEl: HTMLElement | null = el;
     while (true) {
         if (!nowEl) break;
@@ -205,11 +205,18 @@ export default class ActaEditor {
             this._CHANGE$.next({ action: 'scale', value: scale });
         });
 
-        fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => this._onMouseDown(e));
+        fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
+            if (this._tool === EditorTool.FRAME_MOVE_MODE && e.target instanceof HTMLElement && GET_FRAME(e.target)) {
+                const target = GET_FRAME(e.target) as IActaFrame;
+                if (!e.ctrlKey) {
+                    for (const frame of this._selectedFrames) frame.classList.remove('selected');
+                }
+                target.classList.add('selected');
+            } else this._onMouseDown(e)
+        });
         fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 1)).subscribe(e => this._onMouseMove(e));
-        fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => this._onMouseUp(e));
-
         fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 4)).subscribe(e => this._onScrollMove(e));
+        fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => this._onMouseUp(e));
     }
 
     private _calcGuideBoundary() {
@@ -378,7 +385,7 @@ export default class ActaEditor {
 
     private get _editableParagraph() { return this._page.querySelector<ActaParagraph>('x-paragraph.editable'); }
     private get _selectedFrames() {
-        return this._page.querySelectorAll<IActaFrame>('.frame.focus');
+        return this._page.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected');
     }
 
     processKeyEvent(e: KeyboardEvent) {
@@ -410,74 +417,16 @@ export default class ActaEditor {
         if (actionType === 'remove') {
             for (const frame of selected) frame.remove();
         } else if (step) {
-            if (actionType === 'flip') {
-                const target = action.split('-')[2];
-                switch (target) {
-                    case 'back':
-                    case 'front':
-                    default: break;
-                }
-            } else if (['align', 'valign'].indexOf(actionType) > -1) {
+            if (actionType === 'move') {
                 const target = action.split('-')[1];
-                if (selected.length < 2) return;
-                switch (target) {
-                    case 'center':
-                    case 'left':
-                    case 'right':
-                    case 'middle':
-                    case 'top':
-                    case 'bottom':
-                    default: break;
-                }
-            } else if (actionType === 'move') {
-                const target = action.split('-')[1];
-                switch (target) {
-                    case 'up':
-                        for (const frame of selected) {
-                            frame.y = Math.max(U.pt(frame.y) - step, 0);
-                        }
-                        break;
-                    case 'down':
-                        for (const frame of selected) {
-                            frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
-                        }
-                        break;
-                    case 'left':
-                        for (const frame of selected) {
-                            frame.x = Math.max(U.pt(frame.x) - step, 0);
-                        }
-                        break;
-                    case 'right':
-                        for (const frame of selected) {
-                            frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
-                        }
-                        break;
-                    case 'leftup':
-                        for (const frame of selected) {
-                            frame.x = Math.max(U.pt(frame.x) - step, 0);
-                            frame.y = Math.max(U.pt(frame.y) - step, 0);
-                        }
-                        break;
-                    case 'leftdown':
-                        for (const frame of selected) {
-                            frame.x = Math.max(U.pt(frame.x) - step, 0);
-                            frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
-                        }
-                        break;
-                    case 'rightup':
-                        for (const frame of selected) {
-                            frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
-                            frame.y = Math.max(U.pt(frame.y) - step, 0);
-                        }
-                        break;
-                    case 'rightdown':
-                        for (const frame of selected) {
-                            frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
-                            frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
-                        }
-                        break;
-                    default:
-                        break;
+                if (target.indexOf('up') > -1) {
+                    for (const frame of selected) frame.y = Math.max(U.pt(frame.y) - step, 0);
+                } else if (target.indexOf('down') > -1) {
+                    for (const frame of selected) frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
+                } else if (target.indexOf('left') > -1) {
+                    for (const frame of selected) frame.x = Math.max(U.pt(frame.x) - step, 0);
+                } else if (target.indexOf('right') > -1) {
+                    for (const frame of selected) frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
                 }
             } else if (actionType === 'rotate') {
                 const target = action.split('-')[1];
@@ -485,6 +434,64 @@ export default class ActaEditor {
                     case 'left':
                     case 'right':
                     default: break;
+                }
+            }
+        } else {
+            if (actionType === 'flip') {
+                const target = action.split('-')[2];
+                switch (target) {
+                    case 'back':
+                        for (const frame of selected) {
+
+                        }
+                        break;
+                    case 'front':
+                        for (const frame of selected) {
+
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            } else if (actionType === 'align') {
+                const target = action.split('-')[1];
+                if (selected.length < 2) return;
+
+                const left: number[] = [], right: number[] = [];
+                for (const frame of selected) {
+                    left.push(U.pt(frame.x));
+                    right.push(U.pt(frame.x) + U.pt(frame.width));
+                }
+                const minLeft = Math.min(... left);
+                const maxRight = Math.max(... right);
+                const center = minLeft + (maxRight - minLeft) / 2;
+
+                if (target === 'center') {
+                    for (const frame of selected) frame.x = center - (U.pt(frame.width) / 2);
+                } else if (target === 'left') {
+                    for (const frame of selected) frame.x = minLeft;
+                } else if (target === 'right') {
+                    for (const frame of selected) frame.x = maxRight - U.pt(frame.width);
+                }
+            } else if (actionType === 'valign') {
+                const target = action.split('-')[1];
+                if (selected.length < 2) return;
+
+                const top: number[] = [], bottom: number[] = [];
+                for (const frame of selected) {
+                    top.push(U.pt(frame.y));
+                    bottom.push(U.pt(frame.y) + U.pt(frame.height));
+                }
+                const minTop = Math.min(... top);
+                const maxBottom = Math.max(... bottom);
+                const middle = minTop + (maxBottom - minTop) / 2;
+
+                if (target === 'middle') {
+                    for (const frame of selected) frame.y = middle - (U.pt(frame.height) / 2);
+                } else if (target === 'top') {
+                    for (const frame of selected) frame.y = minTop;
+                } else if (target === 'bottom') {
+                    for (const frame of selected) frame.y = maxBottom - U.pt(frame.height);
                 }
             }
         }
@@ -521,6 +528,11 @@ export default class ActaEditor {
 
     set tool(tool: EditorTool) {
         this._tool = tool;
+        if (this._tool !== EditorTool.FRAME_MOVE_MODE) {
+            for (const frame of this._selectedFrames) {
+                frame.classList.remove('selected');
+            }
+        }
         if (this._tool === EditorTool.TEXT_MODE) {
             const focusedPara = this._page.querySelector<ActaParagraph>('x-paragraph.focus');
             if (!focusedPara) return;
