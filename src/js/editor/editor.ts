@@ -314,7 +314,7 @@ export default class ActaEditor {
                 if (!this._mouseEventDragGuide || !this._mouseEventStartPosition) return;
 
                 const size = GET_BOX_SIZE(this._mouseEventStartPosition, GET_OFFSET_POSITION(e), this._pageGuideBoundary);
-                let frame, changetool: EditorTool | undefined;
+                let frame: IActaFrame | undefined, changetool: EditorTool | undefined;
                 if (size.columnCount < 1 || size.lineCount < 1) return;
 
                 switch (this._tool) {
@@ -324,34 +324,39 @@ export default class ActaEditor {
                         changetool = EditorTool.SELECT;
                         break;
                     case EditorTool.DRAW_TEXT_FRAME:
-                        frame = new ActaParagraph(
-                            U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                            accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
-                        );
-                        frame.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
-                        changetool = EditorTool.TEXT_MODE;
+                        {
+                            const paragraph = new ActaParagraph(
+                                U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
+                                accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
+                            );
+                            paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
+                            changetool = EditorTool.TEXT_MODE;
+                            frame = paragraph;
+                        }
                         break;
                     case EditorTool.DRAW_TITLE_FRAME:
-                        frame = new ActaParagraph(
-                            U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                            accountInfo.prefDefaultTitleTextStyle
-                        );
-                        frame.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
-                        changetool = EditorTool.TEXT_MODE;
+                        {
+                            const paragraph = new ActaParagraph(
+                                U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
+                                accountInfo.prefDefaultTitleTextStyle
+                            );
+                            paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
+                            changetool = EditorTool.TEXT_MODE;
+                            frame = paragraph;
+                        }
                         break;
                     default: break;
                 }
                 if (!frame) return;
 
                 this._page.appendChild(frame as IActaFrame);
-                
-                // *** 임시***
-                const focusedFrame = this._focusedFrame;
-                if (focusedFrame) focusedFrame.blur();
-                frame.classList.add('focus');
-
                 this._CHANGE$.next({ action: 'append', value: frame as IActaFrame });
-                if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
+
+                // 프레임을 페이지에 추가 후 렌더링 이후에 실행
+                setTimeout((f: IActaFrame) => {
+                    f.focus({ preventScroll: true });
+                    if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
+                }, 1, frame);
             }
         } finally {
             if (this._mouseEventDragGuide) this._mouseEventDragGuide.remove();
