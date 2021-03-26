@@ -14,6 +14,8 @@ export default abstract class IActaFrame extends IActaElement {
     private _margin: number | string;
     private _focused: boolean;
 
+    private _moveMode: boolean;
+
     protected _preflightProfiles: IActaPreflightProfile[];
 
     protected _CHANGE_SIZE$: Subject<undefined>;
@@ -110,6 +112,7 @@ export default abstract class IActaFrame extends IActaElement {
         this._preflightProfiles = [];
         this._margin = 0;
         this._focused = false;
+        this._moveMode = false;
 
         this._CHANGE_SIZE$ = new Subject();
         this._OVERLAP$ = new Subject();
@@ -226,6 +229,7 @@ export default abstract class IActaFrame extends IActaElement {
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
     set rotate(rotate: number) { this.setAttribute('rotate', rotate.toString()); }
     set overlapFrames(list: IActaFrame[]) { this._overlapFrames = list; }
+    set moveMode(modeMode: boolean) { this._moveMode = modeMode; }
     set margin(margin: number | string) {
         let changed = false;
         if (U.px(this._margin) !== U.px(margin)) changed = true;
@@ -249,6 +253,7 @@ export default abstract class IActaFrame extends IActaElement {
     get overlapFrames() { return this._overlapFrames; }
     get overlapObservable() { return this._OVERLAP$; }
     get preflightProfiles() { return this._preflightProfiles; }
+    get moveMode() { return this._moveMode; }
     get margin() { return this._margin; }
 
     get order() {

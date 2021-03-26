@@ -157,7 +157,6 @@ export default class ActaEditor {
     private _mouseEventDragGuide?: HTMLElement;
     private _mouseMovePreviousEvent?: MouseEvent;
     private _mouseEventStartPosition?: { left: number, top: number };
-    private _mouseEventTarget?: IActaFrame;
     private _pageGuideBoundary?: Boundary;
 
     private _CHANGE$: Subject<{ action: string, value: any }>;
@@ -206,16 +205,29 @@ export default class ActaEditor {
         });
 
         fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
-            if (this._tool === EditorTool.FRAME_MOVE_MODE && e.target instanceof HTMLElement && GET_FRAME(e.target)) {
-                const target = GET_FRAME(e.target) as IActaFrame;
-                if (!e.ctrlKey) {
-                    for (const frame of this._selectedFrames) frame.classList.remove('selected');
+            if (this._tool === EditorTool.FRAME_MOVE_MODE) {
+                const frame = GET_FRAME(e.target as HTMLElement);
+                if (!frame) return;
+
+                if (!frame.classList.contains('selected') && !frame.classList.contains('focus')) {
+                    if (!e.ctrlKey) {
+                        for (const selectedFrame of this._selectedFrames) selectedFrame.classList.remove('selected');
+                    }
+                    frame.classList.add('selected');
                 }
-                target.classList.add('selected');
-            } else this._onMouseDown(e)
+                this._mouseEventStartPosition = GET_OFFSET_POSITION(e);
+            } else {
+                this._onMouseDown(e)
+            }
         });
-        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 1)).subscribe(e => this._onMouseMove(e));
-        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 4)).subscribe(e => this._onScrollMove(e));
+        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 1 && this._tool === EditorTool.FRAME_MOVE_MODE)).subscribe(e => this._onFrameMove(e));
+        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(_ => this._tool !== EditorTool.FRAME_MOVE_MODE)).subscribe(e => {
+            switch (e.buttons) {
+                case 1: this._onMouseMove(e); break;
+                case 4: this._onScrollMove(e); break;
+                default: break;
+            }
+        });
         fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => this._onMouseUp(e));
     }
 
@@ -245,6 +257,22 @@ export default class ActaEditor {
         }
     }
 
+    private _onFrameMove(e: MouseEvent) {
+        const selectedFrames = this._selectedFrames;
+
+        for (const frame of selectedFrames) {
+            if (target.indexOf('up') > -1) {
+                for (const frame of selected) frame.y = Math.max(U.pt(frame.y) - step, 0);
+            } else if (target.indexOf('down') > -1) {
+                for (const frame of selected) frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
+            } else if (target.indexOf('left') > -1) {
+                for (const frame of selected) frame.x = Math.max(U.pt(frame.x) - step, 0);
+            } else if (target.indexOf('right') > -1) {
+                for (const frame of selected) frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
+            }
+        }
+    }
+
     private _onScrollMove(e: MouseEvent) {
         try {
             if (!this._mouseMovePreviousEvent) return;
@@ -268,7 +296,6 @@ export default class ActaEditor {
         const previousDragGuide = this._mouseEventDragGuide;
 
         this._mouseEventDragGuide = undefined;
-        this._mouseEventTarget = undefined;
 
         try {
             const pos = GET_OFFSET_POSITION(e);
@@ -278,12 +305,6 @@ export default class ActaEditor {
                 this._mouseEventDragGuide = document.createElement('div');
                 this._mouseEventDragGuide.classList.add('draw-guide');
                 this._page.appendChild(this._mouseEventDragGuide);
-            } else if (this._tool === EditorTool.FRAME_MOVE_MODE) {
-                const frame = GET_FRAME(e.target as HTMLElement);
-                if (!frame) return;
-                this._mouseEventStartPosition = pos;
-                this._mouseEventTarget = frame;
-                this._mouseEventTarget.focus();
             }
         } finally {
             if (previousDragGuide) previousDragGuide.remove();
@@ -394,17 +415,25 @@ export default class ActaEditor {
         }
     }
 
-    private get _editableParagraph() { return this._page.querySelector<ActaParagraph>('x-paragraph.editable'); }
     private get _selectedFrames() {
-        return this._page.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected');
+        return [... this._page.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected')];
+    }
+
+    private get _editableParagraph() {
+        return this._page.querySelector<ActaParagraph>('x-paragraph.editable'); 
     }
 
     private get _focusedParagraph() {
         return this._page.querySelector<ActaParagraph>('x-paragraph.focus');
     }
 
-    private get _focusedFrame() {
-        return this._page.querySelector<IActaFrame>('.frame.focus');
+    private get _allFrames() {
+        const children = this._page.querySelectorAll('*');
+        const frames: IActaFrame[] = [];
+        for (const el of children) {
+            if (el instanceof IActaFrame) frames.push(el);
+        }
+        return frames;
     }
 
     processKeyEvent(e: KeyboardEvent) {
@@ -557,11 +586,13 @@ export default class ActaEditor {
     }
 
     set tool(tool: EditorTool) {
+        const allFrames = this._allFrames;
         this._tool = tool;
         if (this._tool !== EditorTool.FRAME_MOVE_MODE) {
-            for (const frame of this._selectedFrames) {
-                frame.classList.remove('selected');
-            }
+            for (const frame of this._selectedFrames) frame.classList.remove('selected');
+            for (const frame of allFrames) frame.moveMode = false;
+        } else {
+            for (const frame of allFrames) frame.moveMode = true;
         }
         if (this._tool === EditorTool.TEXT_MODE) {
             const focusedPara = this._focusedParagraph;

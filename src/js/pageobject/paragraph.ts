@@ -1022,6 +1022,7 @@ export default class ActaParagraph extends IActaFrame {
         this._CHANGE_SIZE$.subscribe(() => this._EMIT_REPAINT());
 
         fromEvent<KeyboardEvent>(this, 'keydown').pipe(filter(e => {
+            if (this.moveMode) return false;
             if (!this.editable) return false;
             return true;
         })).subscribe(e => {
@@ -1031,7 +1032,7 @@ export default class ActaParagraph extends IActaFrame {
         });
 
         fromEvent<MouseEvent>(this, 'dblclick').pipe(filter(e => {
-            if (this.readonly || this.editable) return false;
+            if (this.moveMode || this.readonly || this.editable) return false;
             return true;
         })).subscribe(e => {
             const textChar = this._getTextCharAtPosition(e.target as ActaParagraphColumn, e.offsetX, e.offsetY);
@@ -1047,6 +1048,7 @@ export default class ActaParagraph extends IActaFrame {
 
         let waitTripleClickTimer: boolean = false;
         fromEvent<MouseEvent>(this, 'mousedown').pipe(filter(e => {
+            if (this.moveMode) return false;
             if (!this.editable) {
                 if (!this.readonly) this.focus({ preventScroll: true });
                 return false;
@@ -1096,7 +1098,7 @@ export default class ActaParagraph extends IActaFrame {
         });
 
         fromEvent<MouseEvent>(this, 'mousemove').pipe(filter(e => {
-            if (!this.editable || this.readonly) return false;
+            if (this.moveMode || !this.editable || this.readonly) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
             if (!(e.target instanceof ActaParagraphColumn)) return false;
             if (e.buttons !== 1) return false;
@@ -1112,7 +1114,7 @@ export default class ActaParagraph extends IActaFrame {
         });
 
         fromEvent<MouseEvent>(this, 'mouseup').pipe(filter(e => {
-            if (!this.editable || this.readonly) return false;
+            if (this.moveMode || !this.editable || this.readonly) return false;
             if (this._cursorMode !== CursorMode.SELECTIONSTART) return false;
             if (!(e.target instanceof ActaParagraphColumn)) return false;
             return true;
