@@ -15,6 +15,8 @@ export default abstract class IActaFrame extends IActaElement {
     private _focused: boolean;
 
     private _moveMode: boolean;
+    private _moveOriginalLeft?: number | string;
+    private _moveOriginalTop?: number | string;
 
     protected _preflightProfiles: IActaPreflightProfile[];
 
@@ -215,6 +217,16 @@ export default abstract class IActaFrame extends IActaElement {
         return null;
     }
 
+    savePosition() {
+        if (this._moveMode) {
+            this._moveOriginalLeft = this.x;
+            this._moveOriginalTop = this.y;
+        } else {
+            this._moveOriginalLeft = undefined;
+            this._moveOriginalTop = undefined;
+        }
+    }
+
     set x(x: string | number) { this.setAttribute('x', x.toString()); }
     set y(y: string | number) { this.setAttribute('y', y.toString()); }
     set width(width: string | number) { this.setAttribute('width', width.toString()); }
@@ -229,7 +241,10 @@ export default abstract class IActaFrame extends IActaElement {
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
     set rotate(rotate: number) { this.setAttribute('rotate', rotate.toString()); }
     set overlapFrames(list: IActaFrame[]) { this._overlapFrames = list; }
-    set moveMode(modeMode: boolean) { this._moveMode = modeMode; }
+    set moveMode(modeMode: boolean) {
+        this._moveMode = modeMode;
+        this.savePosition();
+    }
     set margin(margin: number | string) {
         let changed = false;
         if (U.px(this._margin) !== U.px(margin)) changed = true;
@@ -254,6 +269,8 @@ export default abstract class IActaFrame extends IActaElement {
     get overlapObservable() { return this._OVERLAP$; }
     get preflightProfiles() { return this._preflightProfiles; }
     get moveMode() { return this._moveMode; }
+    get savedPositionLeft() { return this._moveOriginalLeft || 0; }
+    get savedPositionTop() { return this._moveOriginalTop || 0; }
     get margin() { return this._margin; }
 
     get order() {

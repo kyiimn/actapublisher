@@ -54,8 +54,8 @@ export interface IActaEditorTextAttribute {
 };
 
 interface Position {
-    left: number,
-    top: number,
+    x: number,
+    y: number,
     xIndex?: number,
     yIndex?: number
 };
@@ -65,107 +65,119 @@ interface Boundary {
     y: number[]
 };
 
-function GET_OFFSET_POSITION(e: MouseEvent, parentEl?: IActaFrame) {
-    let left = e.offsetX, top = e.offsetY;
-    if (!e.target) return { left, top };
-
-    let nowEl: HTMLElement | null = e.target as HTMLElement;
-    if (nowEl !== parentEl && nowEl.nodeName !== 'X-PAGE') {
-        while (true) {
-            if (!nowEl || (parentEl && nowEl === parentEl) || nowEl.nodeName === 'X-PAGE') break;
-            const computedStyle = window.getComputedStyle(nowEl);
-            if (computedStyle.position === 'absolute') {
-                left += parseFloat(computedStyle.left);
-                top += parseFloat(computedStyle.top);
-            } else {
-                left += nowEl.offsetLeft;
-                top += nowEl.offsetTop;
-            }
-            nowEl = nowEl.offsetParent as HTMLElement | null;
-        }
-    }
-    return { left, top };
-}
-
-function APPLY_MAGNET(pos: Position, magnet?: Boundary, open?: boolean) {
-    if (!magnet) return pos;
-
-    if (magnet.x.length > ((open === undefined) ? 0 : 1)) {
-        let dx = Number.MAX_SAFE_INTEGER;
-        let idx = -1;
-        for (let i = ((open === undefined || open === true) ? 0 : 1); i < magnet.x.length; i += ((open === undefined) ? 1 : 2)) {
-            const x = magnet.x[i];
-            if (Math.abs(dx) > Math.abs(pos.left - x)) {
-                dx = pos.left - x;
-                idx = i;
-            }
-        }
-        pos.left -= dx;
-        pos.xIndex = (idx + ((open === false) ? 1 : 0)) / 2;
-    }
-    if (magnet.y.length > ((open === undefined) ? 0 : 1)) {
-        let dy = Number.MAX_SAFE_INTEGER;
-        let idx = -1;
-        for (let i = ((open === undefined || open === true) ? 0 : 1); i < magnet.y.length; i += ((open === undefined) ? 1 : 2)) {
-            const y = magnet.y[i];
-            if (Math.abs(dy) > Math.abs(pos.top - y)) {
-                dy = pos.top - y;
-                idx = i;
-            }
-        }
-        pos.top -= dy;
-        pos.yIndex = (idx + ((open === false) ? 1 : 0)) / 2;
-    }
-    return pos;
-}
-
-function GET_BOX_SIZE(spos: Position, epos: Position, magnetData?: Boundary) {
-    const x1 = Math.min(spos.left, epos.left);
-    const y1 = Math.min(spos.top, epos.top);
-    const x2 = Math.max(spos.left, epos.left);
-    const y2 = Math.max(spos.top, epos.top);
-
-    const nspos = APPLY_MAGNET({ left: x1, top: y1 }, magnetData, true);
-    const nepos = APPLY_MAGNET({ left: x2, top: y2 }, magnetData, false);
-
-    return {
-        x: nspos.left,
-        y: nspos.top,
-        width: nepos.left - nspos.left,
-        height: nepos.top - nspos.top,
-        columnCount: (nepos.xIndex || 0) - (nspos.xIndex || 0),
-        lineCount: (nepos.yIndex || 0) - (nspos.yIndex || 0)
-    };
-}
-
-function GET_FRAME(el: HTMLElement | null) {
-    let nowEl: HTMLElement | null = el;
-    while (true) {
-        if (!nowEl) break;
-        if (nowEl instanceof IActaFrame) break;
-        nowEl = nowEl.parentElement;
-    }
-    return nowEl instanceof IActaFrame ? nowEl as IActaFrame : null;
-}
-
 export default class ActaEditor {
     private _element: HTMLElement;
     private _tool: EditorTool;
     private _page: ActaPage;
     private _readonly: boolean;
+    private _magnetRange: number;
 
     private _mouseEventDragGuide?: HTMLElement;
     private _mouseMovePreviousEvent?: MouseEvent;
-    private _mouseEventStartPosition?: { left: number, top: number };
+    private _mouseEventStartPosition?: { x: number, y: number };
     private _pageGuideBoundary?: Boundary;
 
     private _CHANGE$: Subject<{ action: string, value: any }>;
+
+    private static getOffsetPosition(e: MouseEvent, parentEl?: IActaFrame): Position {
+        let left = e.offsetX, top = e.offsetY;
+        if (!e.target) return { x: left, y: top };
+    
+        let nowEl: HTMLElement | null = e.target as HTMLElement;
+        if (nowEl !== parentEl && nowEl.nodeName !== 'X-PAGE') {
+            while (true) {
+                if (!nowEl || (parentEl && nowEl === parentEl) || nowEl.nodeName === 'X-PAGE') break;
+                const computedStyle = window.getComputedStyle(nowEl);
+                if (computedStyle.position === 'absolute') {
+                    left += parseFloat(computedStyle.left);
+                    top += parseFloat(computedStyle.top);
+                } else {
+                    left += nowEl.offsetLeft;
+                    top += nowEl.offsetTop;
+                }
+                nowEl = nowEl.offsetParent as HTMLElement | null;
+            }
+        }
+        return { x: left, y: top };
+    }
+
+    private static getFrame(el: HTMLElement | null) {
+        let nowEl: HTMLElement | null = el;
+        while (true) {
+            if (!nowEl) break;
+            if (nowEl instanceof IActaFrame) break;
+            nowEl = nowEl.parentElement;
+        }
+        return nowEl instanceof IActaFrame ? nowEl as IActaFrame : null;
+    }
+    
+    private static getMagnetPosition(pos: Position, magnetData?: Boundary, open?: boolean) {
+        if (!magnetData) return pos;
+    
+        if (magnetData.x.length > ((open === undefined) ? 0 : 1)) {
+            let dx = Number.MAX_SAFE_INTEGER;
+            let idx = -1;
+            for (let i = ((open === undefined || open === true) ? 0 : 1); i < magnetData.x.length; i += ((open === undefined) ? 1 : 2)) {
+                const x = magnetData.x[i];
+                if (Math.abs(dx) > Math.abs(pos.x - x)) {
+                    dx = pos.x - x;
+                    idx = i;
+                }
+            }
+            pos.x -= dx;
+            pos.xIndex = (idx + ((open === false) ? 1 : 0)) / 2;
+        }
+        if (magnetData.y.length > ((open === undefined) ? 0 : 1)) {
+            let dy = Number.MAX_SAFE_INTEGER;
+            let idx = -1;
+            for (let i = ((open === undefined || open === true) ? 0 : 1); i < magnetData.y.length; i += ((open === undefined) ? 1 : 2)) {
+                const y = magnetData.y[i];
+                if (Math.abs(dy) > Math.abs(pos.y - y)) {
+                    dy = pos.y - y;
+                    idx = i;
+                }
+            }
+            pos.y -= dy;
+            pos.yIndex = (idx + ((open === false) ? 1 : 0)) / 2;
+        }
+        return pos;
+    }
+
+    private static getValidMagnetPosition(pos: Position, magnetData: Boundary, range: number, open?: boolean) {
+        const orgPos: Position = { x: pos.x, y: pos.y };
+        const magnetPos = this.getMagnetPosition(pos, magnetData, open);
+
+        if (Math.abs(orgPos.x - magnetPos.x) > range) magnetPos.x = orgPos.x;
+        if (Math.abs(orgPos.y - magnetPos.y) > range) magnetPos.y = orgPos.y;
+
+        return magnetPos;
+    }
+
+    private static getBoxSize(spos: Position, epos: Position, magnetData?: Boundary) {
+        const x1 = Math.min(spos.x, epos.x);
+        const y1 = Math.min(spos.y, epos.y);
+        const x2 = Math.max(spos.x, epos.x);
+        const y2 = Math.max(spos.y, epos.y);
+    
+        const nspos = this.getMagnetPosition({ x: x1, y: y1 }, magnetData, true);
+        const nepos = this.getMagnetPosition({ x: x2, y: y2 }, magnetData, false);
+    
+        return {
+            x: nspos.x,
+            y: nspos.y,
+            width: nepos.x - nspos.x,
+            height: nepos.y - nspos.y,
+            columnCount: (nepos.xIndex || 0) - (nspos.xIndex || 0),
+            lineCount: (nepos.yIndex || 0) - (nspos.yIndex || 0)
+        };
+    }
 
     constructor(pageSize: IActaCodePageSize) {
         this._CHANGE$ = new Subject();
 
         this._tool = EditorTool.SELECT;
         this._readonly = false;
+        this._magnetRange = 10;
 
         this._element = document.createElement('div');
         this._element.classList.add('editor');
@@ -206,29 +218,37 @@ export default class ActaEditor {
 
         fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
             if (this._tool === EditorTool.FRAME_MOVE_MODE) {
-                const frame = GET_FRAME(e.target as HTMLElement);
-                if (!frame) return;
-
-                if (!frame.classList.contains('selected') && !frame.classList.contains('focus')) {
-                    if (!e.ctrlKey) {
-                        for (const selectedFrame of this._selectedFrames) selectedFrame.classList.remove('selected');
-                    }
-                    frame.classList.add('selected');
-                }
-                this._mouseEventStartPosition = GET_OFFSET_POSITION(e);
+                this._onFrameMoveStart(e);
             } else {
-                this._onMouseDown(e)
+                this._onDrawGuideStart(e)
             }
         });
-        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(e => e.buttons === 1 && this._tool === EditorTool.FRAME_MOVE_MODE)).subscribe(e => this._onFrameMove(e));
-        fromEvent<MouseEvent>(this._page, 'mousemove').pipe(filter(_ => this._tool !== EditorTool.FRAME_MOVE_MODE)).subscribe(e => {
-            switch (e.buttons) {
-                case 1: this._onMouseMove(e); break;
-                case 4: this._onScrollMove(e); break;
-                default: break;
+        fromEvent<MouseEvent>(this._page, 'mousemove').subscribe(e => {
+            if (this._tool === EditorTool.FRAME_MOVE_MODE) {
+                if (e.buttons === 1) this._onFrameMove(e);
+            } else {
+                switch (e.buttons) {
+                    case 1: this._onDrawGuideMove(e); break;
+                    case 4: this._onScrollMove(e); break;
+                    default: break;
+                }
             }
         });
-        fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => this._onMouseUp(e));
+        fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => {
+            try {
+                if (EditorToolDrawFrames.indexOf(this._tool) > -1) this._onDrawGuideEnd(e);
+            } finally {
+                if (this._mouseEventDragGuide) this._mouseEventDragGuide.remove();
+
+                this._mouseEventDragGuide = undefined;
+                this._mouseEventStartPosition = undefined;
+                this._mouseMovePreviousEvent = undefined;
+                this._pageGuideBoundary = undefined;
+
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
     }
 
     private _calcGuideBoundary() {
@@ -257,19 +277,51 @@ export default class ActaEditor {
         }
     }
 
-    private _onFrameMove(e: MouseEvent) {
-        const selectedFrames = this._selectedFrames;
+    private _onFrameMoveStart(e: MouseEvent) {
+        const frame = ActaEditor.getFrame(e.target as HTMLElement);
+        if (!frame) return;
 
-        for (const frame of selectedFrames) {
-            if (target.indexOf('up') > -1) {
-                for (const frame of selected) frame.y = Math.max(U.pt(frame.y) - step, 0);
-            } else if (target.indexOf('down') > -1) {
-                for (const frame of selected) frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
-            } else if (target.indexOf('left') > -1) {
-                for (const frame of selected) frame.x = Math.max(U.pt(frame.x) - step, 0);
-            } else if (target.indexOf('right') > -1) {
-                for (const frame of selected) frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
+        if (!frame.classList.contains('selected') && !frame.classList.contains('focus')) {
+            if (!e.ctrlKey) {
+                for (const selectedFrame of this._selectedFrames) selectedFrame.classList.remove('selected');
             }
+            frame.classList.add('selected');
+        }
+        for (const selectedFrame of this._selectedFrames) selectedFrame.savePosition();
+
+        this._calcGuideBoundary();
+        this._mouseMovePreviousEvent = e;
+    }
+
+    private _onFrameMove(e: MouseEvent) {
+        try {
+            if (!this._mouseMovePreviousEvent) return;
+
+            const selectedFrames = this._selectedFrames;
+            const mx = (e.clientX - this._mouseMovePreviousEvent.clientX) / this._page.scale;
+            const my = (e.clientY - this._mouseMovePreviousEvent.clientY) / this._page.scale;
+
+            for (const frame of selectedFrames) {
+                let x1 = Math.min(U.px(this._page.width) - U.px(frame.width), Math.max(0, U.px(frame.savedPositionLeft) + mx));
+                let y1 = Math.min(U.px(this._page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
+                const x2 = x1 + U.px(frame.width), y2 = y1 + U.px(frame.height);
+
+                if (this._pageGuideBoundary) {
+                    const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
+                    const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
+
+                    if (nspos.x !== x1) x1 = nspos.x;
+                    else if (nepos.x !== x2) x1 = nepos.x - U.px(frame.width);
+
+                    if (nspos.y !== y1) y1 = nspos.y;
+                    else if (nepos.y !== y2) x1 = nepos.y - U.px(frame.height);
+                }
+                frame.x = `${x1}px`;
+                frame.y = `${y1}px`;
+            }
+        } finally {
+            e.preventDefault();
+            e.stopPropagation();
         }
     }
 
@@ -292,13 +344,13 @@ export default class ActaEditor {
         }
     }
 
-    private _onMouseDown(e: MouseEvent) {
+    private _onDrawGuideStart(e: MouseEvent) {
         const previousDragGuide = this._mouseEventDragGuide;
 
         this._mouseEventDragGuide = undefined;
 
         try {
-            const pos = GET_OFFSET_POSITION(e);
+            const pos = ActaEditor.getOffsetPosition(e);
             this._calcGuideBoundary();
             if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
                 this._mouseEventStartPosition = pos;
@@ -308,14 +360,16 @@ export default class ActaEditor {
             }
         } finally {
             if (previousDragGuide) previousDragGuide.remove();
+            this._mouseMovePreviousEvent = e;
+
             e.stopPropagation();
         }
     }
 
-    private _onMouseMove(e: MouseEvent) {
+    private _onDrawGuideMove(e: MouseEvent) {
         try {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1 && this._mouseEventDragGuide && this._mouseEventStartPosition) {
-                const size = GET_BOX_SIZE(this._mouseEventStartPosition, GET_OFFSET_POSITION(e), this._pageGuideBoundary);
+                const size = ActaEditor.getBoxSize(this._mouseEventStartPosition, ActaEditor.getOffsetPosition(e), this._pageGuideBoundary);
                 this._mouseEventDragGuide.style.left = `${size.x}px`;
                 this._mouseEventDragGuide.style.top = `${size.y}px`;
                 this._mouseEventDragGuide.style.width = `${size.width}px`;
@@ -329,67 +383,53 @@ export default class ActaEditor {
         }
     }
 
-    private _onMouseUp(e: MouseEvent) {
-        try {
-            if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
-                if (!this._mouseEventDragGuide || !this._mouseEventStartPosition) return;
+    private _onDrawGuideEnd(e: MouseEvent) {
+        if (!this._mouseEventDragGuide || !this._mouseEventStartPosition) return;
 
-                const size = GET_BOX_SIZE(this._mouseEventStartPosition, GET_OFFSET_POSITION(e), this._pageGuideBoundary);
-                let frame: IActaFrame | undefined, changetool: EditorTool | undefined;
-                if (size.columnCount < 1 || size.lineCount < 1) return;
+        const size = ActaEditor.getBoxSize(this._mouseEventStartPosition, ActaEditor.getOffsetPosition(e), this._pageGuideBoundary);
+        let frame: IActaFrame | undefined, changetool: EditorTool | undefined;
+        if (size.columnCount < 1 || size.lineCount < 1) return;
 
-                switch (this._tool) {
-                    case EditorTool.DRAW_EMPTY_FRAME: break;
-                    case EditorTool.DRAW_IMAGE_FRAME:
-                        frame = new ActaImage(U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX));
-                        changetool = EditorTool.SELECT;
-                        break;
-                    case EditorTool.DRAW_TEXT_FRAME:
-                        {
-                            const paragraph = new ActaParagraph(
-                                U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                                accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
-                            );
-                            paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
-                            changetool = EditorTool.TEXT_MODE;
-                            frame = paragraph;
-                        }
-                        break;
-                    case EditorTool.DRAW_TITLE_FRAME:
-                        {
-                            const paragraph = new ActaParagraph(
-                                U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                                accountInfo.prefDefaultTitleTextStyle
-                            );
-                            paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
-                            changetool = EditorTool.TEXT_MODE;
-                            frame = paragraph;
-                        }
-                        break;
-                    default: break;
+        switch (this._tool) {
+            case EditorTool.DRAW_EMPTY_FRAME: break;
+            case EditorTool.DRAW_IMAGE_FRAME:
+                frame = new ActaImage(U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX));
+                changetool = EditorTool.SELECT;
+                break;
+            case EditorTool.DRAW_TEXT_FRAME:
+                {
+                    const paragraph = new ActaParagraph(
+                        U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
+                        accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
+                    );
+                    paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
+                    changetool = EditorTool.TEXT_MODE;
+                    frame = paragraph;
                 }
-                if (!frame) return;
-
-                this._page.appendChild(frame as IActaFrame);
-                this._CHANGE$.next({ action: 'append', value: frame as IActaFrame });
-
-                // 프레임을 페이지에 추가 후 렌더링 이후에 실행
-                setTimeout((f: IActaFrame) => {
-                    f.focus({ preventScroll: true });
-                    if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
-                }, 1, frame);
-            }
-        } finally {
-            if (this._mouseEventDragGuide) this._mouseEventDragGuide.remove();
-
-            this._mouseEventDragGuide = undefined;
-            this._mouseEventStartPosition = undefined;
-            this._mouseMovePreviousEvent = undefined;
-            this._pageGuideBoundary = undefined;
-
-            e.preventDefault();
-            e.stopPropagation();
+                break;
+            case EditorTool.DRAW_TITLE_FRAME:
+                {
+                    const paragraph = new ActaParagraph(
+                        U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
+                        accountInfo.prefDefaultTitleTextStyle
+                    );
+                    paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
+                    changetool = EditorTool.TEXT_MODE;
+                    frame = paragraph;
+                }
+                break;
+            default: break;
         }
+        if (!frame) return;
+
+        this._page.appendChild(frame as IActaFrame);
+        this._CHANGE$.next({ action: 'append', value: frame as IActaFrame });
+
+        // 프레임을 페이지에 추가 후 렌더링 이후에 실행
+        setTimeout((f: IActaFrame) => {
+            f.focus({ preventScroll: true });
+            if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
+        }, 1, frame);
     }
 
     private _onParagraphMoveCursor(paragraph: ActaParagraph, _: number) {
