@@ -314,7 +314,7 @@ export default class ActaEditor {
                     else if (nepos.x !== x2) x1 = nepos.x - U.px(frame.width);
 
                     if (nspos.y !== y1) y1 = nspos.y;
-                    else if (nepos.y !== y2) x1 = nepos.y - U.px(frame.height);
+                    else if (nepos.y !== y2) y1 = nepos.y - U.px(frame.height);
                 }
                 frame.x = `${x1}px`;
                 frame.y = `${y1}px`;
