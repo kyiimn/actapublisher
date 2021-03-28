@@ -306,17 +306,23 @@ export default class ActaEditor {
                 let y1 = Math.min(U.px(this._page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
 
                 if (this._pageGuideBoundary) {
-                    const x2 = x1 + U.px(frame.width);
-                    const y2 = y1 + U.px(frame.height);
+                    if (frame instanceof ActaParagraph || frame instanceof ActaImage) {
+                        const x2 = x1 + U.px(frame.width);
+                        const y2 = y1 + U.px(frame.height);
 
-                    const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
-                    const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
+                        const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
+                        const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
 
-                    if (nspos.x !== x1) x1 = nspos.x;
-                    else if (nepos.x !== x2) x1 = nepos.x - U.px(frame.width);
+                        if (nspos.x !== x1) x1 = nspos.x;
+                        else if (nepos.x !== x2) x1 = nepos.x - U.px(frame.width);
 
-                    if (nspos.y !== y1) y1 = nspos.y;
-                    else if (nepos.y !== y2) y1 = nepos.y - U.px(frame.height);
+                        if (nspos.y !== y1) y1 = nspos.y;
+                        else if (nepos.y !== y2) y1 = nepos.y - U.px(frame.height);
+                    } else {
+                        const npos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale);
+                        x1 = npos.x;
+                        y1 = npos.y;
+                    }
                 }
                 frame.x = `${x1}px`;
                 frame.y = `${y1}px`;
