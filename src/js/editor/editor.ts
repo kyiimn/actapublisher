@@ -304,9 +304,11 @@ export default class ActaEditor {
             for (const frame of selectedFrames) {
                 let x1 = Math.min(U.px(this._page.width) - U.px(frame.width), Math.max(0, U.px(frame.savedPositionLeft) + mx));
                 let y1 = Math.min(U.px(this._page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
-                const x2 = x1 + U.px(frame.width), y2 = y1 + U.px(frame.height);
 
                 if (this._pageGuideBoundary) {
+                    const x2 = x1 + U.px(frame.width);
+                    const y2 = y1 + U.px(frame.height);
+
                     const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
                     const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
 
