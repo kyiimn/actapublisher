@@ -498,7 +498,7 @@ export default class ActaEditor {
                     break;
                 case 'Escape':
                     for (const frame of selected) {
-                        frame.classList.remove('focus');
+                        if (frame.isFocused) frame.blur();
                         frame.classList.remove('selected');
                     }
                     break;

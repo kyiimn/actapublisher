@@ -3,8 +3,8 @@ import IActaFrame from './interface/frame';
 import IActaElement from './interface/element';
 import U from '../util/units';
 
-import { fromEvent, Subject } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { fromEvent, merge, Subject } from 'rxjs';
+import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import "../../css/pageobject/page.scss";
 
@@ -114,12 +114,16 @@ export default class ActaPage extends IActaElement {
                             attributes: true,
                             attributeFilter: IActaFrame.observedAttributes
                         });
-                        fromEvent(node, 'focus').pipe(filter(e => {
-                            return e.target ? true : false;
-                        }), map(e => {
-                            e.preventDefault();
-                            return e.target as IActaFrame;
-                        })).subscribe(target => {
+                        merge(
+                            fromEvent(node, 'blur').pipe(filter(e => e.target ? true : false), map(e => {
+                                e.preventDefault();
+                                return undefined;
+                            })),
+                            fromEvent(node, 'focus').pipe(filter(e => e.target ? true : false), map(e => {
+                                e.preventDefault();
+                                return e.target as IActaFrame;
+                            }))
+                        ).pipe(distinctUntilChanged()).subscribe(target => {
                             this._CHANGE_FOCUS$.next(target);
                         });
                         node.subscribeChangeFocus(this._CHANGE_FOCUS$);
