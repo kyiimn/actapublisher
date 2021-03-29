@@ -105,8 +105,6 @@ export default abstract class IActaFrame extends IActaElement {
 
     protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(); }
 
-    protected get isFocused() { return this._focused; }
-
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
 
@@ -272,6 +270,7 @@ export default abstract class IActaFrame extends IActaElement {
     get savedPositionLeft() { return this._moveOriginalLeft || 0; }
     get savedPositionTop() { return this._moveOriginalTop || 0; }
     get margin() { return this._margin; }
+    get isFocused() { return this._focused; }
 
     get order() {
         const parentElement = this.parentElement;

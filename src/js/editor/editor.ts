@@ -82,7 +82,7 @@ export default class ActaEditor {
     private static getOffsetPosition(e: MouseEvent, parentEl?: IActaFrame): Position {
         let left = e.offsetX, top = e.offsetY;
         if (!e.target) return { x: left, y: top };
-    
+
         let nowEl: HTMLElement | null = e.target as HTMLElement;
         if (nowEl !== parentEl && nowEl.nodeName !== 'X-PAGE') {
             while (true) {
@@ -110,10 +110,9 @@ export default class ActaEditor {
         }
         return nowEl instanceof IActaFrame ? nowEl as IActaFrame : null;
     }
-    
+
     private static getMagnetPosition(pos: Position, magnetData?: Boundary, open?: boolean) {
         if (!magnetData) return pos;
-    
         if (magnetData.x.length > ((open === undefined) ? 0 : 1)) {
             let dx = Number.MAX_SAFE_INTEGER;
             let idx = -1;
@@ -158,10 +157,10 @@ export default class ActaEditor {
         const y1 = Math.min(spos.y, epos.y);
         const x2 = Math.max(spos.x, epos.x);
         const y2 = Math.max(spos.y, epos.y);
-    
+
         const nspos = this.getMagnetPosition({ x: x1, y: y1 }, magnetData, true);
         const nepos = this.getMagnetPosition({ x: x2, y: y2 }, magnetData, false);
-    
+
         return {
             x: nspos.x,
             y: nspos.y,
@@ -468,7 +467,7 @@ export default class ActaEditor {
     }
 
     private get _editableParagraph() {
-        return this._page.querySelector<ActaParagraph>('x-paragraph.editable'); 
+        return this._page.querySelector<ActaParagraph>('x-paragraph.editable');
     }
 
     private get _focusedParagraph() {
@@ -496,6 +495,12 @@ export default class ActaEditor {
             switch (e.key) {
                 case 'Delete':
                     for (const frame of selected) frame.remove();
+                    break;
+                case 'Escape':
+                    for (const frame of selected) {
+                        frame.classList.remove('focus');
+                        frame.classList.remove('selected');
+                    }
                     break;
                 default:
                     return;
