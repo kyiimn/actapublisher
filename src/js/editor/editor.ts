@@ -1,8 +1,7 @@
 import ActaPage from '../pageobject/page';
 import ActaGuide from '../pageobject/guide';
-import ActaParagraph, { ParagraphVerticalAlign as ParagraphVerticalAlign } from '../pageobject/paragraph';
+import ActaParagraph from '../pageobject/paragraph';
 import ActaTextAttribute from '../pageobject/textstyle/textattribute';
-import ActaTextStyleManager from '../pageobject/textstyle/textstylemgr';
 import ActaImage from '../pageobject/image';
 import IActaFrame from '../pageobject/interface/frame';
 import accountInfo from '../info/account';
@@ -176,7 +175,7 @@ export default class ActaEditor {
 
         this._tool = EditorTool.SELECT;
         this._readonly = false;
-        this._magnetRange = 10;
+        this._magnetRange = 24;
 
         this._element = document.createElement('div');
         this._element.classList.add('editor');
@@ -304,7 +303,7 @@ export default class ActaEditor {
                 let x1 = Math.min(U.px(this._page.width) - U.px(frame.width), Math.max(0, U.px(frame.savedPositionLeft) + mx));
                 let y1 = Math.min(U.px(this._page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
 
-                if (this._pageGuideBoundary) {
+                if (this._pageGuideBoundary && !e.ctrlKey) {
                     if (frame instanceof ActaParagraph || frame instanceof ActaImage) {
                         const x2 = x1 + U.px(frame.width);
                         const y2 = y1 + U.px(frame.height);
@@ -390,7 +389,7 @@ export default class ActaEditor {
         }
     }
 
-    private _onDrawGuideEnd(e: MouseEvent) {
+    private async _onDrawGuideEnd(e: MouseEvent) {
         if (!this._mouseEventDragGuide || !this._mouseEventStartPosition) return;
 
         const size = ActaEditor.getBoxSize(this._mouseEventStartPosition, ActaEditor.getOffsetPosition(e), this._pageGuideBoundary);
@@ -433,10 +432,8 @@ export default class ActaEditor {
         this._CHANGE$.next({ action: 'append', value: frame as IActaFrame });
 
         // 프레임을 페이지에 추가 후 렌더링 이후에 실행
-        setTimeout((f: IActaFrame) => {
-            f.focus({ preventScroll: true });
-            if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
-        }, 1, frame);
+        await frame.focus({ preventScroll: true }, true);
+        if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
     }
 
     private _onParagraphMoveCursor(paragraph: ActaParagraph, _: number) {
@@ -609,29 +606,29 @@ export default class ActaEditor {
         }
     }
 
-    setTextStyle(tbData: IActaEditorTextAttribute) {
+    setTextAttribute(tbData: IActaEditorTextAttribute, type: string) {
         const paragraph = this._page.querySelector<ActaParagraph>('x-paragraph.focus.editable');
         if (!paragraph) return;
 
-        const textAttr = new ActaTextAttribute();
-        if (tbData.textStyle) textAttr.copy(ActaTextStyleManager.get(tbData.textStyle));
-        if (tbData.fontName) textAttr.fontName = tbData.fontName;
-        if (tbData.fontSize) textAttr.fontSize = tbData.fontSize;
-        if (tbData.xscale) textAttr.xscale = tbData.xscale;
-        if (tbData.letterSpacing) textAttr.letterSpacing = tbData.letterSpacing;
-        if (tbData.lineHeight) textAttr.lineHeight = tbData.lineHeight;
-        if (tbData.textAlign) textAttr.textAlign = tbData.textAlign;
-        if (tbData.underline) textAttr.underline = tbData.underline;
-        if (tbData.strikeline) textAttr.strikeline = tbData.strikeline;
-        if (tbData.indent) textAttr.indent = tbData.indent;
-
-        if (tbData.textStyle) paragraph.setTextStyleAtCursor(tbData.textStyle);
-        paragraph.setTextAttributeAtCursor(textAttr);
+        if (type === 'textstyle') {
+            if (tbData.textStyle) paragraph.setTextStyleAtCursor(tbData.textStyle);
+        } else {
+            const textAttr = new ActaTextAttribute();
+            if (type === 'font') textAttr.fontName = tbData.fontName || '';
+            if (type === 'fontsize') textAttr.fontSize = tbData.fontSize !== undefined ? tbData.fontSize : null;
+            if (type === 'xscale') textAttr.xscale = tbData.xscale !== undefined ? tbData.xscale : null;
+            if (type === 'letterspacing') textAttr.letterSpacing = tbData.letterSpacing !== undefined ? tbData.letterSpacing : null;
+            if (type === 'lineheight') textAttr.lineHeight = tbData.lineHeight !== undefined ? tbData.lineHeight : null;
+            if (type === 'align') textAttr.textAlign = tbData.textAlign !== undefined ? tbData.textAlign : null;
+            if (type === 'underline') textAttr.underline = tbData.underline !== undefined ? tbData.underline : null;
+            if (type === 'strikeline') textAttr.strikeline = tbData.strikeline !== undefined ? tbData.strikeline : null;
+            if (type === 'indent') textAttr.indent = tbData.indent !== undefined ? tbData.indent : null;
+            paragraph.setTextAttributeAtCursor(textAttr);
+        }
     }
 
     cancel() {
         if (!this._mouseEventDragGuide && !this._mouseEventStartPosition) return;
-
         if (this._mouseEventDragGuide) this._mouseEventDragGuide.remove();
         this._mouseEventDragGuide = undefined;
         this._mouseEventStartPosition = undefined;

@@ -10,6 +10,8 @@ import { IActaEditorTextAttribute } from '../editor/editor';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+type CHANGE_TYPE = 'textstyle' | 'font' | 'fontsize' | 'indent' | 'xscale' | 'letterspacing' | 'lineheight' | 'underline' | 'strikeline' | 'align';
+
 class ActaToolbarText {
     private _toolbar: HTMLUListElement;
     private _itemTextStyle;
@@ -28,7 +30,7 @@ class ActaToolbarText {
 
     private _disabled: boolean;
 
-    private _CHANGE$: Subject<IActaEditorTextAttribute>;
+    private _CHANGE$: Subject<[IActaEditorTextAttribute, CHANGE_TYPE]>;
 
     constructor() {
         this._CHANGE$ = new Subject();
@@ -98,21 +100,25 @@ class ActaToolbarText {
 
         this._itemTextStyle.observable.subscribe(data => {
             this._changeTextStyle(data.value);
-            this._changeValues();
+            this._changeValues('textstyle');
         });
         this._itemUnderline.observable.subscribe(_ => {
             this._itemUnderline.value = !this._itemUnderline.value;
-            this._changeValues();
+            this._changeValues('underline');
         });
         this._itemStrikeline.observable.subscribe(_ => {
             this._itemStrikeline.value = !this._itemStrikeline.value;
-            this._changeValues();
+            this._changeValues('strikeline');
         });
-        merge(
-            this._itemFont.observable, this._itemFontSize.observable, this._itemIndent.observable, this._itemXScale.observable,
-            this._itemLetterSpacing.observable, this._itemLineHeight.observable
-        ).subscribe(_ => {
-            this._changeValues();
+        merge<CHANGE_TYPE>(
+            this._itemFont.observable.pipe(map(_ => 'font')),
+            this._itemFontSize.observable.pipe(map(_ => 'fontsize')),
+            this._itemIndent.observable.pipe(map(_ => 'indent')),
+            this._itemXScale.observable.pipe(map(_ => 'xscale')),
+            this._itemLetterSpacing.observable.pipe(map(_ => 'letterspacing')),
+            this._itemLineHeight.observable.pipe(map(_ => 'lineheight'))
+        ).subscribe(type => {
+            this._changeValues(type);
         });
         merge(
             this._itemAlignJustify.observable.pipe(map(_ => TextAlign.JUSTIFY)), this._itemAlignLeft.observable.pipe(map(_ => TextAlign.LEFT)),
@@ -122,7 +128,7 @@ class ActaToolbarText {
             this._itemAlignLeft.value = align === TextAlign.LEFT ? true : false;
             this._itemAlignCenter.value = align === TextAlign.CENTER ? true : false;
             this._itemAlignRight.value = align === TextAlign.RIGHT ? true : false;
-            this._changeValues();
+            this._changeValues('align');
         });
     }
 
@@ -146,8 +152,8 @@ class ActaToolbarText {
         this._itemAlignRight.value = textstyle.textAlign === TextAlign.RIGHT ? true : false;
     }
 
-    private _changeValues() {
-        this._CHANGE$.next(this.data);
+    private _changeValues(type: CHANGE_TYPE) {
+        this._CHANGE$.next([this.data, type]);
     }
 
     enable() {
@@ -193,33 +199,31 @@ class ActaToolbarText {
             this._itemTextStyle.value = data.textStyle;
             this._changeTextStyle(data.textStyle);
         }
-        if (data.fontName !== undefined) this._itemFont.value = data.fontName;
-        if (data.fontSize !== undefined) this._itemFontSize.value = U.convert(unit, data.fontSize).toFixed(2);
-        if (data.indent !== undefined) this._itemIndent.value = U.convert(unit, data.indent).toFixed(2);
-        if (data.xscale !== undefined) this._itemXScale.value = (data.xscale * 100).toString();
-        if (data.letterSpacing !== undefined) this._itemLetterSpacing.value = U.convert(unit, data.letterSpacing).toFixed(2);
-        if (data.lineHeight !== undefined) this._itemLineHeight.value = (data.lineHeight * 100).toString();
+        this._itemFont.value = data.fontName === undefined ? '' : data.fontName;
+        this._itemFontSize.value = data.fontSize === undefined ? '' : U.convert(unit, data.fontSize).toFixed(2);
+        this._itemIndent.value = data.indent === undefined ? '' : U.convert(unit, data.indent).toFixed(2);
+        this._itemXScale.value = data.xscale === undefined ? '' : (data.xscale * 100).toString();
+        this._itemLetterSpacing.value = data.letterSpacing === undefined ? '' : U.convert(unit, data.letterSpacing).toFixed(2);
+        this._itemLineHeight.value = data.lineHeight === undefined ? '' : (data.lineHeight * 100).toString();
         if (data.underline !== undefined) this._itemUnderline.value = data.underline;
         if (data.strikeline !== undefined) this._itemStrikeline.value = data.strikeline;
-        if (data.textAlign !== undefined) {
-            this._itemAlignJustify.value = data.textAlign === TextAlign.JUSTIFY ? true : false;
-            this._itemAlignLeft.value = data.textAlign === TextAlign.LEFT ? true : false;
-            this._itemAlignCenter.value = data.textAlign === TextAlign.CENTER ? true : false;
-            this._itemAlignRight.value = data.textAlign === TextAlign.RIGHT ? true : false;
-        }
+        this._itemAlignJustify.value = data.textAlign === TextAlign.JUSTIFY ? true : false;
+        this._itemAlignLeft.value = data.textAlign === TextAlign.LEFT ? true : false;
+        this._itemAlignCenter.value = data.textAlign === TextAlign.CENTER ? true : false;
+        this._itemAlignRight.value = data.textAlign === TextAlign.RIGHT ? true : false;
     }
 
     get data() {
         const data: IActaEditorTextAttribute = {};
         const unit = accountInfo.prefTextUnitType;
 
-        data.textStyle = this._itemTextStyle.value;
-        data.fontName = this._itemFont.value;
-        data.fontSize = U.pt(this._itemFontSize.value, unit);
-        data.indent = U.pt(this._itemIndent.value, unit);
-        data.xscale = parseFloat(this._itemXScale.value) / 100;
-        data.letterSpacing = U.pt(this._itemLetterSpacing.value, unit);
-        data.lineHeight = parseFloat(this._itemLineHeight.value) / 100;
+        data.textStyle = this._itemTextStyle.value !== '' ? this._itemTextStyle.value : undefined;
+        data.fontName = this._itemFont.value !== '' ? this._itemFont.value : undefined;
+        data.fontSize = this._itemFontSize.value !== '' ? U.pt(this._itemFontSize.value, unit) : undefined;
+        data.indent = this._itemIndent.value !== '' ? U.pt(this._itemIndent.value, unit) : undefined;
+        data.xscale = this._itemXScale.value !== '' ? parseFloat(this._itemXScale.value) / 100 : undefined;
+        data.letterSpacing = this._itemLetterSpacing.value !== '' ? U.pt(this._itemLetterSpacing.value, unit) : undefined;
+        data.lineHeight = this._itemLineHeight.value !== '' ? parseFloat(this._itemLineHeight.value) / 100 : undefined;
         data.underline = this._itemUnderline.value;
         data.strikeline = this._itemStrikeline.value;
 

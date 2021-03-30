@@ -96,9 +96,9 @@ class Designer {
             if (editor) editor.processPageObjectControl(ctrl.action, ctrl.step);
         });
 
-        this._toolbarText.observable.subscribe(data => {
+        this._toolbarText.observable.subscribe(val => {
             const editor = this._layout.active;
-            if (editor) editor.setTextStyle(data);
+            if (editor) editor.setTextAttribute(val[0], val[1]);
         });
 
         this._toolbarDocStatus.observable.subscribe(data => {

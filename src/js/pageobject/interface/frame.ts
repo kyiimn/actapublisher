@@ -225,6 +225,23 @@ export default abstract class IActaFrame extends IActaElement {
         }
     }
 
+    async focus(options?: FocusOptions | undefined, afterRender?: boolean) {
+        if (!afterRender) {
+            super.focus(options);
+        } else return new Promise(r => {
+            setTimeout(o => {
+                super.focus(o);
+                r(true);
+            }, 1, options);
+        });
+    }
+
+    blur() {
+        this.classList.remove('focus');
+        this._focused = false;
+        this._onBlur();
+    }
+
     set x(x: string | number) { this.setAttribute('x', x.toString()); }
     set y(y: string | number) { this.setAttribute('y', y.toString()); }
     set width(width: string | number) { this.setAttribute('width', width.toString()); }
