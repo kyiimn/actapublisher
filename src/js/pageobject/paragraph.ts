@@ -435,14 +435,6 @@ export default class ActaParagraph extends IActaFrame {
             this._cursorMode = CursorMode.SELECTION;
             this._EMIT_REPAINT_CURSOR();
             return false;
-        } else if (e.altKey && e.key === 'd') {
-            const aa = new ActaTextAttribute();
-            aa.fontSize = 15;
-            this.setTextAttributeAtCursor(aa);
-            return false;
-        } else if (e.altKey && e.key === 'c') {
-            this.setTextStyleAtCursor('본문2');
-            return false;
         }
         return (!e.ctrlKey && !e.altKey) ? this._onKeyPressInputChar(e) : undefined;
     }
