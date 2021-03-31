@@ -92,7 +92,12 @@ export default abstract class IActaFrame extends IActaElement {
 
     private _applyRotate() {
         const rotate = this.rotate;
-        this.style.transform = `rotate(${rotate}deg)`;
+        const css = `rotate(${rotate}deg)`;
+        if (this.style.transform.toLowerCase().indexOf('rotate') > -1) {
+            this.style.transform = this.style.transform.toLowerCase().replace(/rotate[\s]?\([^\)]*?\)/, css);
+        } else {
+            this.style.transform = css;
+        }
     }
 
     protected _onFocus() { return; }
