@@ -183,6 +183,8 @@ class Designer {
             this._toolbarPODraw.value = value;
         } else if (action === 'textstyle') {
             this._toolbarText.data = value;
+        } else if (action === 'shortcut') {
+            this._toolbarText.onShortcut
         }
     }
 

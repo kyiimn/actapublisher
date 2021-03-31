@@ -76,7 +76,7 @@ export default class ActaEditor {
     private _mouseEventStartPosition?: { x: number, y: number };
     private _pageGuideBoundary?: Boundary;
 
-    private _CHANGE$: Subject<{ action: string, value: any }>;
+    private _EVENT$: Subject<{ action: string, value: any }>;
 
     private static getOffsetPosition(e: MouseEvent, parentEl?: IActaFrame): Position {
         let left = e.offsetX, top = e.offsetY;
@@ -171,7 +171,7 @@ export default class ActaEditor {
     }
 
     constructor(pageSize: IActaCodePageSize) {
-        this._CHANGE$ = new Subject();
+        this._EVENT$ = new Subject();
 
         this._tool = EditorTool.SELECT;
         this._readonly = false;
@@ -211,7 +211,7 @@ export default class ActaEditor {
             scale = Math.max(0.05, scale);
             this._page.scale = scale;
 
-            this._CHANGE$.next({ action: 'scale', value: scale });
+            this._EVENT$.next({ action: 'scale', value: scale });
         });
 
         fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
@@ -429,11 +429,11 @@ export default class ActaEditor {
         if (!frame) return;
 
         this._page.appendChild(frame as IActaFrame);
-        this._CHANGE$.next({ action: 'append', value: frame as IActaFrame });
+        this._EVENT$.next({ action: 'append', value: frame as IActaFrame });
 
         // 프레임을 페이지에 추가 후 렌더링 이후에 실행
         await frame.focus({ preventScroll: true }, true);
-        if (changetool) this._CHANGE$.next({ action: 'changetool', value: changetool });
+        if (changetool) this._EVENT$.next({ action: 'changetool', value: changetool });
     }
 
     private _onParagraphMoveCursor(paragraph: ActaParagraph, _: number) {
@@ -452,10 +452,10 @@ export default class ActaEditor {
         if (textAttr.strikeline !== null) tbData.strikeline = textAttr.strikeline;
         if (textAttr.textAlign !== null) tbData.textAlign = textAttr.textAlign;
 
-        this._CHANGE$.next({ action: "textstyle", value: tbData });
+        this._EVENT$.next({ action: "textstyle", value: tbData });
 
         if (this._tool !== EditorTool.TEXT_MODE) {
-            this._CHANGE$.next({ action: 'changetool', value: EditorTool.TEXT_MODE });
+            this._EVENT$.next({ action: 'changetool', value: EditorTool.TEXT_MODE });
         }
     }
 
@@ -500,7 +500,8 @@ export default class ActaEditor {
                     }
                     break;
                 default:
-                    return;
+                    this._EVENT$.next({ action: 'shortcut', value: e.key });
+                    break;
             }
             e.preventDefault();
             e.stopPropagation();
@@ -664,7 +665,7 @@ export default class ActaEditor {
     get tool() { return this._tool; }
     get readonly() { return this._readonly; }
 
-    get observable() { return this._CHANGE$; }
+    get observable() { return this._EVENT$; }
     get page() { return this._page; }
     get el() { return this._element; }
 }
