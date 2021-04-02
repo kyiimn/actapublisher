@@ -355,7 +355,7 @@ export default class ActaParagraph extends IActaFrame {
                     if (this.cursor === 0) return false;
                     this.cursor--;
                 }
-                this._removeTextChars([this.textChars[this.cursor]]);
+                if (this.textChars[this.cursor]) this._removeTextChars([this.textChars[this.cursor]]);
             }
             this._cursorMode = CursorMode.EDIT;
             this._EMIT_REPAINT_CURSOR();
@@ -521,7 +521,9 @@ export default class ActaParagraph extends IActaFrame {
     }
 
     private _removeTextChars(textChars: ActaTextChar[]) {
-        for (const textChar of textChars) textChar.remove();
+        for (const textChar of textChars) {
+            if (textChar) textChar.remove();
+        }
         this._EMIT_REPAINT();
     }
 

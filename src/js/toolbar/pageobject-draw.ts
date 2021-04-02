@@ -110,6 +110,23 @@ class ActaToolbarPageObjectDraw {
         this._disabled = true;
     }
 
+    onKeydown(e: KeyboardEvent) {
+        switch (e.key.toUpperCase()) {
+            case 'S': this.value = EditorTool.SELECT; break;
+            case 'E': this.value = EditorTool.FRAME_EDIT_MODE; break;
+            case 'Q': this.value = EditorTool.FRAME_MOVE_MODE; break;
+            case 'W': this.value = EditorTool.TEXT_MODE; break;
+            case 'B': this.value = EditorTool.DRAW_EMPTY_FRAME; break;
+            case 'T': this.value = EditorTool.DRAW_TITLE_FRAME; break;
+            case 'X': this.value = EditorTool.DRAW_TEXT_FRAME; break;
+            case 'I': this.value = EditorTool.DRAW_IMAGE_FRAME; break;
+            case 'L': this.value = EditorTool.DRAW_LINE; break;
+            default: return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
     set value(value: EditorTool) {
         this._itemSelect.value = value === EditorTool.SELECT ? true : false;
         this._itemFrameEditMode.value = value === EditorTool.FRAME_EDIT_MODE ? true : false;

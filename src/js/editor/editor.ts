@@ -397,7 +397,17 @@ export default class ActaEditor {
         if (size.columnCount < 1 || size.lineCount < 1) return;
 
         switch (this._tool) {
-            case EditorTool.DRAW_EMPTY_FRAME: break;
+            case EditorTool.DRAW_EMPTY_FRAME:
+                {
+                    const paragraph = new ActaParagraph(
+                        U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
+                        accountInfo.prefDefaultBodyTextStyle
+                    );
+                    paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
+                    paragraph.readonly = true;
+                    frame = paragraph;
+                }
+                break;
             case EditorTool.DRAW_IMAGE_FRAME:
                 frame = new ActaImage(U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX));
                 changetool = EditorTool.SELECT;
@@ -500,8 +510,8 @@ export default class ActaEditor {
                     }
                     break;
                 default:
-                    this._EVENT$.next({ action: 'shortcut', value: e.key });
-                    break;
+                    this._EVENT$.next({ action: 'keydown', value: e });
+                    return;
             }
             e.preventDefault();
             e.stopPropagation();
