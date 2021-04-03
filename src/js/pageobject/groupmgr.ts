@@ -54,7 +54,7 @@ class ActaGroupManager {
         }
         for (const frame of (frames instanceof IActaFrame ? [frames] : frames)) {
             this.remove(pageid, frame);
-            this._datas[pageid].member[group].push(frame);
+            if (group) this._datas[pageid].member[group].push(frame);
         }
         return group;
     }
