@@ -121,10 +121,12 @@ class ActaToolbarPageObjectDraw {
             case 'X': this.value = EditorTool.DRAW_TEXT_FRAME; break;
             case 'I': this.value = EditorTool.DRAW_IMAGE_FRAME; break;
             case 'L': this.value = EditorTool.DRAW_LINE; break;
-            default: return;
+            default: return true;
         }
         e.preventDefault();
         e.stopPropagation();
+
+        return false;
     }
 
     set value(value: EditorTool) {

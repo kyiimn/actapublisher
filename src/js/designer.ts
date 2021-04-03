@@ -163,7 +163,11 @@ class Designer {
             if (activeEl && ['input', 'select', 'button'].indexOf(activeEl.nodeName.toLowerCase()) > -1) return false;
 
             return true;
-        })).subscribe(e => (this._layout.active as Editor).processKeyEvent(e));
+        })).subscribe(e => {
+            const activeEditor = this._layout.active as Editor;
+            if (activeEditor.onKeydown(e) === false) return;
+            if (this._toolbarPODraw.onKeydown(e) === false) return;
+        });
     }
 
     static getInstance() {
@@ -183,8 +187,6 @@ class Designer {
             this._toolbarPODraw.value = value;
         } else if (action === 'textstyle') {
             this._toolbarText.data = value;
-        } else if (action === 'keydown') {
-            this._toolbarPODraw.onKeydown(value as KeyboardEvent);
         }
     }
 

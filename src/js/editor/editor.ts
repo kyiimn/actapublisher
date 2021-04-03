@@ -490,13 +490,11 @@ export default class ActaEditor {
         return frames;
     }
 
-    processKeyEvent(e: KeyboardEvent) {
+    onKeydown(e: KeyboardEvent) {
         if (this._editableParagraph) {
             if (e.key === 'Escape') {
                 this._editableParagraph.switchEditable(false);
-                e.preventDefault();
-                e.stopPropagation();
-            }
+            } else return true;
         } else {
             const selected = this._selectedFrames;
             switch (e.key) {
@@ -510,12 +508,13 @@ export default class ActaEditor {
                     }
                     break;
                 default:
-                    this._EVENT$.next({ action: 'keydown', value: e });
-                    return;
+                    return true;
             }
-            e.preventDefault();
-            e.stopPropagation();
         }
+        e.preventDefault();
+        e.stopPropagation();
+
+        return false;
     }
 
     processPageObjectControl(action: string, step?: number) {
