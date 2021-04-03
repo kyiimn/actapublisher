@@ -1,10 +1,13 @@
 import IActaFrame from './interface/frame';
 import ActaPage from './page';
+import U from '../util/units';
+
 import { v4 as uuidv4 } from 'uuid';
 
 export type GroupID = string;
 
 type GroupData = {
+    name?: string,
     groupList: GroupID[],
     member: { [group: string]: IActaFrame[] }
 };
@@ -24,12 +27,27 @@ class ActaGroupManager {
         this._datas = {};
     }
 
+    private _isValidPageID(pageid: string) {
+        return this._datas[pageid] ? true : false;
+    }
+
+    private _getPageID(page: ActaPage | string) {
+        return page instanceof ActaPage ? page.id : page;
+    }
+
+    private _isValidGroupID(pageid: string, group: GroupID | undefined) {
+        if (!group) return false;
+
+        const idx = this._datas[pageid].groupList.indexOf(group);
+        return idx < 0 ? false : true;
+    }
+
     add(page: ActaPage | string, frames: IActaFrame[] | IActaFrame, group?: GroupID) {
-        const pageid = page instanceof ActaPage ? page.id : page;
-        if (!this._datas[pageid]) this._datas[pageid] = {
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) this._datas[pageid] = {
             groupList: [], member: {}
         };
-        if (!group || this._datas[pageid].groupList.indexOf(group) < 0) {
+        if (!this._isValidGroupID(pageid, group)) {
             group = uuidv4();
             this._datas[pageid].groupList.push(group);
             this._datas[pageid].member[group] = [];
@@ -42,8 +60,8 @@ class ActaGroupManager {
     }
 
     remove(page: ActaPage | string, frames: IActaFrame[] | IActaFrame) {
-        const pageid = page instanceof ActaPage ? page.id : page;
-        if (!this._datas[pageid]) return;
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) return;
 
         for (const group of this._datas[pageid].groupList) {
             for (const frame of (frames instanceof IActaFrame ? [frames] : frames)) {
@@ -56,8 +74,8 @@ class ActaGroupManager {
     }
 
     removeGroup(page: ActaPage | string, group: GroupID) {
-        const pageid = page instanceof ActaPage ? page.id : page;
-        if (!this._datas[pageid]) return;
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) return;
 
         const idx = this._datas[pageid].groupList.indexOf(group);
         if (idx > -1) this._datas[pageid].groupList.splice(idx, 1);
@@ -67,8 +85,8 @@ class ActaGroupManager {
 
     groupHas(page: ActaPage | string, frames: IActaFrame[] | IActaFrame) {
         const retGroup: GroupID[] = [];
-        const pageid = page instanceof ActaPage ? page.id : page;
-        if (!this._datas[pageid]) return retGroup;
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) return null;
 
         for (const group of this._datas[pageid].groupList) {
             for (const frame of (frames instanceof IActaFrame ? [frames] : frames)) {
@@ -78,7 +96,52 @@ class ActaGroupManager {
                 retGroup.push(group);
             }
         }
-        return retGroup;
+        return retGroup.length === 1 ? retGroup[0] : null;
+    }
+
+    setGroupName(page: ActaPage | string, group: GroupID, name: string) {
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) return;
+        if (!this._isValidGroupID(pageid, group)) return;
+
+        if (name) this._datas[pageid].name = name;
+        else delete this._datas[pageid].name;
+    }
+
+    getGroupName(page: ActaPage | string, group: GroupID) {
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) return null;
+        if (!this._isValidGroupID(pageid, group)) return null;
+
+        return this._datas[pageid].name || null;
+    }
+
+    getMember(page: ActaPage | string, frameOrGroup: IActaFrame | GroupID) {
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) return null;
+
+        const group = frameOrGroup instanceof IActaFrame ? this.groupHas(pageid, frameOrGroup) : frameOrGroup;
+        if (!group) return null;
+        if (!this._datas[pageid].member[group]) return null;
+
+        return this._datas[pageid].member[group];
+    }
+
+    getBoundingClientRect(page: ActaPage | string, group: GroupID) {
+        const pageid = this._getPageID(page);
+        if (!this._isValidPageID(pageid)) return null;
+        if (!this._isValidGroupID(pageid, group)) return null;
+
+        let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER;
+        let maxX = 0, maxY = 0;
+
+        for (const frame of this._datas[pageid].member[group]) {
+            minX = Math.min(minX, U.px(frame.x));
+            minY = Math.min(minY, U.px(frame.y));
+            maxX = Math.max(maxX, U.px(frame.x) + U.px(frame.width));
+            maxY = Math.max(maxY, U.px(frame.y) + U.px(frame.height));
+        }
+        return new DOMRect(minX, minY, maxX - minX, maxY - minY);
     }
 };
 export default ActaGroupManager.in;
