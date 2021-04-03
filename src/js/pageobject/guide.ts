@@ -5,7 +5,7 @@ import { Subject, Subscription } from 'rxjs';
 
 import "../../css/pageobject/guide.scss";
 
-interface IActaGuideColumnLineData {
+type ColumnLineData = {
     lineHeight: number
     lineCount: number,
     lineSpacing: number
@@ -13,7 +13,7 @@ interface IActaGuideColumnLineData {
 
 export default class ActaGuide extends IActaElement {
     private _subscriptionChangePageSize?: Subscription;
-    private _columnLineData?: IActaGuideColumnLineData;
+    private _columnLineData?: ColumnLineData;
 
     static get observedAttributes() {
         return ['direction', 'column-count', 'column-width', 'innermargin'];
@@ -112,7 +112,7 @@ export default class ActaGuide extends IActaElement {
     set columnCount(count: number) { this.setAttribute('column-count', Math.max(count, 1).toString()); }
     set columnWidth(widths: string[] | number[]) { this.setAttribute('column-width', widths.join(' ')); }
     set innerMargin(innerMargin: string | number) { this.setAttribute('innermargin', innerMargin.toString()); }
-    set lineMarker(data: IActaGuideColumnLineData | undefined) {
+    set lineMarker(data: ColumnLineData | undefined) {
         const columns = this.querySelectorAll<ActaGuideColumn>('x-guide-col');
         for (const col of columns) {
             col.lineMarker = data;
@@ -158,7 +158,7 @@ class ActaGuideColumn extends IActaElement {
         this._applyWidth(newValue);
     }
 
-    set lineMarker(data: IActaGuideColumnLineData | undefined) {
+    set lineMarker(data: ColumnLineData | undefined) {
         this.innerHTML = '';
         if (!data) return;
 

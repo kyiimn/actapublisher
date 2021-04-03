@@ -1,7 +1,7 @@
 import ActaTextAttributeAbsolute from './textattribute-absolute';
 import { Subject } from 'rxjs';
 
-interface IActaTextStyleList {
+type TextStyleList = {
     [styleName: string] : ActaTextAttributeAbsolute
 };
 
@@ -16,8 +16,8 @@ class ActaTextStyleManager {
         return ActaTextStyleManager.getInstance();
     }
 
-    private _list: IActaTextStyleList;
-    private _CHANGE$: Subject<IActaTextStyleList>;
+    private _list: TextStyleList;
+    private _CHANGE$: Subject<TextStyleList>;
 
     private constructor() {
         this._list = {};

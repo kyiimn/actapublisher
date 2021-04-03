@@ -3,8 +3,7 @@ import { filter, map } from "rxjs/operators";
 import '../../css/ui/spliter.scss';
 
 type SpliterDirection = 'row' | 'col';
-
-interface IActaUISpliterOptions {
+type SpliterOptions = {
     spliterEl: HTMLElement,
     direction: SpliterDirection,
     targetEl: HTMLElement,
@@ -29,11 +28,11 @@ export default class ActaUISpliter {
 
     private _id: string;
 
-    static create(options: IActaUISpliterOptions) {
+    static create(options: SpliterOptions) {
         return new this(options);
     }
 
-    private constructor(options: IActaUISpliterOptions) {
+    private constructor(options: SpliterOptions) {
         this._direction = options.direction;
 
         this._minSize = options.minSize || 0;

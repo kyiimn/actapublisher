@@ -5,7 +5,7 @@ const __DEFAULT_ACCOUNT_INFO_FRAME_UNIT_TYPE = 'MM';
 const __DEFAULT_ACCOUNT_INFO_TEXT_UNIT_TYPE = 'POINT';
 const __DEFAULT_ACCOUNT_INFO_DPI = 96;
 
-interface IActaAccountUser {
+type AccountUser = {
     id: number,
     mediaId: number,
     mediaName: string,
@@ -21,7 +21,7 @@ interface IActaAccountUser {
     originalData?: any
 }
 
-interface IActaAccountDept {
+type AccountDept = {
     id: number,
     mediaId: number,
     mediaName: string,
@@ -32,7 +32,7 @@ interface IActaAccountDept {
     groupMemberList?: number[]
 }
 
-interface IActaAccountPreference {
+type AccountPreference = {
     textUnitType: string,
     frameUnitType: string,
     defaultBodyTextStyleId: number,
@@ -54,13 +54,13 @@ class ActaAccountInfo {
     }
     static get in() { return ActaAccountInfo.getInstance(); }
 
-    private _user: IActaAccountUser[];
-    private _dept: IActaAccountDept[];
+    private _user: AccountUser[];
+    private _dept: AccountDept[];
 
     private _loginMediaId?: number;
-    private _loginDept?: IActaAccountDept;
-    private _loginUser?: IActaAccountUser;
-    private _preference?: IActaAccountPreference;
+    private _loginDept?: AccountDept;
+    private _loginUser?: AccountUser;
+    private _preference?: AccountPreference;
 
     private _logined: boolean;
 

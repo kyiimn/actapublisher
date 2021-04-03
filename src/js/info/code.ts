@@ -1,7 +1,7 @@
 import colormgr from '../pageobject/color/colormgr';
 import api from '../util/api';
 
-export interface IActaCodeClass {
+export type CodeClass = {
     class: number,
     code: string,
     name: string,
@@ -11,14 +11,14 @@ export interface IActaCodeClass {
     use: boolean
 };
 
-export interface IActaCodeMedia {
+export type CodeMedia = {
     id: number,
     name: string,
     type: string,
     typeName: string
 };
 
-export interface IActaCodeLocal {
+export type CodeLabel = {
     id: number,
     code: string,
     name: string,
@@ -28,7 +28,7 @@ export interface IActaCodeLocal {
     use: boolean
 };
 
-export interface IActaCodeEdition {
+export type CodeEditon = {
     id: number,
     edition: number,
     name: string,
@@ -37,7 +37,7 @@ export interface IActaCodeEdition {
     use: boolean
 };
 
-export interface IActaCodeSection {
+export type CodeSection = {
     id: number,
     code: string,
     name: string,
@@ -46,7 +46,7 @@ export interface IActaCodeSection {
     use: boolean
 };
 
-export interface IActaCodeAdverSize {
+export type CodeAdverSize = {
     id: number,
     name: string,
     mediaId: number,
@@ -54,7 +54,7 @@ export interface IActaCodeAdverSize {
     use: boolean
 };
 
-export interface IActaCodeAdverLocal {
+export type CodeAdverLocal = {
     id: number,
     code: string,
     name: string,
@@ -64,7 +64,7 @@ export interface IActaCodeAdverLocal {
     use: boolean
 };
 
-export interface IActaCodeColor {
+export type CodeColor = {
     id: number,
     code: string,
     name: string,
@@ -76,12 +76,12 @@ export interface IActaCodeColor {
     sort: number
 };
 
-export interface IActaCodePrintType {
+export type CodePrintType = {
     id: number,
     name: string
 };
 
-export interface IActaCodeClosingTime {
+export type CodeClosingTime = {
     id: number,
     closingDate?: string,
     closingTime: string,
@@ -92,7 +92,7 @@ export interface IActaCodeClosingTime {
     editionName: string
 };
 
-export interface IActaCodePageSize {
+export type CodePageSize = {
     id: number,
     name: string,
     paperType: string,
@@ -130,16 +130,16 @@ class ActaCodeInfo {
     }
     static get in() { return ActaCodeInfo.getInstance(); }
 
-    private _codeClass: IActaCodeClass[];
-    private _media: IActaCodeMedia[];
-    private _local: IActaCodeLocal[];
-    private _edition: IActaCodeEdition[];
-    private _section: IActaCodeSection[];
-    private _adverSize: IActaCodeAdverSize[];
-    private _adverLocal: IActaCodeAdverLocal[];
-    private _printType: IActaCodePrintType[];
-    private _closingTime: IActaCodeClosingTime[];
-    private _pageSize: IActaCodePageSize[];
+    private _codeClass: CodeClass[];
+    private _media: CodeMedia[];
+    private _local: CodeLabel[];
+    private _edition: CodeEditon[];
+    private _section: CodeSection[];
+    private _adverSize: CodeAdverSize[];
+    private _adverLocal: CodeAdverLocal[];
+    private _printType: CodePrintType[];
+    private _closingTime: CodeClosingTime[];
+    private _pageSize: CodePageSize[];
 
     private constructor() {
         this._codeClass = [];
@@ -186,7 +186,7 @@ class ActaCodeInfo {
 
         result = await api.get('/info/code/color');
         if (!result) return false;
-        for (const code of result.data as IActaCodeColor[]) colormgr.add(code);
+        for (const code of result.data as CodeColor[]) colormgr.add(code);
 
         result = await api.get('/info/code/printtype');
         if (!result) return false;
@@ -213,7 +213,7 @@ class ActaCodeInfo {
     get closingTime() { return this._closingTime; }
     get pageSize() { return this._pageSize; }
 
-    findCodeClass(cls: number, code: string): IActaCodeClass | null {
+    findCodeClass(cls: number, code: string): CodeClass | null {
         let ret = null;
         for (const cc of this.codeClass) {
             if (cc.class !== cls || cc.code !== code) continue;
@@ -223,7 +223,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findMedia(id: number): IActaCodeMedia | null {
+    findMedia(id: number): CodeMedia | null {
         let ret = null;
         for (const code of this.media) {
             if (code.id !== id) continue;
@@ -233,7 +233,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findLocal(id: number): IActaCodeLocal | null {
+    findLocal(id: number): CodeLabel | null {
         let ret = null;
         for (const code of this.local) {
             if (code.id !== id) continue;
@@ -243,7 +243,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findEdition(id: number): IActaCodeEdition | null {
+    findEdition(id: number): CodeEditon | null {
         let ret = null;
         for (const code of this.edition) {
             if (code.id !== id) continue;
@@ -253,7 +253,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findSection(id: number): IActaCodeSection | null {
+    findSection(id: number): CodeSection | null {
         let ret = null;
         for (const code of this.section) {
             if (code.id !== id) continue;
@@ -263,7 +263,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findAdverSize(id: number): IActaCodeAdverSize | null {
+    findAdverSize(id: number): CodeAdverSize | null {
         let ret = null;
         for (const code of this.adverSize) {
             if (code.id !== id) continue;
@@ -273,7 +273,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findAdverLocal(id: number): IActaCodeAdverLocal | null {
+    findAdverLocal(id: number): CodeAdverLocal | null {
         let ret = null;
         for (const code of this.adverLocal) {
             if (code.id !== id) continue;
@@ -283,7 +283,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findPrintType(id: number): IActaCodePrintType | null {
+    findPrintType(id: number): CodePrintType | null {
         let ret = null;
         for (const code of this.printType) {
             if (code.id !== id) continue;
@@ -293,7 +293,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findClosingTime(id: number): IActaCodeClosingTime | null {
+    findClosingTime(id: number): CodeClosingTime | null {
         let ret = null;
         for (const code of this.closingTime) {
             if (code.id !== id) continue;
@@ -303,7 +303,7 @@ class ActaCodeInfo {
         return ret;
     }
 
-    findPageSize(id: number): IActaCodePageSize | null {
+    findPageSize(id: number): CodePageSize | null {
         let ret = null;
         for (const code of this.pageSize) {
             if (code.id !== id) continue;

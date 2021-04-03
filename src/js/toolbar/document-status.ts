@@ -3,7 +3,7 @@ import formbuilder from '../ui/form';
 
 import { merge, Subject } from 'rxjs';
 
-interface IActaToolbarDocumentStatusData {
+type DocumentStatusData = {
     scale?: number
 }
 
@@ -46,7 +46,7 @@ class ActaToolbarDocumentStatus {
         this._disabled = true;
     }
 
-    set data(data: IActaToolbarDocumentStatusData) {
+    set data(data: DocumentStatusData) {
         if (data.scale !== undefined) this._itemScale.value = data.scale.toString();
     }
 

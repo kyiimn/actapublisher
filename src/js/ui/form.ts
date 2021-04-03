@@ -3,38 +3,42 @@ import { filter, map } from "rxjs/operators";
 
 import '../../css/ui/form.scss';
 
-interface IActaUIFormButtonOptions {
+type AttrMap = { [key: string]: string };
+type ItemList = { name: string, value: string }[];
+type EventData = { value: string, element: HTMLElement };
+
+type UIFormButtonOptions = {
     id?: string,
     icon?: string,
     icontype?: string,
     class?: string,
-    attr?: { [key: string]: string },
+    attr?: AttrMap,
     label: string
 };
 
-interface IActaUIFormComboboxOptions {
+type UIFormComboboxOptions = {
     id?: string,
     class?: string,
-    attr?: { [key: string]: string },
+    attr?: AttrMap,
     label?: string,
-    items: { name: string, value: string }[],
+    items: ItemList,
     suffix?: string,
     width?: number | string
 };
 
-interface IActaUIFormInputOptions {
+type UIFormInputOptions = {
     id?: string,
     class?: string,
-    attr?: { [key: string]: string },
+    attr?: AttrMap,
     label?: string,
     suffix?: string,
     width?: number | string
 };
 
-interface IActaUIFormInputNumberOptions {
+type UIFormInputNumberOptions = {
     id?: string,
     class?: string,
-    attr?: { [key: string]: string },
+    attr?: AttrMap,
     label?: string,
     suffix?: string,
     min?: number,
@@ -54,7 +58,7 @@ export class ActaUIFormItem {
 
 // tslint:disable-next-line: max-classes-per-file
 export class ActaUIFormInputItem extends ActaUIFormItem {
-    private _EVENT$: Observable<{ value: string, element: HTMLElement }>;
+    private _EVENT$: Observable<EventData>;
     private _input: HTMLSelectElement | HTMLInputElement;
     private _disabled: boolean;
 
@@ -199,7 +203,7 @@ class ActaUIFormBuilder {
         return (new ActaUIFieldset()).el;
     }
 
-    static appButton(opts: IActaUIFormButtonOptions): ActaUIFormButtonItem {
+    static appButton(opts: UIFormButtonOptions): ActaUIFormButtonItem {
         const li = document.createElement('li');
         const button = document.createElement('button');
         const text = document.createElement('span');
@@ -224,7 +228,7 @@ class ActaUIFormBuilder {
         return new ActaUIFormButtonItem({ el: li, button });
     }
 
-    static iconButton(opts: IActaUIFormButtonOptions): ActaUIFormButtonItem {
+    static iconButton(opts: UIFormButtonOptions): ActaUIFormButtonItem {
         const li = document.createElement('li');
         const button = document.createElement('button');
 
@@ -247,7 +251,7 @@ class ActaUIFormBuilder {
         return new ActaUIFormButtonItem({ el: li, button });
     }
 
-    static combobox(opts: IActaUIFormComboboxOptions): ActaUIFormInputItem {
+    static combobox(opts: UIFormComboboxOptions): ActaUIFormInputItem {
         const li = document.createElement('li');
         const select = document.createElement('select');
 
@@ -288,7 +292,7 @@ class ActaUIFormBuilder {
         return new ActaUIFormInputItem({ el: li, input: select, eventName: 'change' });
     }
 
-    static input(opts: IActaUIFormInputOptions): ActaUIFormInputItem {
+    static input(opts: UIFormInputOptions): ActaUIFormInputItem {
         const li = document.createElement('li');
         const input = document.createElement('input');
 
@@ -324,7 +328,7 @@ class ActaUIFormBuilder {
         return new ActaUIFormInputItem({ el: li, input, eventName: 'change' });
     }
 
-    static label(opts: IActaUIFormInputOptions): ActaUIFormLabelItem {
+    static label(opts: UIFormInputOptions): ActaUIFormLabelItem {
         const li = document.createElement('li');
         const input = document.createElement('label');
 
@@ -358,7 +362,7 @@ class ActaUIFormBuilder {
         return new ActaUIFormLabelItem({ el: li, input });
     }
 
-    static inputNumber(opts: IActaUIFormInputNumberOptions): ActaUIFormInputItem {
+    static inputNumber(opts: UIFormInputNumberOptions): ActaUIFormInputItem {
         const li = document.createElement('li');
         const input = document.createElement('input');
 

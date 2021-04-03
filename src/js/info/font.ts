@@ -4,7 +4,7 @@ import textstylemgr from '../pageobject/textstyle/textstylemgr';
 import api from '../util/api';
 import U from '../util/units';
 
-export interface IActaFont {
+export type Font = {
     id: number,
     mediaId: number,
     mediaName: string,
@@ -15,7 +15,7 @@ export interface IActaFont {
     sort: number
 };
 
-export interface IActaTextStyle {
+export type TextAttriubte = {
     id: number,
     mediaId: number,
     mediaName: string,
@@ -48,7 +48,7 @@ class ActaFontInfo {
 
         fontmgr.clear();
         for (const code of result.data) {
-            const font: IActaFont = code;
+            const font: Font = code;
             const url = api.file(font);
             await fontmgr.add(url, font.name);
         }
@@ -58,7 +58,7 @@ class ActaFontInfo {
 
         textstylemgr.clear();
         for (const code of result.data) {
-            const textstyle: IActaTextStyle = code;
+            const textstyle: TextAttriubte = code;
             if (!fontmgr.get(textstyle.fontName)) continue;
 
             const t = new ActaTextAttributeAbsolute(textstyle.fontName);

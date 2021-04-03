@@ -7,7 +7,7 @@ import IActaFrame from '../pageobject/interface/frame';
 import accountInfo from '../info/account';
 import U from '../util/units';
 
-import { IActaCodePageSize } from '../info/code';
+import { CodePageSize } from '../info/code';
 import { TextAlign } from '../pageobject/textstyle/textattribute-absolute';
 import { fromEvent, Subject } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -52,14 +52,14 @@ export interface IActaEditorTextAttribute {
     textAlign?: TextAlign
 };
 
-interface Position {
+type Position = {
     x: number,
     y: number,
     xIndex?: number,
     yIndex?: number
 };
 
-interface Boundary {
+type Boundary = {
     x: number[],
     y: number[]
 };
@@ -170,7 +170,7 @@ export default class ActaEditor {
         };
     }
 
-    constructor(pageSize: IActaCodePageSize) {
+    constructor(pageSize: CodePageSize) {
         this._EVENT$ = new Subject();
 
         this._tool = EditorTool.SELECT;

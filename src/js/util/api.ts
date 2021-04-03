@@ -1,15 +1,10 @@
 import querystring from 'querystring';
 
-interface IActaAPIParameter {
+type APIParameter = {
     [key: string] : any
 };
 
-enum AjaxMethod {
-    GET = 'GET',
-    POST = 'POST',
-    DELETE = 'DELETE',
-    PUT = 'PUT'
-};
+type AjaxMethod = 'GET' | 'POST' | 'DELETE' | 'PUT';
 
 class ActaAPI {
     private static _instance: ActaAPI;
@@ -42,12 +37,12 @@ class ActaAPI {
         return (XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
     }
 
-    private async _request(method: AjaxMethod, path: string, parameter?: IActaAPIParameter, headers?: IActaAPIParameter) {
+    private async _request(method: AjaxMethod, path: string, parameter?: APIParameter, headers?: APIParameter) {
         const params = querystring.stringify(parameter);
         const xhr = this._xhr;
         let url;
 
-        if ((method === AjaxMethod.GET || method === AjaxMethod.DELETE) && params) {
+        if ((method === 'GET' || method === 'DELETE') && params) {
             url = `${this._url}${(path[0] !== '/') ? '/' : ''}${path}?${params}`;
         } else {
             url = `${this._url}${(path[0] !== '/') ? '/' : ''}${path}`;
@@ -60,7 +55,7 @@ class ActaAPI {
                 if (headers[key]) xhr.setRequestHeader(key, headers[key]);
             }
         }
-        if ((method === AjaxMethod.POST || method === AjaxMethod.PUT) && params) {
+        if ((method === 'POST' || method === 'PUT') && params) {
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         }
 
@@ -74,7 +69,7 @@ class ActaAPI {
             xhr.onabort = () => { resolve(false); };
             xhr.onerror = () => { resolve(false); };
 
-            if (method === AjaxMethod.POST || method === AjaxMethod.PUT) {
+            if (method === 'POST' || 'AjaxMethod.PUT') {
                 xhr.send(params);
             } else {
                 xhr.send();
@@ -82,20 +77,20 @@ class ActaAPI {
         });
     }
 
-    async get(path: string, parameter?: IActaAPIParameter, headers?: IActaAPIParameter) {
-        return this._request(AjaxMethod.GET, path, parameter, headers);
+    async get(path: string, parameter?: APIParameter, headers?: APIParameter) {
+        return this._request('GET', path, parameter, headers);
     }
 
-    async post(path: string, parameter?: IActaAPIParameter, headers?: IActaAPIParameter) {
-        return this._request(AjaxMethod.POST, path, parameter, headers);
+    async post(path: string, parameter?: APIParameter, headers?: APIParameter) {
+        return this._request('POST', path, parameter, headers);
     }
 
-    async put(path: string, parameter?: IActaAPIParameter, headers?: IActaAPIParameter) {
-        return this._request(AjaxMethod.PUT, path, parameter, headers);
+    async put(path: string, parameter?: APIParameter, headers?: APIParameter) {
+        return this._request('PUT', path, parameter, headers);
     }
 
-    async delete(path: string, parameter?: IActaAPIParameter, headers?: IActaAPIParameter) {
-        return this._request(AjaxMethod.DELETE, path, parameter, headers);
+    async delete(path: string, parameter?: APIParameter, headers?: APIParameter) {
+        return this._request('DELETE', path, parameter, headers);
     }
 
     file(data: {
