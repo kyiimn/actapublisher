@@ -360,7 +360,7 @@ export default class ActaParagraph extends IActaFrame {
             this._cursorMode = CursorMode.EDIT;
             this._EMIT_REPAINT_CURSOR();
             return false;
-        } else if (e.keyCode === Keycode.HANGUL) {
+        } else if (e.keyCode === Keycode.HANGUL || (e.ctrlKey || e.shiftKey) && e.keyCode === Keycode.SPACE) {
             ActaParagraph.TOGGLE_INPUT_METHOD();
             this._cursorMode = CursorMode.EDIT;
             this._EMIT_REPAINT_CURSOR();
