@@ -5,6 +5,7 @@ import ActaTextAttribute from '../pageobject/textstyle/textattribute';
 import ActaImage from '../pageobject/image';
 import IActaFrame from '../pageobject/interface/frame';
 import accountInfo from '../info/account';
+import groupmgr from '../pageobject/groupmgr';
 import U from '../util/units';
 
 import { CodePageSize } from '../info/code';
@@ -25,6 +26,12 @@ export enum EditorTool {
     DRAW_IMAGE_FRAME,
     DRAW_LINE
 };
+
+const EditorToolSelect = [
+    EditorTool.SELECT,
+    EditorTool.FRAME_EDIT_MODE,
+    EditorTool.FRAME_MOVE_MODE
+];
 
 const EditorToolModes = [
     EditorTool.FRAME_EDIT_MODE,
@@ -215,11 +222,14 @@ export default class ActaEditor {
         });
 
         fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
-            if (this._tool === EditorTool.FRAME_MOVE_MODE) {
-                this._onFrameMoveStart(e);
+            if (EditorToolSelect.indexOf(this._tool) > -1) {
+                this._onSelect(e);
+                if (this._tool === EditorTool.FRAME_MOVE_MODE) this._onFrameMoveStart(e);
             } else {
                 this._onDrawGuideStart(e)
             }
+            e.preventDefault();
+            e.stopPropagation();
         });
         fromEvent<MouseEvent>(this._page, 'mousemove').subscribe(e => {
             if (this._tool === EditorTool.FRAME_MOVE_MODE) {
@@ -275,16 +285,44 @@ export default class ActaEditor {
         }
     }
 
-    private _onFrameMoveStart(e: MouseEvent) {
+    private _onSelect(e: MouseEvent) {
         const frame = ActaEditor.getFrame(e.target as HTMLElement);
         if (!frame) return;
 
         if (!frame.classList.contains('selected') && !frame.classList.contains('focus')) {
-            if (!e.ctrlKey) {
-                for (const selectedFrame of this._selectedFrames) selectedFrame.classList.remove('selected');
+            if (!e.ctrlKey && !e.shiftKey) {
+                for (const selectedFrame of this._selectedFrames) {
+                    selectedFrame.classList.remove('focus');
+                    selectedFrame.classList.remove('selected');
+                }
+                const members = groupmgr.getMember(this._page, frame) || [frame];
+                for (const member of members) {
+                    if (member === frame) {
+                        member.focus({ preventScroll: true });
+                    } else {
+                        member.classList.add('selected');
+                    }
+                }
+            } else {
+                if (this._selectedFrames.length > 0) {
+                    frame.classList.add('selected');
+                } else {
+                    frame.focus({ preventScroll: true });
+                }
             }
-            frame.classList.add('selected');
+        } else {
+            for (const selectedFrame of this._selectedFrames) {
+                selectedFrame.classList.remove('focus');
+                selectedFrame.classList.remove('selected');
+            }
+            frame.focus({ preventScroll: true });
         }
+    }
+
+    private _onFrameMoveStart(e: MouseEvent) {
+        const frame = ActaEditor.getFrame(e.target as HTMLElement);
+        if (!frame) return;
+
         for (const selectedFrame of this._selectedFrames) selectedFrame.savePosition();
 
         this._calcGuideBoundary();
@@ -367,8 +405,6 @@ export default class ActaEditor {
         } finally {
             if (previousDragGuide) previousDragGuide.remove();
             this._mouseMovePreviousEvent = e;
-
-            e.stopPropagation();
         }
     }
 
@@ -648,7 +684,7 @@ export default class ActaEditor {
     set tool(tool: EditorTool) {
         const allFrames = this._allFrames;
         this._tool = tool;
-        if (this._tool !== EditorTool.FRAME_MOVE_MODE) {
+        if (EditorToolSelect.indexOf(this._tool) < 0) {
             for (const frame of this._selectedFrames) frame.classList.remove('selected');
             for (const frame of allFrames) frame.moveMode = false;
         } else {
