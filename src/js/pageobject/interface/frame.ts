@@ -230,6 +230,14 @@ export default abstract class IActaFrame extends IActaElement {
         }
     }
 
+    restorePosition() {
+        if (!this._moveMode) return;
+        if (this._moveOriginalLeft === undefined || this._moveOriginalTop === undefined) return;
+
+        this.x = this._moveOriginalLeft;
+        this.y = this._moveOriginalTop;
+    }
+
     async focus(options?: FocusOptions | undefined, afterRender?: boolean) {
         if (!afterRender) {
             super.focus(options);
@@ -293,6 +301,7 @@ export default abstract class IActaFrame extends IActaElement {
     get savedPositionTop() { return this._moveOriginalTop || 0; }
     get margin() { return this._margin; }
     get isFocused() { return this._focused; }
+    get isSelected() { return (this._focused || this.classList.contains('selected')) ? true : false; }
 
     get order() {
         const parentElement = this.parentElement;

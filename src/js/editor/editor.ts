@@ -33,12 +33,6 @@ const EditorToolSelect = [
     EditorTool.FRAME_MOVE_MODE
 ];
 
-const EditorToolModes = [
-    EditorTool.FRAME_EDIT_MODE,
-    EditorTool.FRAME_MOVE_MODE,
-    EditorTool.TEXT_MODE
-];
-
 const EditorToolDrawFrames = [
     EditorTool.DRAW_EMPTY_FRAME,
     EditorTool.DRAW_IMAGE_FRAME,
@@ -77,6 +71,7 @@ export default class ActaEditor {
     private _page: ActaPage;
     private _readonly: boolean;
     private _magnetRange: number;
+    private _ignoreMoveLimit: number;
 
     private _mouseEventDragGuide?: HTMLElement;
     private _mouseMovePreviousEvent?: MouseEvent;
@@ -183,6 +178,7 @@ export default class ActaEditor {
         this._tool = EditorTool.SELECT;
         this._readonly = false;
         this._magnetRange = 24;
+        this._ignoreMoveLimit = 2;
 
         this._element = document.createElement('div');
         this._element.classList.add('editor');
@@ -222,12 +218,13 @@ export default class ActaEditor {
         });
 
         fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
-            if (EditorToolSelect.indexOf(this._tool) > -1) {
-                this._onSelect(e);
-                if (this._tool === EditorTool.FRAME_MOVE_MODE) this._onFrameMoveStart(e);
-            } else {
+            if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
                 this._onDrawGuideStart(e)
-            }
+            } else if (EditorToolSelect.indexOf(this._tool) > -1) {
+                this._onSelectStart(e);
+                if (this._tool === EditorTool.FRAME_MOVE_MODE) this._onFrameMoveStart(e);
+            } else return;
+
             e.preventDefault();
             e.stopPropagation();
         });
@@ -241,10 +238,19 @@ export default class ActaEditor {
                     default: break;
                 }
             }
+            e.preventDefault();
+            e.stopPropagation();
         });
         fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => {
             try {
-                if (EditorToolDrawFrames.indexOf(this._tool) > -1) this._onDrawGuideEnd(e);
+                if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
+                    this._onDrawGuideEnd(e);
+                } else if (EditorToolSelect.indexOf(this._tool) > -1) {
+                    if (EditorTool.FRAME_MOVE_MODE === this._tool) {
+                        if (this._onFrameMoveEnd(e)) return;
+                    }
+                    this._onSelectEnd(e);
+                }
             } finally {
                 if (this._mouseEventDragGuide) this._mouseEventDragGuide.remove();
 
@@ -257,6 +263,22 @@ export default class ActaEditor {
                 e.stopPropagation();
             }
         });
+    }
+
+    private _getSelectedBoundingClientRect(savedPosition?: boolean) {
+        let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER;
+        let maxX = 0, maxY = 0;
+
+        if (this._selectedFrames.length < 1) return null;
+        if (this._tool !== EditorTool.FRAME_MOVE_MODE && savedPosition) return null;
+
+        for (const frame of this._selectedFrames) {
+            minX = Math.min(minX, U.px(savedPosition ? frame.savedPositionLeft : frame.x));
+            minY = Math.min(minY, U.px(savedPosition ? frame.savedPositionTop : frame.y));
+            maxX = Math.max(maxX, U.px(savedPosition ? frame.savedPositionLeft : frame.x) + U.px(frame.width));
+            maxY = Math.max(maxY, U.px(savedPosition ? frame.savedPositionTop : frame.y) + U.px(frame.height));
+        }
+        return new DOMRect(minX, minY, maxX - minX, maxY - minY);
     }
 
     private _calcGuideBoundary() {
@@ -285,35 +307,34 @@ export default class ActaEditor {
         }
     }
 
-    private _onSelect(e: MouseEvent) {
+    private _onSelectStart(e: MouseEvent) {
         const frame = ActaEditor.getFrame(e.target as HTMLElement);
         if (!frame) return;
 
-        if (!frame.classList.contains('selected') && !frame.classList.contains('focus')) {
+        if (!frame.isSelected) {
             if (!e.ctrlKey && !e.shiftKey) {
                 for (const selectedFrame of this._selectedFrames) {
-                    selectedFrame.classList.remove('focus');
                     selectedFrame.classList.remove('selected');
                 }
-                const members = groupmgr.getMember(this._page, frame) || [frame];
-                for (const member of members) {
-                    if (member === frame) {
-                        member.focus({ preventScroll: true });
-                    } else {
-                        member.classList.add('selected');
-                    }
-                }
+                frame.focus({ preventScroll: true });
             } else {
-                if (this._selectedFrames.length > 0) {
-                    frame.classList.add('selected');
-                } else {
-                    frame.focus({ preventScroll: true });
-                }
+                frame.classList.add('selected');
             }
-        } else {
+        }
+    }
+
+    private _onSelectEnd(e: MouseEvent) {
+        const frame = ActaEditor.getFrame(e.target as HTMLElement);
+        if (!frame) return;
+
+        if (!e.ctrlKey && !e.shiftKey) {
             for (const selectedFrame of this._selectedFrames) {
-                selectedFrame.classList.remove('focus');
                 selectedFrame.classList.remove('selected');
+            }
+            const members = groupmgr.getMember(this._page, frame) || [];
+            for (const member of members) {
+                if (member === frame) continue;
+                member.classList.add('selected');
             }
             frame.focus({ preventScroll: true });
         }
@@ -330,43 +351,78 @@ export default class ActaEditor {
     }
 
     private _onFrameMove(e: MouseEvent) {
-        try {
-            if (!this._mouseMovePreviousEvent) return;
+        if (!this._mouseMovePreviousEvent) return;
 
-            const selectedFrames = this._selectedFrames;
-            const mx = (e.clientX - this._mouseMovePreviousEvent.clientX) / this._page.scale;
-            const my = (e.clientY - this._mouseMovePreviousEvent.clientY) / this._page.scale;
+        const mx = (e.clientX - this._mouseMovePreviousEvent.clientX) / this._page.scale;
+        const my = (e.clientY - this._mouseMovePreviousEvent.clientY) / this._page.scale;
 
-            for (const frame of selectedFrames) {
-                let x1 = Math.min(U.px(this._page.width) - U.px(frame.width), Math.max(0, U.px(frame.savedPositionLeft) + mx));
-                let y1 = Math.min(U.px(this._page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
+        if (this._selectedFrames.length > 1) {
+            const rect = this._getSelectedBoundingClientRect(true);
+            if (!rect) return;
 
-                if (this._pageGuideBoundary && !e.ctrlKey) {
-                    if (frame instanceof ActaParagraph || frame instanceof ActaImage) {
-                        const x2 = x1 + U.px(frame.width);
-                        const y2 = y1 + U.px(frame.height);
+            let x1 = Math.min(U.px(this._page.width) - rect.width, Math.max(0, rect.x + mx));
+            let y1 = Math.min(U.px(this._page.height) - rect.height, Math.max(0, rect.y + my));
 
-                        const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
-                        const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
+            if (this._pageGuideBoundary && !e.ctrlKey) {
+                const x2 = x1 + rect.width;
+                const y2 = y1 + rect.height;
 
-                        if (nspos.x !== x1) x1 = nspos.x;
-                        else if (nepos.x !== x2) x1 = nepos.x - U.px(frame.width);
+                const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
+                const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
 
-                        if (nspos.y !== y1) y1 = nspos.y;
-                        else if (nepos.y !== y2) y1 = nepos.y - U.px(frame.height);
-                    } else {
-                        const npos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale);
-                        x1 = npos.x;
-                        y1 = npos.y;
-                    }
-                }
-                frame.x = `${x1}px`;
-                frame.y = `${y1}px`;
+                if (nspos.x !== x1) x1 = nspos.x;
+                else if (nepos.x !== x2) x1 = nepos.x - rect.width;
+
+                if (nspos.y !== y1) y1 = nspos.y;
+                else if (nepos.y !== y2) y1 = nepos.y - rect.height;
             }
-        } finally {
-            e.preventDefault();
-            e.stopPropagation();
+
+            for (const frame of this._selectedFrames) {
+                frame.x = `${U.px(frame.savedPositionLeft) + (x1 - rect.x)}px`;
+                frame.y = `${U.px(frame.savedPositionTop) + (y1 - rect.y)}px`;
+            }
+        } else if (this._selectedFrames.length === 1) {
+            const frame = this._selectedFrames[0];
+            let x1 = Math.min(U.px(this._page.width) - U.px(frame.width), Math.max(0, U.px(frame.savedPositionLeft) + mx));
+            let y1 = Math.min(U.px(this._page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
+
+            if (this._pageGuideBoundary && !e.ctrlKey) {
+                if (frame instanceof ActaParagraph || frame instanceof ActaImage) {
+                    const x2 = x1 + U.px(frame.width);
+                    const y2 = y1 + U.px(frame.height);
+
+                    const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
+                    const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
+
+                    if (nspos.x !== x1) x1 = nspos.x;
+                    else if (nepos.x !== x2) x1 = nepos.x - U.px(frame.width);
+
+                    if (nspos.y !== y1) y1 = nspos.y;
+                    else if (nepos.y !== y2) y1 = nepos.y - U.px(frame.height);
+                } else {
+                    const npos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale);
+                    x1 = npos.x;
+                    y1 = npos.y;
+                }
+            }
+            frame.x = `${x1}px`;
+            frame.y = `${y1}px`;
         }
+    }
+
+    private _onFrameMoveEnd(e: MouseEvent) {
+        if (!this._mouseMovePreviousEvent) return;
+
+        const selectedFrames = this._selectedFrames;
+        const mx = (e.clientX - this._mouseMovePreviousEvent.clientX);
+        const my = (e.clientY - this._mouseMovePreviousEvent.clientY);
+
+        if (Math.abs(mx) > this._ignoreMoveLimit || Math.abs(my) > this._ignoreMoveLimit) return true;
+
+        for (const frame of selectedFrames) {
+            frame.restorePosition();
+        }
+        return false;
     }
 
     private _onScrollMove(e: MouseEvent) {
