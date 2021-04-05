@@ -229,14 +229,12 @@ export default class ActaEditor {
             e.stopPropagation();
         });
         fromEvent<MouseEvent>(this._page, 'mousemove').subscribe(e => {
-            if (this._tool === EditorTool.FRAME_MOVE_MODE) {
+            if (e.buttons === 4) {
+                this._onScrollMove(e);
+            } else if (this._tool === EditorTool.FRAME_MOVE_MODE) {
                 if (e.buttons === 1) this._onFrameMove(e);
-            } else {
-                switch (e.buttons) {
-                    case 1: this._onDrawGuideMove(e); break;
-                    case 4: this._onScrollMove(e); break;
-                    default: break;
-                }
+            } else if (EditorToolDrawFrames.indexOf(this._tool) > -1 && e.buttons === 1) {
+                this._onDrawGuideMove(e);
             }
             e.preventDefault();
             e.stopPropagation();
@@ -742,9 +740,15 @@ export default class ActaEditor {
         this._tool = tool;
         if (EditorToolSelect.indexOf(this._tool) < 0) {
             for (const frame of this._selectedFrames) frame.classList.remove('selected');
-            for (const frame of allFrames) frame.moveMode = false;
+            for (const frame of allFrames) frame.mode = 'NONE';
         } else {
-            for (const frame of allFrames) frame.moveMode = true;
+            for (const frame of allFrames) {
+                if (this._tool === EditorTool.FRAME_EDIT_MODE) {
+                    frame.mode = 'EDIT';
+                } else {
+                    frame.mode = 'MOVE';
+                }
+            }
         }
         if (this._tool === EditorTool.TEXT_MODE) {
             const focusedPara = this._focusedParagraph;

@@ -8,13 +8,15 @@ import { Subject, Subscription } from 'rxjs';
 import "../../../css/pageobject/frame.scss";
 import { textChangeRangeIsUnchanged } from 'typescript';
 
+type FrameMode = 'NONE' | 'MOVE' | 'EDIT';
+
 export default abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
     private _overlapFrames: IActaFrame[];
     private _margin: number | string;
     private _focused: boolean;
 
-    private _moveMode: boolean;
+    private _mode: FrameMode;
     private _moveOriginalLeft?: number | string;
     private _moveOriginalTop?: number | string;
 
@@ -117,7 +119,7 @@ export default abstract class IActaFrame extends IActaElement {
         this._preflightProfiles = [];
         this._margin = 0;
         this._focused = false;
-        this._moveMode = false;
+        this._mode = 'NONE';
 
         this._CHANGE_SIZE$ = new Subject();
         this._OVERLAP$ = new Subject();
@@ -221,7 +223,7 @@ export default abstract class IActaFrame extends IActaElement {
     }
 
     savePosition() {
-        if (this._moveMode) {
+        if (this._mode) {
             this._moveOriginalLeft = this.x;
             this._moveOriginalTop = this.y;
         } else {
@@ -231,7 +233,7 @@ export default abstract class IActaFrame extends IActaElement {
     }
 
     restorePosition() {
-        if (!this._moveMode) return;
+        if (!this._mode) return;
         if (this._moveOriginalLeft === undefined || this._moveOriginalTop === undefined) return;
 
         this.x = this._moveOriginalLeft;
@@ -269,8 +271,8 @@ export default abstract class IActaFrame extends IActaElement {
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
     set rotate(rotate: number) { this.setAttribute('rotate', rotate.toString()); }
     set overlapFrames(list: IActaFrame[]) { this._overlapFrames = list; }
-    set moveMode(modeMode: boolean) {
-        this._moveMode = modeMode;
+    set mode(mode: FrameMode) {
+        this._mode = mode;
         this.savePosition();
     }
     set margin(margin: number | string) {
@@ -296,7 +298,7 @@ export default abstract class IActaFrame extends IActaElement {
     get overlapFrames() { return this._overlapFrames; }
     get overlapObservable() { return this._OVERLAP$; }
     get preflightProfiles() { return this._preflightProfiles; }
-    get moveMode() { return this._moveMode; }
+    get mode() { return this._mode; }
     get savedPositionLeft() { return this._moveOriginalLeft || 0; }
     get savedPositionTop() { return this._moveOriginalTop || 0; }
     get margin() { return this._margin; }
