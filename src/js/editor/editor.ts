@@ -437,7 +437,7 @@ export default class ActaEditor {
                 {
                     const paragraph = new ActaParagraph(
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                        accountInfo.prefDefaultBodyTextStyle
+                        accountInfo.defaultBodyTextStyle
                     );
                     paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
                     paragraph.readonly = true;
@@ -452,7 +452,7 @@ export default class ActaEditor {
                 {
                     const paragraph = new ActaParagraph(
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                        accountInfo.prefDefaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
+                        accountInfo.defaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
                     );
                     paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
                     changetool = EditorTool.TEXT_MODE;
@@ -463,7 +463,7 @@ export default class ActaEditor {
                 {
                     const paragraph = new ActaParagraph(
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                        accountInfo.prefDefaultTitleTextStyle
+                        accountInfo.defaultTitleTextStyle
                     );
                     paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
                     changetool = EditorTool.TEXT_MODE;

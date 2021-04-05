@@ -80,7 +80,7 @@ class ActaAccountInfo {
         this._loginUser = result.data.user;
 
         this._preference = result.data.preference;
-        U.DPI = this.prefDPI;
+        U.DPI = this.dpi;
 
         result = await api.get('/info/account/dept');
         if (!result) return false;
@@ -97,12 +97,12 @@ class ActaAccountInfo {
 
         return true;
     }
-    get prefFrameUnitType() { return this._preference ? this._preference.frameUnitType : __DEFAULT_ACCOUNT_INFO_FRAME_UNIT_TYPE; }
-    get prefTextUnitType() { return this._preference ? this._preference.textUnitType : __DEFAULT_ACCOUNT_INFO_TEXT_UNIT_TYPE; }
-    get prefDefaultBodyTextStyle() { return this._preference ? this._preference.defaultBodyTextStyleName : ''; }
-    get prefDefaultTitleTextStyle() { return this._preference ? this._preference.defaultTitleTextStyleName : ''; }
-    get prefDPI() { return this._preference ? this._preference.dpi : __DEFAULT_ACCOUNT_INFO_DPI; }
-    get prefOptions() { return this._preference ? this._preference.options : {}; }
+    get frameUnitType() { return this._preference ? this._preference.frameUnitType : __DEFAULT_ACCOUNT_INFO_FRAME_UNIT_TYPE; }
+    get textUnitType() { return this._preference ? this._preference.textUnitType : __DEFAULT_ACCOUNT_INFO_TEXT_UNIT_TYPE; }
+    get defaultBodyTextStyle() { return this._preference ? this._preference.defaultBodyTextStyleName : ''; }
+    get defaultTitleTextStyle() { return this._preference ? this._preference.defaultTitleTextStyleName : ''; }
+    get dpi() { return this._preference ? this._preference.dpi : __DEFAULT_ACCOUNT_INFO_DPI; }
+    get options() { return this._preference ? this._preference.options : {}; }
 
     get isLogined() { return this._logined; }
     get loginMediaId() { return this._loginMediaId || 0; }

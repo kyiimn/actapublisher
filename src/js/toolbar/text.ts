@@ -136,7 +136,7 @@ class ActaToolbarText {
         const textstyle = textstylemgr.get(name);
         if (!textstyle) return;
 
-        const unit = accountInfo.prefTextUnitType;
+        const unit = accountInfo.textUnitType;
 
         this._itemFont.value = textstyle.fontName;
         this._itemFontSize.value = U.convert(unit, textstyle.fontSize).toFixed(2);
@@ -193,7 +193,7 @@ class ActaToolbarText {
     }
 
     set data(data: IActaEditorTextAttribute) {
-        const unit = accountInfo.prefTextUnitType;
+        const unit = accountInfo.textUnitType;
 
         if (data.textStyle !== undefined) {
             this._itemTextStyle.value = data.textStyle;
@@ -215,7 +215,7 @@ class ActaToolbarText {
 
     get data() {
         const data: IActaEditorTextAttribute = {};
-        const unit = accountInfo.prefTextUnitType;
+        const unit = accountInfo.textUnitType;
 
         data.textStyle = this._itemTextStyle.value !== '' ? this._itemTextStyle.value : undefined;
         data.fontName = this._itemFont.value !== '' ? this._itemFont.value : undefined;
