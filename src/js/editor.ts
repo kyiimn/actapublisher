@@ -2,7 +2,8 @@ import ActaPage from './pageobject/page';
 import ActaGuide from './pageobject/guide';
 import ActaParagraph from './pageobject/paragraph';
 import ActaImage from './pageobject/image';
-import { ImageFitType, ImageOverlapMethod } from './pageobject/image';
+import { ImageFitType } from './pageobject/image';
+import { FrameOverlapMethod } from './pageobject/interface/frame';
 import fontmgr from './pageobject/font/fontmgr';
 import colormgr from './pageobject/color/colormgr';
 import textstylemgr from './pageobject/textstyle/textstylemgr';
@@ -54,7 +55,7 @@ const main = async () => {
 
     para3.src = 'test/bigsur.eps';
     para3.fitType = ImageFitType.FIT_FRAME;
-    para3.overlapMethod = ImageOverlapMethod.SHAPE;
+    para3.overlapMethod = FrameOverlapMethod.SHAPE;
     para3.margin = 10;
 
     const para5 = new ActaImage('90mm', '25mm', '40mm', '40mm');// , '본문3', 2, '2mm');
@@ -62,7 +63,7 @@ const main = async () => {
 
     para5.src = 'test/bigsur.eps';
     para5.fitType = ImageFitType.FIT_FRAME;
-    para5.overlapMethod = ImageOverlapMethod.SHAPE;
+    para5.overlapMethod = FrameOverlapMethod.SHAPE;
     para5.margin = 10;
 
     const para4 = new ActaParagraph('60mm', '60mm', '20mm', '40mm', '본문3', 1, '2mm');

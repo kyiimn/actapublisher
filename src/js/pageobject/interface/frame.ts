@@ -6,9 +6,15 @@ import U from '../../util/units';
 import { Subject, Subscription } from 'rxjs';
 
 import "../../../css/pageobject/frame.scss";
-import { textChangeRangeIsUnchanged } from 'typescript';
 
 type FrameMode = 'NONE' | 'MOVE' | 'EDIT';
+
+export enum FrameOverlapMethod {
+    OVERLAP,        // 겹치기
+    FRAMEBOX,       // 프레임박스
+    SHAPE,          // 그림 테두리따라
+    JUMP            // 라인점프
+};
 
 export default abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
@@ -19,6 +25,8 @@ export default abstract class IActaFrame extends IActaElement {
     private _mode: FrameMode;
     private _moveOriginalLeft?: number | string;
     private _moveOriginalTop?: number | string;
+
+    private _overlapMethod: FrameOverlapMethod;
 
     protected _preflightProfiles: IActaPreflightProfile[];
 
@@ -114,6 +122,8 @@ export default abstract class IActaFrame extends IActaElement {
 
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
+
+        this._overlapMethod = FrameOverlapMethod.FRAMEBOX;
 
         this._overlapFrames = [];
         this._preflightProfiles = [];
@@ -271,6 +281,12 @@ export default abstract class IActaFrame extends IActaElement {
     set paddingRight(padding: string | number) { this.setAttribute('padding-right', padding.toString()); }
     set rotate(rotate: number) { this.setAttribute('rotate', rotate.toString()); }
     set overlapFrames(list: IActaFrame[]) { this._overlapFrames = list; }
+    set overlapMethod(overlapMethod: FrameOverlapMethod) {
+        if (this._overlapMethod !== overlapMethod) {
+            this._overlapMethod = overlapMethod;
+            this._EMIT_CHANGE_SIZE();
+        }
+    }
     set mode(mode: FrameMode) {
         this._mode = mode;
         this.savePosition();
@@ -296,6 +312,7 @@ export default abstract class IActaFrame extends IActaElement {
     get paddingRight() { return this.getAttribute('padding-right') || '0'; }
     get rotate() { return parseFloat(this.getAttribute('rotate') || '0'); }
     get overlapFrames() { return this._overlapFrames; }
+    get overlapMethod() { return this._overlapMethod; }
     get overlapObservable() { return this._OVERLAP$; }
     get preflightProfiles() { return this._preflightProfiles; }
     get mode() { return this._mode; }

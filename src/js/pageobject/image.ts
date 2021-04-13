@@ -1,4 +1,4 @@
-import IActaFrame from './interface/frame';
+import IActaFrame, { FrameOverlapMethod } from './interface/frame';
 import IActaFrameOverlapArea from './interface/frame-overlap-area';
 import U from '../util/units';
 
@@ -8,13 +8,6 @@ export enum ImageFitType {
     FIT_CONTENT,    // 프레임 채우기(비율)
     FIT_FRAME,      // 프레임 맞추기(비율)
     CENTER          // 가운데
-};
-
-export enum ImageOverlapMethod {
-    OVERLAP,        // 겹치기
-    FRAMEBOX,       // 프레임박스
-    SHAPE,          // 그림 테두리따라
-    JUMP            // 라인점프
 };
 
 export default class ActaImage extends IActaFrame {
@@ -28,7 +21,6 @@ export default class ActaImage extends IActaFrame {
     private _maskDataY: number[][] | null;
 
     private _fitType: ImageFitType;
-    private _overlapMethod: ImageOverlapMethod;
 
     private _originalCanvas: OffscreenCanvas | HTMLCanvasElement | null;
     private _src: string;
@@ -280,7 +272,6 @@ export default class ActaImage extends IActaFrame {
         this._src = '';
 
         this._fitType = ImageFitType.CENTER;
-        this._overlapMethod = ImageOverlapMethod.FRAMEBOX;
 
         this._displayCanvas = document.createElement('canvas');
         this._displayCanvas.style.position = 'absolute';
@@ -299,9 +290,9 @@ export default class ActaImage extends IActaFrame {
     }
 
     computeOverlapArea(x1: number, y1: number, x2: number, y2: number): IActaFrameOverlapArea | null {
-        if (this._overlapMethod === ImageOverlapMethod.OVERLAP) {
+        if (this.overlapMethod === FrameOverlapMethod.OVERLAP) {
             return null;
-        } else if (this._overlapMethod === ImageOverlapMethod.FRAMEBOX || !this._originalCanvas || (!this._hasMask || this._maskDataX === null || this._maskDataY === null)) {
+        } else if (this.overlapMethod === FrameOverlapMethod.FRAMEBOX || !this._originalCanvas || (!this._hasMask || this._maskDataX === null || this._maskDataY === null)) {
             // 이미지가 배치되지 않았거나, 마스크정보가 없으면 프레임박스와 동일하게 처리
             return super.computeOverlapArea(x1, y1, x2, y2);
         }
@@ -330,7 +321,7 @@ export default class ActaImage extends IActaFrame {
             y: [Math.max(0, y1 - thisY1), Math.min(thisY2 - thisY1, y2 - thisY1)]
         };
 
-        if (this._overlapMethod === ImageOverlapMethod.SHAPE) {
+        if (this.overlapMethod === FrameOverlapMethod.SHAPE) {
             let hasYPx = false;
             for (let y = 0; y < this._maskDataY.length; y++) {
                 if (Math.max(...this._maskDataY[y].slice(inArea.x[0], inArea.x[1])) > 0) hasYPx = true;
@@ -351,7 +342,7 @@ export default class ActaImage extends IActaFrame {
                 if (Math.max(...this._maskDataX[x].slice(inArea.y[0], inArea.y[1])) > 0) hasXPx = true;
                 else if (!hasXPx && x >= inArea.x[0] && x < inArea.x[1]) area.x[1]--;
             }
-        } else if (this._overlapMethod === ImageOverlapMethod.JUMP) {
+        } else if (this.overlapMethod === FrameOverlapMethod.JUMP) {
             let hasYPx = false;
             for (let y = 0; y < this._maskDataY.length; y++) {
                 if (Math.max(...this._maskDataY[y]) > 0) hasYPx = true;
@@ -404,13 +395,6 @@ export default class ActaImage extends IActaFrame {
 
         this._fitType = fitType;
         if (changed && this._fitType !== ImageFitType.NONE) {
-            this._EMIT_CHANGE_SIZE();
-        }
-    }
-
-    set overlapMethod(overlapMethod: ImageOverlapMethod) {
-        if (this._overlapMethod !== overlapMethod) {
-            this._overlapMethod = overlapMethod;
             this._EMIT_CHANGE_SIZE();
         }
     }

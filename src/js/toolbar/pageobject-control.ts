@@ -33,10 +33,10 @@ class ActaToolbarPageObjectControl {
 
     private _disabled: boolean;
 
-    private _CLICK$: Subject<{ action: string, step?: number }>;
+    private _CHANGE$: Subject<{ action: string, step?: number }>;
 
     constructor() {
-        this._CLICK$ = new Subject();
+        this._CHANGE$ = new Subject();
 
         this._disabled = false;
 
@@ -111,7 +111,7 @@ class ActaToolbarPageObjectControl {
             this._itemVAlignBottom.observable.pipe(map(_ => 'valign-bottom')),
             this._itemRemove.observable.pipe(map(_ => 'remove')),
         ).subscribe(action => {
-            this._CLICK$.next({ action });
+            this._CHANGE$.next({ action });
         });
 
         merge(
@@ -120,7 +120,7 @@ class ActaToolbarPageObjectControl {
             this._itemMoveDown.observable.pipe(map(_ => 'move-down')),
             this._itemMoveRight.observable.pipe(map(_ => 'move-right'))
         ).subscribe(action => {
-            this._CLICK$.next({ action, step: U.px(this._itemMoveStep1.value, accountInfo.frameUnitType) });
+            this._CHANGE$.next({ action, step: U.px(this._itemMoveStep1.value, accountInfo.frameUnitType) });
         });
 
         merge(
@@ -129,14 +129,14 @@ class ActaToolbarPageObjectControl {
             this._itemMoveRightDown.observable.pipe(map(_ => 'move-rightdown')),
             this._itemMoveLeftDown.observable.pipe(map(_ => 'move-leftdown'))
         ).subscribe(action => {
-            this._CLICK$.next({ action, step: U.px(this._itemMoveStep2.value, accountInfo.frameUnitType) });
+            this._CHANGE$.next({ action, step: U.px(this._itemMoveStep2.value, accountInfo.frameUnitType) });
         });
 
         merge(
             this._itemRotateLeft.observable.pipe(map(_ => 'rotate-left')),
             this._itemRotateRight.observable.pipe(map(_ => 'rotate-right'))
         ).subscribe(action => {
-            this._CLICK$.next({ action, step: parseFloat(this._itemRotateStep.value) });
+            this._CHANGE$.next({ action, step: parseFloat(this._itemRotateStep.value) });
         });
     }
 
@@ -194,7 +194,7 @@ class ActaToolbarPageObjectControl {
         this._disabled = true;
     }
 
-    get observable() { return this._CLICK$; }
+    get observable() { return this._CHANGE$; }
     get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }

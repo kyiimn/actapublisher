@@ -18,10 +18,10 @@ class ActaToolbarPageObjectDraw {
 
     private _disabled: boolean;
 
-    private _SELECT$: Subject<EditorTool>;
+    private _CHANGE$: Subject<EditorTool>;
 
     constructor() {
-        this._SELECT$ = new Subject();
+        this._CHANGE$ = new Subject();
 
         this._disabled = false;
 
@@ -79,7 +79,7 @@ class ActaToolbarPageObjectDraw {
     }
 
     private _changeValues() {
-        this._SELECT$.next(this.value);
+        this._CHANGE$.next(this.value);
     }
 
     enable() {
@@ -156,7 +156,7 @@ class ActaToolbarPageObjectDraw {
         else if (this._itemLine.value) value = EditorTool.DRAW_LINE;
         return value;
     }
-    get observable() { return this._SELECT$; }
+    get observable() { return this._CHANGE$; }
     get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }
