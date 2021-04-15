@@ -157,7 +157,7 @@ body {
                     &:first-child {
                         margin-right: 4px;
 
-                        &:after {
+                        &:not(.icon):after {
                             content: ': ';
                         }
                     }

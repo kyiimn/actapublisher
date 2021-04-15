@@ -1,5 +1,6 @@
 import ToolbarPODraw from './toolbar/pageobject-draw';
 import ToolbarPOControl from './toolbar/pageobject-control';
+import ToolbarPOTransform from './toolbar/pageobject-transform';
 import ToolbarText from './toolbar/text';
 import ToolbarDocStatus from './toolbar/document-status';
 import Editor from './editor/editor';
@@ -24,7 +25,8 @@ class Designer {
     private static _instance: Designer;
 
     private _toolbarPODraw;
-    private _toolbarPOCtrl;
+    private _toolbarPOControl;
+    private _toolbarPOTransform;
     private _toolbarText;
     private _toolbarDocStatus;
 
@@ -38,7 +40,8 @@ class Designer {
 
     private constructor() {
         this._toolbarPODraw = new ToolbarPODraw();
-        this._toolbarPOCtrl = new ToolbarPOControl();
+        this._toolbarPOControl = new ToolbarPOControl();
+        this._toolbarPOTransform = new ToolbarPOTransform();
         this._toolbarText = new ToolbarText();
         this._toolbarDocStatus = new ToolbarDocStatus();
 
@@ -77,12 +80,14 @@ class Designer {
 
     private _initToolbar() {
         this._layout.toolbar.appendChild(this._toolbarPODraw.el);
-        this._layout.topbar.appendChild(this._toolbarPOCtrl.el);
+        this._layout.topbar.appendChild(this._toolbarPOControl.el);
+        this._layout.topbar.appendChild(this._toolbarPOTransform.el);
         this._layout.topbar.appendChild(this._toolbarText.el);
         this._layout.documentStatusbar.appendChild(this._toolbarDocStatus.el);
 
         this._toolbarPODraw.disable();
-        this._toolbarPOCtrl.disable();
+        this._toolbarPOControl.disable();
+        this._toolbarPOTransform.disable();
         this._toolbarText.disable();
         this._toolbarDocStatus.disable();
 
@@ -91,9 +96,14 @@ class Designer {
             if (editor) editor.tool = tool;
         });
 
-        this._toolbarPOCtrl.observable.subscribe(ctrl => {
+        this._toolbarPOControl.observable.subscribe(ctrl => {
             const editor = this._layout.active;
             if (editor) editor.processPageObjectControl(ctrl.action, ctrl.step);
+        });
+
+        this._toolbarPOTransform.observable.subscribe(ctrl => {
+            const editor = this._layout.active;
+            // if (editor) editor.processPageObjectControl(ctrl.action, ctrl.value);
         });
 
         this._toolbarText.observable.subscribe(val => {
@@ -126,7 +136,8 @@ class Designer {
                 if (data.value) {
                     const editor = data.value as Editor;
                     this._toolbarPODraw.enable();
-                    this._toolbarPOCtrl.enable();
+                    this._toolbarPOControl.enable();
+                    this._toolbarPOTransform.enable();
                     this._toolbarText.enable();
                     this._toolbarDocStatus.enable();
 
@@ -136,7 +147,8 @@ class Designer {
                     editor.tool = this._toolbarPODraw.value;
                 } else {
                     this._toolbarPODraw.disable();
-                    this._toolbarPOCtrl.disable();
+                    this._toolbarPOControl.disable();
+                    this._toolbarPOTransform.disable();
                     this._toolbarText.disable();
                     this._toolbarDocStatus.disable();
                 }

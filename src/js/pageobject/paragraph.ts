@@ -1329,6 +1329,7 @@ export default class ActaParagraph extends IActaFrame {
     get value() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyle() { return this._defaultTextStyle; }
     get readonly() { return this._readonly; }
+    get isEditable() { return this.editable; }
 
     get textChars() {
         return this._textStore ? this._textStore.toArray() : [];

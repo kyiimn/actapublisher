@@ -2,6 +2,7 @@ import { fromEvent, Observable } from "rxjs";
 import { filter, map } from "rxjs/operators";
 
 import '../../css/ui/form.scss';
+import '../../css/ui/customicon.scss';
 
 type AttrMap = { [key: string]: string };
 type ItemList = { name: string, value: string }[];
@@ -41,6 +42,8 @@ type UIFormInputNumberOptions = {
     attr?: AttrMap,
     label?: string,
     suffix?: string,
+    icon?: string,
+    icontype?: string,
     min?: number,
     max?: number,
     step?: number,
@@ -184,6 +187,8 @@ class ActaUIFormBuilder {
             icon.className = 'material-icons';
             icon.innerHTML = iconname;
             icon.style.fontSize = 'inherit';
+        } else if (icontype === 'custom') {
+            icon.className = `custom-icons ${iconname}`;
         } else {
             icon.className = `${icontype || 'fa'} fa-${iconname}`;
         }
@@ -371,11 +376,20 @@ class ActaUIFormBuilder {
         input.setAttribute('id', `${opts.id}-INPUT`);
         input.setAttribute('type', 'number');
 
-        if (opts.label) {
+        if (opts.icon || opts.label) {
             const label = document.createElement('label');
             label.setAttribute('id', `${opts.id}-LABEL`);
             label.setAttribute('for', `${opts.id}-INPUT`);
-            label.innerHTML = opts.label;
+            if (opts.icon) {
+                const icon = this._makeIconElement(opts.icon, opts.icontype);
+                icon.style.fontSize = (opts.icontype === 'material') ? '1.4em' : '1.2em';
+                icon.style.verticalAlign = 'middle';
+                label.classList.add('icon');
+                label.appendChild(icon);
+                if (opts.label) label.setAttribute('title', opts.label);
+            } else if (opts.label) {
+                label.innerHTML = opts.label;
+            }
             li.appendChild(label);
         }
         if (opts.class) li.classList.add(opts.class);

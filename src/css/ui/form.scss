@@ -62,7 +62,7 @@ ul.ui-form {
                 min-width: 80px;
                 text-align: right;
 
-                &:after {
+                &:not(.icon):after {
                     content: ': ';
                 }
             }

@@ -120,7 +120,7 @@ class ActaToolbarPageObjectControl {
             this._itemMoveDown.observable.pipe(map(_ => 'move-down')),
             this._itemMoveRight.observable.pipe(map(_ => 'move-right'))
         ).subscribe(action => {
-            this._CHANGE$.next({ action, step: U.px(this._itemMoveStep1.value, accountInfo.frameUnitType) });
+            this._CHANGE$.next({ action, step: U.pt(this._itemMoveStep1.value, accountInfo.frameUnitType) });
         });
 
         merge(
@@ -129,7 +129,7 @@ class ActaToolbarPageObjectControl {
             this._itemMoveRightDown.observable.pipe(map(_ => 'move-rightdown')),
             this._itemMoveLeftDown.observable.pipe(map(_ => 'move-leftdown'))
         ).subscribe(action => {
-            this._CHANGE$.next({ action, step: U.px(this._itemMoveStep2.value, accountInfo.frameUnitType) });
+            this._CHANGE$.next({ action, step: U.pt(this._itemMoveStep2.value, accountInfo.frameUnitType) });
         });
 
         merge(

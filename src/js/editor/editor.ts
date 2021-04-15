@@ -312,11 +312,11 @@ export default class ActaEditor {
         if (!frame.isSelected) {
             if (!e.ctrlKey && !e.shiftKey) {
                 for (const selectedFrame of this._selectedFrames) {
-                    selectedFrame.classList.remove('selected');
+                    selectedFrame.unselect();
                 }
                 frame.focus({ preventScroll: true });
             } else {
-                frame.classList.add('selected');
+                frame.select();
             }
         }
     }
@@ -327,12 +327,12 @@ export default class ActaEditor {
 
         if (!e.ctrlKey && !e.shiftKey) {
             for (const selectedFrame of this._selectedFrames) {
-                selectedFrame.classList.remove('selected');
+                selectedFrame.unselect();
             }
             const members = groupmgr.getMember(this._page, frame) || [];
             for (const member of members) {
                 if (member === frame) continue;
-                member.classList.add('selected');
+                member.select();
             }
             frame.focus({ preventScroll: true });
         }
@@ -594,7 +594,7 @@ export default class ActaEditor {
                 case 'Escape':
                     for (const frame of selected) {
                         if (frame.isFocused) frame.blur();
-                        frame.classList.remove('selected');
+                        frame.unselect();
                     }
                     break;
                 default:
@@ -739,7 +739,7 @@ export default class ActaEditor {
         const allFrames = this._allFrames;
         this._tool = tool;
         if (EditorToolSelect.indexOf(this._tool) < 0) {
-            for (const frame of this._selectedFrames) frame.classList.remove('selected');
+            for (const frame of this._selectedFrames) frame.unselect();
             for (const frame of allFrames) frame.mode = 'NONE';
         } else {
             for (const frame of allFrames) {
@@ -753,7 +753,7 @@ export default class ActaEditor {
         if (this._tool === EditorTool.TEXT_MODE) {
             const focusedPara = this._focusedParagraph;
             if (!focusedPara) return;
-            if (focusedPara.classList.contains('editable')) return;
+            if (focusedPara.isEditable) return;
             focusedPara.switchEditable(true);
         } else {
             if ([EditorTool.FRAME_EDIT_MODE, EditorTool.FRAME_MOVE_MODE].concat(EditorToolDrawFrames).indexOf(this._tool) > -1) {

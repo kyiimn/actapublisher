@@ -6,6 +6,8 @@ import U from '../util/units';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+type CHANGE_TYPE = 'overlap' | 'width' | 'height' | 'padding-left' | 'padding-top' | 'padding-bottom' | 'padding-right' | 'border-left' | 'border-top' | 'border-bottom' | 'border-right' | 'border-color' | 'border-style';
+
 class ActaToolbarPageObjectTransform {
     private _toolbar: HTMLUListElement;
     private _itemSizeWidth;
@@ -18,8 +20,8 @@ class ActaToolbarPageObjectTransform {
     private _itemBorderTop;
     private _itemBorderBottom;
     private _itemBorderRight;
-    private _itemBorderColor;
-    private _itemBorderStyle;
+    // private _itemBorderColor;
+    // private _itemBorderStyle;
     private _itemOverlapMethodOverlap;
     private _itemOverlapMethodFramebox;
     private _itemOverlapMethodShape;
@@ -27,7 +29,7 @@ class ActaToolbarPageObjectTransform {
 
     private _disabled: boolean;
 
-    private _CHANGE$: Subject<{ action: string }>;
+    private _CHANGE$: Subject<{ action: CHANGE_TYPE, value: string }>;
 
     constructor() {
         this._CHANGE$ = new Subject();
@@ -38,154 +40,107 @@ class ActaToolbarPageObjectTransform {
         this._toolbar.classList.add('toolbar');
         this._toolbar.classList.add('pageobject-transform');
 
-        this._itemSizeWidth = formbuilder.inputNumber({ attr: { action: 'move-unit' }, label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_STEP, width: '3.6em', step: .01, min: 0 });
+        this._itemSizeWidth = formbuilder.inputNumber({ attr: { action: 'width' }, icon: 'arrows-alt-v', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_WIDTH, width: '3.6em', step: .01, min: 0 });
+        this._itemSizeHeight = formbuilder.inputNumber({ attr: { action: 'height' }, icon: 'arrows-alt-h', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_HEIGHT, width: '3.6em', step: .01, min: 0 });
+        this._itemPaddingLeft = formbuilder.inputNumber({ attr: { action: 'padding-left' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_LEFT, width: '3.6em', step: .01, min: 0 });
+        this._itemPaddingTop = formbuilder.inputNumber({ attr: { action: 'padding-top' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_TOP, width: '3.6em', step: .01, min: 0 });
+        this._itemPaddingBottom = formbuilder.inputNumber({ attr: { action: 'padding-bottom' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_BOTTOM, width: '3.6em', step: .01, min: 0 });
+        this._itemPaddingRight = formbuilder.inputNumber({ attr: { action: 'padding-right' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_RIGHT, width: '3.6em', step: .01, min: 0 });
+        this._itemBorderLeft = formbuilder.inputNumber({ attr: { action: 'border-left' }, icon: 'border_left', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_BORDER_LEFT, width: '3.6em', step: .01, min: 0 });
+        this._itemBorderTop = formbuilder.inputNumber({ attr: { action: 'border-top' }, icon: 'border_top', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_BORDER_TOP, width: '3.6em', step: .01, min: 0 });
+        this._itemBorderBottom = formbuilder.inputNumber({ attr: { action: 'border-bottom' }, icon: 'border_bottom', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_BORDER_BOTTOM, width: '3.6em', step: .01, min: 0 });
+        this._itemBorderRight = formbuilder.inputNumber({ attr: { action: 'border-right' }, icon: 'border_right', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_BORDER_RIGHT, width: '3.6em', step: .01, min: 0 });
 
-        this._itemFlipToBack = formbuilder.iconButton({ attr: { action: 'flip-to-back' }, icon: 'flip_to_back', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_FLIP_TO_BACK });
-        this._itemFlipToFront = formbuilder.iconButton({ attr: { action: 'flip-to-front' }, icon: 'flip_to_front', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_FLIP_TO_FRONT });
-        this._itemAlignCenter = formbuilder.iconButton({ attr: { action: 'align-center' }, icon: 'align_horizontal_center', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_ALIGN_CENTER });
-        this._itemAlignLeft = formbuilder.iconButton({ attr: { action: 'align-left' }, icon: 'align_horizontal_left', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_ALIGN_LEFT });
-        this._itemAlignRight = formbuilder.iconButton({ attr: { action: 'align-right' }, icon: 'align_horizontal_right', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_ALIGN_RIGHT });
-        this._itemVAlignMiddle = formbuilder.iconButton({ attr: { action: 'valign-middle' }, icon: 'align_vertical_center', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_VALIGN_MIDDLE });
-        this._itemVAlignTop = formbuilder.iconButton({ attr: { action: 'valign-top' }, icon: 'align_vertical_top', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_VALIGN_TOP });
-        this._itemVAlignBottom = formbuilder.iconButton({ attr: { action: 'valign-bottom' }, icon: 'align_vertical_bottom', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_VALIGN_BOTTOM });
-        this._itemMoveLeft = formbuilder.iconButton({ attr: { action: 'move-left' }, icon: 'arrow_back', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_LEFT });
-        this._itemMoveUp = formbuilder.iconButton({ attr: { action: 'move-up' }, icon: 'arrow_upward', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_UP });
-        this._itemMoveDown = formbuilder.iconButton({ attr: { action: 'move-down' }, icon: 'arrow_downward', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_DOWM });
-        this._itemMoveRight = formbuilder.iconButton({ attr: { action: 'move-right' }, icon: 'arrow_forward', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_RIGHT });
-        this._itemMoveStep1 = formbuilder.inputNumber({ attr: { action: 'move-unit' }, label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_STEP, width: '3.6em', step: .01, min: 0 });
-        this._itemMoveLeftUp = formbuilder.iconButton({ attr: { action: 'move-leftup' }, icon: 'north_west', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_LEFTUP });
-        this._itemMoveRightUp = formbuilder.iconButton({ attr: { action: 'move-rightup' }, icon: 'north_east', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_RIGHTUP });
-        this._itemMoveLeftDown = formbuilder.iconButton({ attr: { action: 'move-leftdown' }, icon: 'south_west', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_LEFTDOWN });
-        this._itemMoveRightDown = formbuilder.iconButton({ attr: { action: 'move-rightdown' }, icon: 'south_east', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_RIGHTDOWN });
-        this._itemMoveStep2 = formbuilder.inputNumber({ attr: { action: 'move-munit' }, label: message.TOOLBAR.PAGEOBJECT_CONTROL_MOVE_STEP, width: '3.6em', step: .01, min: 0 });
-        this._itemRotateLeft = formbuilder.iconButton({ attr: { action: 'rotate-left' }, icon: 'rotate_left', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_ROTATE_LEFT });
-        this._itemRotateRight = formbuilder.iconButton({ attr: { action: 'rotate-right' }, icon: 'rotate_right', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_ROTATE_RIGHT });
-        this._itemRotateStep = formbuilder.inputNumber({ attr: { action: 'rotate-munit' }, label: message.TOOLBAR.PAGEOBJECT_CONTROL_ROTATE_STEP, suffix: '˚', width: '3.6em', step: .1, min: -360, max: 360 });
-        this._itemRemove = formbuilder.iconButton({ attr: { action: 'remove' }, icon: 'delete', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_REMOVE });
+        this._itemOverlapMethodOverlap = formbuilder.iconButton({ icon: 'flow-overlap', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_OVERLAP });
+        this._itemOverlapMethodFramebox = formbuilder.iconButton({ icon: 'flow-framebox', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_FRAMEBOX });
+        this._itemOverlapMethodShape = formbuilder.iconButton({ icon: 'flow-shape', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_SHAPE });
+        this._itemOverlapMethodJump = formbuilder.iconButton({ icon: 'flow-jump', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_JUMP });
 
-        this._itemMoveStep1.value = '2';
-        this._itemMoveStep2.value = '2';
-        this._itemRotateStep.value = '90';
-
-        this._toolbar.appendChild(this._itemFlipToBack.el);
-        this._toolbar.appendChild(this._itemFlipToFront.el);
+        this._toolbar.appendChild(this._itemSizeWidth.el);
+        this._toolbar.appendChild(this._itemSizeHeight.el);
         this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemAlignCenter.el);
-        this._toolbar.appendChild(this._itemAlignLeft.el);
-        this._toolbar.appendChild(this._itemAlignRight.el);
+        this._toolbar.appendChild(this._itemPaddingLeft.el);
+        this._toolbar.appendChild(this._itemPaddingTop.el);
+        this._toolbar.appendChild(this._itemPaddingBottom.el);
+        this._toolbar.appendChild(this._itemPaddingRight.el);
         this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemVAlignMiddle.el);
-        this._toolbar.appendChild(this._itemVAlignTop.el);
-        this._toolbar.appendChild(this._itemVAlignBottom.el);
+        this._toolbar.appendChild(this._itemBorderLeft.el);
+        this._toolbar.appendChild(this._itemBorderTop.el);
+        this._toolbar.appendChild(this._itemBorderBottom.el);
+        this._toolbar.appendChild(this._itemBorderRight.el);
         this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemMoveLeft.el);
-        this._toolbar.appendChild(this._itemMoveUp.el);
-        this._toolbar.appendChild(this._itemMoveDown.el);
-        this._toolbar.appendChild(this._itemMoveRight.el);
-        this._toolbar.appendChild(this._itemMoveStep1.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemMoveLeftUp.el);
-        this._toolbar.appendChild(this._itemMoveRightUp.el);
-        this._toolbar.appendChild(this._itemMoveLeftDown.el);
-        this._toolbar.appendChild(this._itemMoveRightDown.el);
-        this._toolbar.appendChild(this._itemMoveStep2.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemRotateLeft.el);
-        this._toolbar.appendChild(this._itemRotateRight.el);
-        this._toolbar.appendChild(this._itemRotateStep.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemRemove.el);
+        this._toolbar.appendChild(this._itemOverlapMethodOverlap.el);
+        this._toolbar.appendChild(this._itemOverlapMethodFramebox.el);
+        this._toolbar.appendChild(this._itemOverlapMethodShape.el);
+        this._toolbar.appendChild(this._itemOverlapMethodJump.el);
 
         merge(
-            this._itemFlipToBack.observable.pipe(map(_ => 'flip-to-back')),
-            this._itemFlipToFront.observable.pipe(map(_ => 'flip-to-front')),
-            this._itemAlignCenter.observable.pipe(map(_ => 'align-center')),
-            this._itemAlignLeft.observable.pipe(map(_ => 'align-left')),
-            this._itemAlignRight.observable.pipe(map(_ => 'align-right')),
-            this._itemVAlignMiddle.observable.pipe(map(_ => 'valign-middle')),
-            this._itemVAlignTop.observable.pipe(map(_ => 'valign-top')),
-            this._itemVAlignBottom.observable.pipe(map(_ => 'valign-bottom')),
-            this._itemRemove.observable.pipe(map(_ => 'remove')),
-        ).subscribe(action => {
-            this._CHANGE$.next({ action });
+            this._itemOverlapMethodOverlap.observable.pipe(map(_ => 'overlap')),
+            this._itemOverlapMethodFramebox.observable.pipe(map(_ => 'framebox')),
+            this._itemOverlapMethodShape.observable.pipe(map(_ => 'shape')),
+            this._itemOverlapMethodJump.observable.pipe(map(_ => 'jump'))
+        ).subscribe(value => {
+            this._itemOverlapMethodOverlap.value = value === 'overlap' ? true : false;
+            this._itemOverlapMethodFramebox.value = value === 'framebox' ? true : false;
+            this._itemOverlapMethodShape.value = value === 'shape' ? true : false;
+            this._itemOverlapMethodJump.value = value === 'jump' ? true : false;
+            this._CHANGE$.next({ action: 'overlap', value });
         });
 
-        merge(
-            this._itemMoveLeft.observable.pipe(map(_ => 'move-left')),
-            this._itemMoveUp.observable.pipe(map(_ => 'move-up')),
-            this._itemMoveDown.observable.pipe(map(_ => 'move-down')),
-            this._itemMoveRight.observable.pipe(map(_ => 'move-right'))
-        ).subscribe(action => {
-            this._CHANGE$.next({ action, step: U.px(this._itemMoveStep1.value, accountInfo.frameUnitType) });
-        });
-
-        merge(
-            this._itemMoveLeftUp.observable.pipe(map(_ => 'move-leftup')),
-            this._itemMoveRightUp.observable.pipe(map(_ => 'move-rightup')),
-            this._itemMoveRightDown.observable.pipe(map(_ => 'move-rightdown')),
-            this._itemMoveLeftDown.observable.pipe(map(_ => 'move-leftdown'))
-        ).subscribe(action => {
-            this._CHANGE$.next({ action, step: U.px(this._itemMoveStep2.value, accountInfo.frameUnitType) });
-        });
-
-        merge(
-            this._itemRotateLeft.observable.pipe(map(_ => 'rotate-left')),
-            this._itemRotateRight.observable.pipe(map(_ => 'rotate-right'))
-        ).subscribe(action => {
-            this._CHANGE$.next({ action, step: parseFloat(this._itemRotateStep.value) });
+        merge<any[]>(
+            this._itemSizeWidth.observable.pipe(map(e => [ 'width', e.value] )),
+            this._itemSizeHeight.observable.pipe(map(e => ['height', e.value] )),
+            this._itemPaddingLeft.observable.pipe(map(e => ['padding-left', e.value] )),
+            this._itemPaddingTop.observable.pipe(map(e => ['padding-top', e.value] )),
+            this._itemPaddingBottom.observable.pipe(map(e => ['padding-bottom', e.value] )),
+            this._itemPaddingRight.observable.pipe(map(e => ['padding-right', e.value] )),
+            this._itemBorderLeft.observable.pipe(map(e => ['border-left', e.value] )),
+            this._itemBorderTop.observable.pipe(map(e => ['border-top', e.value] )),
+            this._itemBorderBottom.observable.pipe(map(e => ['border-bottom', e.value] )),
+            this._itemBorderRight.observable.pipe(map(e => ['border-right', e.value] ))
+        ).subscribe(value => {
+            this._CHANGE$.next({ action: value[0], value: U.pt(value[1], accountInfo.frameUnitType).toString() });
         });
     }
 
     enable() {
-        this._itemFlipToBack.disabled = false;
-        this._itemFlipToFront.disabled = false;
-        this._itemAlignCenter.disabled = false;
-        this._itemAlignLeft.disabled = false;
-        this._itemAlignRight.disabled = false;
-        this._itemVAlignMiddle.disabled = false;
-        this._itemVAlignTop.disabled = false;
-        this._itemVAlignBottom.disabled = false;
-        this._itemMoveLeft.disabled = false;
-        this._itemMoveUp.disabled = false;
-        this._itemMoveDown.disabled = false;
-        this._itemMoveRight.disabled = false;
-        this._itemMoveStep1.disabled = false;
-        this._itemMoveLeftUp.disabled = false;
-        this._itemMoveRightUp.disabled = false;
-        this._itemMoveLeftDown.disabled = false;
-        this._itemMoveRightDown.disabled = false;
-        this._itemMoveStep2.disabled = false;
-        this._itemRotateLeft.disabled = false;
-        this._itemRotateRight.disabled = false;
-        this._itemRotateStep.disabled = false;
-        this._itemRemove.disabled = false;
+        this._itemSizeWidth.disabled = false;
+        this._itemSizeHeight.disabled = false;
+        this._itemPaddingLeft.disabled = false;
+        this._itemPaddingTop.disabled = false;
+        this._itemPaddingBottom.disabled = false;
+        this._itemPaddingRight.disabled = false;
+        this._itemBorderLeft.disabled = false;
+        this._itemBorderTop.disabled = false;
+        this._itemBorderBottom.disabled = false;
+        this._itemBorderRight.disabled = false;
+        // this._itemBorderColor.disabled = false;
+        // this._itemBorderStyle.disabled = false;
+        this._itemOverlapMethodOverlap.disabled = false;
+        this._itemOverlapMethodFramebox.disabled = false;
+        this._itemOverlapMethodShape.disabled = false;
+        this._itemOverlapMethodJump.disabled = false;
 
         this._disabled = false;
     }
 
     disable() {
-        this._itemFlipToBack.disabled = true;
-        this._itemFlipToFront.disabled = true;
-        this._itemAlignCenter.disabled = true;
-        this._itemAlignLeft.disabled = true;
-        this._itemAlignRight.disabled = true;
-        this._itemVAlignMiddle.disabled = true;
-        this._itemVAlignTop.disabled = true;
-        this._itemVAlignBottom.disabled = true;
-        this._itemMoveLeft.disabled = true;
-        this._itemMoveUp.disabled = true;
-        this._itemMoveDown.disabled = true;
-        this._itemMoveRight.disabled = true;
-        this._itemMoveStep1.disabled = true;
-        this._itemMoveLeftUp.disabled = true;
-        this._itemMoveRightUp.disabled = true;
-        this._itemMoveLeftDown.disabled = true;
-        this._itemMoveRightDown.disabled = true;
-        this._itemMoveStep2.disabled = true;
-        this._itemRotateLeft.disabled = true;
-        this._itemRotateRight.disabled = true;
-        this._itemRotateStep.disabled = true;
-        this._itemRemove.disabled = true;
+        this._itemSizeWidth.disabled = true;
+        this._itemSizeHeight.disabled = true;
+        this._itemPaddingLeft.disabled = true;
+        this._itemPaddingTop.disabled = true;
+        this._itemPaddingBottom.disabled = true;
+        this._itemPaddingRight.disabled = true;
+        this._itemBorderLeft.disabled = true;
+        this._itemBorderTop.disabled = true;
+        this._itemBorderBottom.disabled = true;
+        this._itemBorderRight.disabled = true;
+        // this._itemBorderColor.disabled = true;
+        // this._itemBorderStyle.disabled = true;
+        this._itemOverlapMethodOverlap.disabled = true;
+        this._itemOverlapMethodFramebox.disabled = true;
+        this._itemOverlapMethodShape.disabled = true;
+        this._itemOverlapMethodJump.disabled = true;
 
         this._disabled = true;
     }
@@ -194,4 +149,4 @@ class ActaToolbarPageObjectTransform {
     get disabled() { return this._disabled; }
     get el() { return this._toolbar; }
 }
-export default ActaToolbarPageObjectControl;
+export default ActaToolbarPageObjectTransform;

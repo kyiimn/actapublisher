@@ -262,9 +262,19 @@ export default abstract class IActaFrame extends IActaElement {
     }
 
     blur() {
+        super.blur();
+
         this.classList.remove('focus');
         this._focused = false;
         this._onBlur();
+    }
+
+    select() {
+        this.classList.add('selected');
+    }
+
+    unselect() {
+        this.classList.remove('selected');
     }
 
     set x(x: string | number) { this.setAttribute('x', x.toString()); }

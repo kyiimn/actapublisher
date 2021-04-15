@@ -111,6 +111,8 @@ class ActaToolbarPageObjectDraw {
     }
 
     onKeydown(e: KeyboardEvent) {
+        if (!e.altKey) return true;
+
         switch (e.key.toUpperCase()) {
             case 'S': this.value = EditorTool.SELECT; break;
             case 'E': this.value = EditorTool.FRAME_EDIT_MODE; break;
