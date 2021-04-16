@@ -4,7 +4,7 @@ import IActaElement from './interface/element';
 import U from '../util/units';
 
 import { fromEvent, Subject } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import "../../css/pageobject/page.scss";
 
@@ -13,6 +13,8 @@ export default class ActaPage extends IActaElement {
     private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;
     private _CHANGE_FOCUS$: Subject<IActaFrame>;
     private _CHANGE_SCALE$: Subject<{ width: number, height: number }>;
+
+    private _CHANGE_SELECT_FRAMES$: Subject<IActaFrame[]>;
 
     private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
     private _OBSERVER_CHANGE_FRAME_STYLE$: MutationObserver;
@@ -65,6 +67,21 @@ export default class ActaPage extends IActaElement {
         }
     }
 
+    private _getChildFrames(parent?: IActaFrame) {
+        const frames: IActaFrame[] = [];
+        (parent || this).childNodes.forEach(child => {
+            if (child instanceof IActaFrame) frames.push(child);
+        });
+        frames.sort((x, y) => ((x.order < y.order) ? -1 : ((x.order > y.order) ? 1 : 0)));
+        return frames;
+    }
+
+    private subscribeChangeSelectFrame(observer: Subject<IActaFrame>) {
+        observer.subscribe(_ => {
+            this._CHANGE_SELECT_FRAMES$.next(this.selectedFrames);
+        });
+    }
+
     constructor(width?: string | number, height?: string | number) {
         super();
 
@@ -80,6 +97,8 @@ export default class ActaPage extends IActaElement {
             }
             src.overlapObservable.next(src);
         });
+
+        this._CHANGE_SELECT_FRAMES$ = new Subject();
 
         this._OBSERVER_CHANGE_FRAME_STYLE$ = new MutationObserver(mutations => {
             if (mutations.length > 0) this._updateOverlapFrameList();
@@ -99,6 +118,7 @@ export default class ActaPage extends IActaElement {
                     } else if (removedNode instanceof IActaFrame) {
                         const node = removedNode as IActaFrame;
                         node.unsubscribeChangeFocus();
+                        node.observableChangeSelect.unsubscribe();
                     }
                 }
                 for (let i = 0; i < m.addedNodes.length; i++) {
@@ -121,6 +141,8 @@ export default class ActaPage extends IActaElement {
                             this._CHANGE_FOCUS$.next(target);
                         });
                         node.subscribeChangeFocus(this._CHANGE_FOCUS$);
+
+                        this.subscribeChangeSelectFrame(node.observableChangeSelect);
                     }
                 }
             });
@@ -172,12 +194,30 @@ export default class ActaPage extends IActaElement {
 
     get guide() { return this._guide; }
 
-    get frames() {
+    get observableChangeSelectFrames() {
+        return this._CHANGE_SELECT_FRAMES$.pipe(distinctUntilChanged((a, b) => {
+            if (a.length !== b.length) return false;
+            for (const c of a) {
+                if (b.indexOf(c) < 0) return false;
+            }
+            return true;
+        }));
+    }
+
+    get topFrames() {
+        return this._getChildFrames();
+    }
+
+    get selectedFrames() {
+        return [... this.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected')];
+    }
+
+    get allFrames() {
+        const children = this.querySelectorAll('*');
         const frames: IActaFrame[] = [];
-        this.childNodes.forEach(child => {
-            if (child instanceof IActaFrame) frames.push(child);
-        });
-        frames.sort((x, y) => ((x.order < y.order) ? -1 : ((x.order > y.order) ? 1 : 0)));
+        for (const el of children) {
+            if (el instanceof IActaFrame) frames.push(el);
+        }
         return frames;
     }
 };

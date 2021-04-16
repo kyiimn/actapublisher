@@ -1,3 +1,5 @@
+import { IActaFrameAttribute } from '../pageobject/interface/frame';
+
 import message from '../ui/message';
 import formbuilder from '../ui/form';
 import accountInfo from '../info/account';
@@ -145,8 +147,13 @@ class ActaToolbarPageObjectTransform {
         this._disabled = true;
     }
 
+    set value(value: IActaFrameAttribute | null) {
+        console.log(value);
+    }
+
     get observable() { return this._CHANGE$; }
     get disabled() { return this._disabled; }
+    get value() { return {}; }
     get el() { return this._toolbar; }
 }
 export default ActaToolbarPageObjectTransform;

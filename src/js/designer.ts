@@ -16,6 +16,9 @@ import formbuilder from './ui/form';
 import uialert from './ui/alert';
 import waitbar from './ui/waitbar';
 
+import IActaFrame, { IActaFrameAttribute } from './pageobject/interface/frame';
+import U from './util/units';
+
 import { fromEvent, merge } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
@@ -199,6 +202,28 @@ class Designer {
             this._toolbarPODraw.value = value;
         } else if (action === 'textstyle') {
             this._toolbarText.data = value;
+        } else if (action === 'selectframe') {
+            const frames = value as IActaFrame[];
+            if (frames.length < 1) {
+                this._toolbarPOTransform.value = null;
+            } else {
+                let attr: IActaFrameAttribute = frames[0].frameAttribute;
+                for (const frame of value) {
+                    const fattr = frame.frameAttribute;
+                    if (U.pt(attr.width) !== U.pt(fattr.width)) attr.width = undefined;
+                    if (U.pt(attr.height) !== U.pt(fattr.height)) attr.height = undefined;
+                    if (U.pt(attr.paddingLeft) !== U.pt(fattr.paddingLeft)) attr.paddingLeft = undefined;
+                    if (U.pt(attr.paddingTop) !== U.pt(fattr.paddingTop)) attr.paddingTop = undefined;
+                    if (U.pt(attr.paddingBottom) !== U.pt(fattr.paddingBottom)) attr.paddingBottom = undefined;
+                    if (U.pt(attr.paddingRight) !== U.pt(fattr.paddingRight)) attr.paddingRight = undefined;
+                    if (U.pt(attr.borderLeft) !== U.pt(fattr.borderLeft)) attr.borderLeft = undefined;
+                    if (U.pt(attr.borderTop) !== U.pt(fattr.borderTop)) attr.borderTop = undefined;
+                    if (U.pt(attr.borderBottom) !== U.pt(fattr.borderBottom)) attr.borderBottom = undefined;
+                    if (U.pt(attr.borderRight) !== U.pt(fattr.borderRight)) attr.borderRight = undefined;
+                    if (U.pt(attr.overlapMethod) !== U.pt(fattr.overlapMethod)) attr.overlapMethod = undefined;
+                }
+                this._toolbarPOTransform.value = attr;
+            }
         }
     }
 

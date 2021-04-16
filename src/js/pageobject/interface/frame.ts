@@ -16,6 +16,20 @@ export enum FrameOverlapMethod {
     JUMP            // 라인점프
 };
 
+export interface IActaFrameAttribute {
+    width?: number | string,
+    height?: number | string,
+    paddingLeft?: number | string,
+    paddingTop?: number | string,
+    paddingBottom?: number | string,
+    paddingRight?: number | string,
+    borderLeft?: number | string,
+    borderTop?: number | string,
+    borderBottom?: number | string,
+    borderRight?: number | string,
+    overlapMethod?: FrameOverlapMethod
+};
+
 export default abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeFocus?: Subscription;
     private _overlapFrames: IActaFrame[];
@@ -30,7 +44,8 @@ export default abstract class IActaFrame extends IActaElement {
 
     protected _preflightProfiles: IActaPreflightProfile[];
 
-    protected _CHANGE_SIZE$: Subject<undefined>;
+    protected _CHANGE_SELECT$: Subject<IActaFrame>;
+    protected _CHANGE_SIZE$: Subject<IActaFrame>;
     protected _OVERLAP$: Subject<IActaFrame>;
 
     static get observedAttributes() {
@@ -118,7 +133,8 @@ export default abstract class IActaFrame extends IActaElement {
         this._EMIT_CHANGE_SIZE();
     }
 
-    protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(); }
+    protected _EMIT_CHANGE_SELECT() { this._CHANGE_SELECT$.next(this); }
+    protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(this); }
 
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
@@ -132,6 +148,7 @@ export default abstract class IActaFrame extends IActaElement {
         this._mode = 'NONE';
 
         this._CHANGE_SIZE$ = new Subject();
+        this._CHANGE_SELECT$ = new Subject();
         this._OVERLAP$ = new Subject();
         this._OVERLAP$.subscribe(_ => this._onOverlap());
 
@@ -205,6 +222,7 @@ export default abstract class IActaFrame extends IActaElement {
                 this._focused = false;
                 this._onBlur();
             }
+            this._EMIT_CHANGE_SELECT();
         });
     }
 
@@ -267,14 +285,18 @@ export default abstract class IActaFrame extends IActaElement {
         this.classList.remove('focus');
         this._focused = false;
         this._onBlur();
+
+        this._EMIT_CHANGE_SELECT();
     }
 
     select() {
         this.classList.add('selected');
+        this._EMIT_CHANGE_SELECT();
     }
 
     unselect() {
         this.classList.remove('selected');
+        this._EMIT_CHANGE_SELECT();
     }
 
     set x(x: string | number) { this.setAttribute('x', x.toString()); }
@@ -332,12 +354,30 @@ export default abstract class IActaFrame extends IActaElement {
     get isFocused() { return this._focused; }
     get isSelected() { return (this._focused || this.classList.contains('selected')) ? true : false; }
 
+    get observableChangeSelect() { return this._CHANGE_SELECT$; }
+
     get order() {
         const parentElement = this.parentElement;
         if (!parentElement) return -1;
 
         const children = [... parentElement.children];
         return children.indexOf(this) + 1;
+    }
+
+    get frameAttribute(): IActaFrameAttribute {
+        return {
+            width: this.width,
+            height: this.height,
+            paddingTop: this.paddingTop,
+            paddingBottom: this.paddingBottom,
+            paddingLeft: this.paddingLeft,
+            paddingRight: this.paddingRight,
+            borderTop: this.borderTop,
+            borderBottom: this.borderBottom,
+            borderLeft: this.borderLeft,
+            borderRight: this.borderRight,
+            overlapMethod: this.overlapMethod
+        };
     }
 
     abstract preflight(): void;
