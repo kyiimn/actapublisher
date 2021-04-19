@@ -10,7 +10,7 @@ import { IActaEditorTextAttribute } from '../editor/editor';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-type CHANGE_TYPE = 'textstyle' | 'font' | 'fontsize' | 'indent' | 'xscale' | 'letterspacing' | 'lineheight' | 'underline' | 'strikeline' | 'align';
+type CHANGE_ATTR = 'textstyle' | 'font' | 'fontsize' | 'indent' | 'xscale' | 'letterspacing' | 'lineheight' | 'underline' | 'strikeline' | 'align';
 
 class ActaToolbarText {
     private _toolbar: HTMLUListElement;
@@ -30,7 +30,7 @@ class ActaToolbarText {
 
     private _disabled: boolean;
 
-    private _CHANGE$: Subject<[IActaEditorTextAttribute, CHANGE_TYPE]>;
+    private _CHANGE$: Subject<{ attr: CHANGE_ATTR, value: IActaEditorTextAttribute }>;
 
     constructor() {
         this._CHANGE$ = new Subject();
@@ -110,7 +110,7 @@ class ActaToolbarText {
             this._itemStrikeline.value = !this._itemStrikeline.value;
             this._changeValues('strikeline');
         });
-        merge<CHANGE_TYPE>(
+        merge<CHANGE_ATTR>(
             this._itemFont.observable.pipe(map(_ => 'font')),
             this._itemFontSize.observable.pipe(map(_ => 'fontsize')),
             this._itemIndent.observable.pipe(map(_ => 'indent')),
@@ -152,8 +152,8 @@ class ActaToolbarText {
         this._itemAlignRight.value = textstyle.textAlign === TextAlign.RIGHT ? true : false;
     }
 
-    private _changeValues(type: CHANGE_TYPE) {
-        this._CHANGE$.next([this.data, type]);
+    private _changeValues(attr: CHANGE_ATTR) {
+        if (this.data) this._CHANGE$.next({ attr, value: this.data });
     }
 
     enable() {
@@ -192,25 +192,43 @@ class ActaToolbarText {
         this._disabled = true;
     }
 
-    set data(data: IActaEditorTextAttribute) {
+    set data(data: IActaEditorTextAttribute | null) {
         const unit = accountInfo.textUnitType;
 
-        if (data.textStyle !== undefined) {
-            this._itemTextStyle.value = data.textStyle;
-            this._changeTextStyle(data.textStyle);
+        if (data) {
+            if (data.textStyle !== undefined) {
+                this._itemTextStyle.value = data.textStyle;
+                this._changeTextStyle(data.textStyle);
+            }
+            this._itemFont.value = data.fontName === undefined ? '' : data.fontName;
+            this._itemFontSize.value = data.fontSize === undefined ? '' : U.convert(unit, data.fontSize).toFixed(2);
+            this._itemIndent.value = data.indent === undefined ? '' : U.convert(unit, data.indent).toFixed(2);
+            this._itemXScale.value = data.xscale === undefined ? '' : (data.xscale * 100).toString();
+            this._itemLetterSpacing.value = data.letterSpacing === undefined ? '' : U.convert(unit, data.letterSpacing).toFixed(2);
+            this._itemLineHeight.value = data.lineHeight === undefined ? '' : (data.lineHeight * 100).toString();
+            if (data.underline !== undefined) this._itemUnderline.value = data.underline;
+            if (data.strikeline !== undefined) this._itemStrikeline.value = data.strikeline;
+            this._itemAlignJustify.value = data.textAlign === TextAlign.JUSTIFY ? true : false;
+            this._itemAlignLeft.value = data.textAlign === TextAlign.LEFT ? true : false;
+            this._itemAlignCenter.value = data.textAlign === TextAlign.CENTER ? true : false;
+            this._itemAlignRight.value = data.textAlign === TextAlign.RIGHT ? true : false;
+            this.enable();
+        } else {
+            this._itemTextStyle.value = '';
+            this._itemFont.value = '';
+            this._itemFontSize.value = '';
+            this._itemIndent.value = '';
+            this._itemXScale.value = '';
+            this._itemLetterSpacing.value = '';
+            this._itemLineHeight.value = '';
+            this._itemUnderline.value = false;
+            this._itemStrikeline.value = false;
+            this._itemAlignJustify.value = false;
+            this._itemAlignLeft.value = false;
+            this._itemAlignCenter.value = false;
+            this._itemAlignRight.value = false;
+            this.disable();
         }
-        this._itemFont.value = data.fontName === undefined ? '' : data.fontName;
-        this._itemFontSize.value = data.fontSize === undefined ? '' : U.convert(unit, data.fontSize).toFixed(2);
-        this._itemIndent.value = data.indent === undefined ? '' : U.convert(unit, data.indent).toFixed(2);
-        this._itemXScale.value = data.xscale === undefined ? '' : (data.xscale * 100).toString();
-        this._itemLetterSpacing.value = data.letterSpacing === undefined ? '' : U.convert(unit, data.letterSpacing).toFixed(2);
-        this._itemLineHeight.value = data.lineHeight === undefined ? '' : (data.lineHeight * 100).toString();
-        if (data.underline !== undefined) this._itemUnderline.value = data.underline;
-        if (data.strikeline !== undefined) this._itemStrikeline.value = data.strikeline;
-        this._itemAlignJustify.value = data.textAlign === TextAlign.JUSTIFY ? true : false;
-        this._itemAlignLeft.value = data.textAlign === TextAlign.LEFT ? true : false;
-        this._itemAlignCenter.value = data.textAlign === TextAlign.CENTER ? true : false;
-        this._itemAlignRight.value = data.textAlign === TextAlign.RIGHT ? true : false;
     }
 
     get data() {

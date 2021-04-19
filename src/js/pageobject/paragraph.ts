@@ -14,13 +14,15 @@ import textstylemgr from './textstyle/textstylemgr';
 import { CharType } from './text/textchar';
 
 import { Subject, fromEvent, Observable } from 'rxjs';
-import { distinctUntilChanged, debounceTime, filter } from 'rxjs/operators';
+import { distinctUntilChanged, debounceTime, filter, map } from 'rxjs/operators';
 
 import Hangul from 'hangul-js';
 import SelectHanja from './hanja';
 import U from '../util/units';
 
 import "../../css/pageobject/paragraph.scss";
+
+type CHANGE_ACTION = 'cursormove' | 'changeeditable';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
     'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
@@ -140,7 +142,8 @@ export default class ActaParagraph extends IActaFrame {
 
     private _REPAINT$: Subject<undefined>;
     private _REPAINT_CURSOR$: Subject<string>;
-    private _MOVE_CURSOR$: Subject<{ paragraph: ActaParagraph, cursor: number}>;
+    private _CHANGE$: Subject<{ action: CHANGE_ACTION, value: any }>;
+    private _MOVE_CURSOR$: Subject<number>;
 
     private static _INPUT_METHOD:InputMethod = InputMethod.EN;
     private static _CHNAGE_INPUT_METHOD$: Subject<InputMethod> = new Subject();
@@ -935,13 +938,13 @@ export default class ActaParagraph extends IActaFrame {
     private set cursor(pos) {
         if (pos !== null && this._cursor !== pos) this._cursorTextAttribute = undefined;
         this._cursor = pos;
-        if (pos !== null) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
+        if (pos !== null) this._MOVE_CURSOR$.next(pos);
     }
 
     private set selectionStart(pos) {
         if (pos !== null && this._selectionStart !== pos) this._cursorTextAttribute = undefined;
         this._selectionStart = pos;
-        if (pos !== null) this._MOVE_CURSOR$.next({ paragraph: this, cursor: pos });
+        if (pos !== null) this._MOVE_CURSOR$.next(pos);
     }
 
     private get selectionStart() {
@@ -952,8 +955,10 @@ export default class ActaParagraph extends IActaFrame {
         this._editable = value;
         if (this._editable) {
             this.classList.add('editable');
+            this._CHANGE$.next({ action: 'changeeditable', value: true });
         } else {
             this.classList.remove('editable');
+            this._CHANGE$.next({ action: 'changeeditable', value: false });
         }
     }
 
@@ -988,7 +993,13 @@ export default class ActaParagraph extends IActaFrame {
         this._REPAINT$ = new Subject();
         this._REPAINT$.pipe(debounceTime(.005)).subscribe(() => this._repaint());
 
+        this._CHANGE$ = new Subject();
+
         this._MOVE_CURSOR$ = new Subject();
+        this._MOVE_CURSOR$.pipe(
+            filter(pos => [CursorMode.INPUT, CursorMode.NONE].indexOf(this._cursorMode) < 0 && this.isFocused && this.editable),
+            distinctUntilChanged()
+        ).subscribe(pos => this._CHANGE$.next({ action: 'cursormove', value: pos }));
 
         this._columnCount = 1;
         this._innerMargin = 0;
@@ -1317,19 +1328,17 @@ export default class ActaParagraph extends IActaFrame {
         this._readonly = val;
     }
 
-    set onMoveCursor(func: (data: { paragraph: ActaParagraph, cursor: number }) => void) {
-        this._MOVE_CURSOR$.pipe(
-            filter(pos => [CursorMode.INPUT, CursorMode.NONE].indexOf(this._cursorMode) < 0 && this.isFocused && this.editable),
-            distinctUntilChanged((p, n) => p === n, v => v.cursor)
-        ).subscribe(func);
-    }
-
     get columnCount() { return this._columnCount; }
     get innerMargin() { return this._innerMargin; }
     get value() { return this._textStore ? this._textStore.markupText : ''; }
     get defaultTextStyle() { return this._defaultTextStyle; }
     get readonly() { return this._readonly; }
     get isEditable() { return this.editable; }
+    get observable() {
+        return this._CHANGE$.pipe(map(o => {
+            return { paragraph: this, action: o.action, value: o.value };
+        }));
+    }
 
     get textChars() {
         return this._textStore ? this._textStore.toArray() : [];

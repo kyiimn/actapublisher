@@ -3,7 +3,7 @@ import ActaGuide from '../pageobject/guide';
 import ActaParagraph from '../pageobject/paragraph';
 import ActaTextAttribute from '../pageobject/textstyle/textattribute';
 import ActaImage from '../pageobject/image';
-import IActaFrame from '../pageobject/interface/frame';
+import IActaFrame, { FrameOverlapMethod } from '../pageobject/interface/frame';
 import accountInfo from '../info/account';
 import groupmgr from '../pageobject/groupmgr';
 import U from '../util/units';
@@ -406,7 +406,6 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultBodyTextStyle
                     );
-                    paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
                     paragraph.readonly = true;
                     frame = paragraph;
                 }
@@ -421,7 +420,7 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
                     );
-                    paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
+                    paragraph.observable.subscribe(x => this._onParagraphChange(x.paragraph, x.action, x.value));
                     changetool = EditorTool.TEXT_MODE;
                     frame = paragraph;
                 }
@@ -432,7 +431,7 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultTitleTextStyle
                     );
-                    paragraph.onMoveCursor = (x) => this._onParagraphMoveCursor(x.paragraph, x.cursor);
+                    paragraph.observable.subscribe(x => this._onParagraphChange(x.paragraph, x.action, x.value));
                     changetool = EditorTool.TEXT_MODE;
                     frame = paragraph;
                 }
@@ -449,7 +448,20 @@ export default class ActaEditor {
         if (changetool) this._EVENT$.next({ action: 'changetool', value: changetool });
     }
 
-    private _onParagraphMoveCursor(paragraph: ActaParagraph, _: number) {
+    private _onParagraphChange(paragraph: ActaParagraph, action: string, value: any) {
+        switch (action) {
+            case 'changeeditable':
+                if (!value) this._EVENT$.next({ action: 'textstyle', value: null });
+                break;
+            case 'cursormove':
+                this._onParagraphCursorMove(paragraph);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private _onParagraphCursorMove(paragraph: ActaParagraph) {
         const textStyle = paragraph.getTextStyleAtCursor(true);
         const textAttr = paragraph.getTextAttributeAtCursor(true);
         const tbData: IActaEditorTextAttribute = {};
@@ -712,24 +724,48 @@ export default class ActaEditor {
         }
     }
 
-    setTextAttribute(tbData: IActaEditorTextAttribute, type: string) {
+    setTextAttribute(attr: string, value: IActaEditorTextAttribute) {
         const paragraph = this._page.querySelector<ActaParagraph>('x-paragraph.focus.editable');
         if (!paragraph) return;
 
-        if (type === 'textstyle') {
-            if (tbData.textStyle) paragraph.setTextStyleAtCursor(tbData.textStyle);
+        if (attr === 'textstyle') {
+            if (value.textStyle) paragraph.setTextStyleAtCursor(value.textStyle);
         } else {
             const textAttr = new ActaTextAttribute();
-            if (type === 'font') textAttr.fontName = tbData.fontName || '';
-            if (type === 'fontsize') textAttr.fontSize = tbData.fontSize !== undefined ? tbData.fontSize : null;
-            if (type === 'xscale') textAttr.xscale = tbData.xscale !== undefined ? tbData.xscale : null;
-            if (type === 'letterspacing') textAttr.letterSpacing = tbData.letterSpacing !== undefined ? tbData.letterSpacing : null;
-            if (type === 'lineheight') textAttr.lineHeight = tbData.lineHeight !== undefined ? tbData.lineHeight : null;
-            if (type === 'align') textAttr.textAlign = tbData.textAlign !== undefined ? tbData.textAlign : null;
-            if (type === 'underline') textAttr.underline = tbData.underline !== undefined ? tbData.underline : null;
-            if (type === 'strikeline') textAttr.strikeline = tbData.strikeline !== undefined ? tbData.strikeline : null;
-            if (type === 'indent') textAttr.indent = tbData.indent !== undefined ? tbData.indent : null;
+            if (attr === 'font') textAttr.fontName = value.fontName || '';
+            if (attr === 'fontsize') textAttr.fontSize = value.fontSize !== undefined ? value.fontSize : null;
+            if (attr === 'xscale') textAttr.xscale = value.xscale !== undefined ? value.xscale : null;
+            if (attr === 'letterspacing') textAttr.letterSpacing = value.letterSpacing !== undefined ? value.letterSpacing : null;
+            if (attr === 'lineheight') textAttr.lineHeight = value.lineHeight !== undefined ? value.lineHeight : null;
+            if (attr === 'align') textAttr.textAlign = value.textAlign !== undefined ? value.textAlign : null;
+            if (attr === 'underline') textAttr.underline = value.underline !== undefined ? value.underline : null;
+            if (attr === 'strikeline') textAttr.strikeline = value.strikeline !== undefined ? value.strikeline : null;
+            if (attr === 'indent') textAttr.indent = value.indent !== undefined ? value.indent : null;
             paragraph.setTextAttributeAtCursor(textAttr);
+        }
+    }
+
+    setFrameAttribute(attr: string, value: string) {
+        const selectedFrames = this.page.selectedFrames;
+        for (const frame of selectedFrames) {
+            if (attr === 'overlap') {
+                if (value === 'overlap') frame.overlapMethod = FrameOverlapMethod.OVERLAP;
+                if (value === 'framebox') frame.overlapMethod = FrameOverlapMethod.FRAMEBOX;
+                if (value === 'shape') frame.overlapMethod = FrameOverlapMethod.SHAPE;
+                if (value === 'jump') frame.overlapMethod = FrameOverlapMethod.JUMP;
+            }
+            if (attr === 'width') frame.width = value;
+            if (attr === 'height') frame.height = value;
+            if (attr === 'padding-left') frame.paddingLeft = value;
+            if (attr === 'padding-top') frame.paddingTop = value;
+            if (attr === 'padding-bottom') frame.paddingBottom = value;
+            if (attr === 'padding-right') frame.paddingRight = value;
+            if (attr === 'border-left') frame.borderLeft = value;
+            if (attr === 'border-top') frame.borderTop = value;
+            if (attr === 'border-bottom') frame.borderBottom = value;
+            if (attr === 'border-right') frame.borderRight = value;
+            // if (attr === 'border-color');
+            // if (attr === 'border-style');
         }
     }
 

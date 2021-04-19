@@ -104,14 +104,14 @@ class Designer {
             if (editor) editor.processPageObjectControl(ctrl.action, ctrl.step);
         });
 
-        this._toolbarPOTransform.observable.subscribe(ctrl => {
+        this._toolbarPOTransform.observable.subscribe(val => {
             const editor = this._layout.active;
-            // if (editor) editor.processPageObjectControl(ctrl.action, ctrl.value);
+            if (editor) editor.setFrameAttribute(val.attr, val.value);
         });
 
         this._toolbarText.observable.subscribe(val => {
             const editor = this._layout.active;
-            if (editor) editor.setTextAttribute(val[0], val[1]);
+            if (editor) editor.setTextAttribute(val.attr, val.value);
         });
 
         this._toolbarDocStatus.observable.subscribe(data => {
@@ -205,9 +205,10 @@ class Designer {
         } else if (action === 'selectframe') {
             const frames = value as IActaFrame[];
             if (frames.length < 1) {
+                this._toolbarPOControl.disable();
                 this._toolbarPOTransform.value = null;
             } else {
-                let attr: IActaFrameAttribute = frames[0].frameAttribute;
+                const attr: IActaFrameAttribute = frames[0].frameAttribute;
                 for (const frame of value) {
                     const fattr = frame.frameAttribute;
                     if (U.pt(attr.width) !== U.pt(fattr.width)) attr.width = undefined;
@@ -222,6 +223,7 @@ class Designer {
                     if (U.pt(attr.borderRight) !== U.pt(fattr.borderRight)) attr.borderRight = undefined;
                     if (U.pt(attr.overlapMethod) !== U.pt(fattr.overlapMethod)) attr.overlapMethod = undefined;
                 }
+                this._toolbarPOControl.enable();
                 this._toolbarPOTransform.value = attr;
             }
         }

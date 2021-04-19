@@ -1,4 +1,4 @@
-import { IActaFrameAttribute } from '../pageobject/interface/frame';
+import { IActaFrameAttribute, FrameOverlapMethod } from '../pageobject/interface/frame';
 
 import message from '../ui/message';
 import formbuilder from '../ui/form';
@@ -8,7 +8,7 @@ import U from '../util/units';
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-type CHANGE_TYPE = 'overlap' | 'width' | 'height' | 'padding-left' | 'padding-top' | 'padding-bottom' | 'padding-right' | 'border-left' | 'border-top' | 'border-bottom' | 'border-right' | 'border-color' | 'border-style';
+type CHANGE_ATTR = 'overlap' | 'width' | 'height' | 'padding-left' | 'padding-top' | 'padding-bottom' | 'padding-right' | 'border-left' | 'border-top' | 'border-bottom' | 'border-right' | 'border-color' | 'border-style';
 
 class ActaToolbarPageObjectTransform {
     private _toolbar: HTMLUListElement;
@@ -31,7 +31,7 @@ class ActaToolbarPageObjectTransform {
 
     private _disabled: boolean;
 
-    private _CHANGE$: Subject<{ action: CHANGE_TYPE, value: string }>;
+    private _CHANGE$: Subject<{ attr: CHANGE_ATTR, value: string }>;
 
     constructor() {
         this._CHANGE$ = new Subject();
@@ -86,7 +86,7 @@ class ActaToolbarPageObjectTransform {
             this._itemOverlapMethodFramebox.value = value === 'framebox' ? true : false;
             this._itemOverlapMethodShape.value = value === 'shape' ? true : false;
             this._itemOverlapMethodJump.value = value === 'jump' ? true : false;
-            this._CHANGE$.next({ action: 'overlap', value });
+            this._CHANGE$.next({ attr: 'overlap', value });
         });
 
         merge<any[]>(
@@ -101,7 +101,7 @@ class ActaToolbarPageObjectTransform {
             this._itemBorderBottom.observable.pipe(map(e => ['border-bottom', e.value] )),
             this._itemBorderRight.observable.pipe(map(e => ['border-right', e.value] ))
         ).subscribe(value => {
-            this._CHANGE$.next({ action: value[0], value: U.pt(value[1], accountInfo.frameUnitType).toString() });
+            this._CHANGE$.next({ attr: value[0], value: U.pt(value[1], accountInfo.frameUnitType).toString() });
         });
     }
 
@@ -148,12 +148,65 @@ class ActaToolbarPageObjectTransform {
     }
 
     set value(value: IActaFrameAttribute | null) {
-        console.log(value);
+        const unit = accountInfo.frameUnitType;
+
+        if (value === null) {
+            this._itemSizeWidth.value = '';
+            this._itemSizeHeight.value = '';
+            this._itemPaddingLeft.value = '';
+            this._itemPaddingTop.value = '';
+            this._itemPaddingBottom.value = '';
+            this._itemPaddingRight.value = '';
+            this._itemBorderLeft.value = '';
+            this._itemBorderTop.value = '';
+            this._itemBorderBottom.value = '';
+            this._itemBorderRight.value = '';
+            this._itemOverlapMethodOverlap.value = false;
+            this._itemOverlapMethodFramebox.value = false;
+            this._itemOverlapMethodShape.value = false;
+            this._itemOverlapMethodJump.value = false;
+            this.disable();
+        } else {
+            this._itemSizeWidth.value = value.width === undefined ? '' : U.convert(unit, value.width).toFixed(2);
+            this._itemSizeHeight.value = value.height === undefined ? '' : U.convert(unit, value.height).toFixed(2);
+            this._itemPaddingLeft.value = value.paddingLeft === undefined ? '' : U.convert(unit, value.paddingLeft).toFixed(2);
+            this._itemPaddingTop.value = value.paddingTop === undefined ? '' : U.convert(unit, value.paddingTop).toFixed(2);
+            this._itemPaddingBottom.value = value.paddingBottom === undefined ? '' : U.convert(unit, value.paddingBottom).toFixed(2);
+            this._itemPaddingRight.value = value.paddingRight === undefined ? '' : U.convert(unit, value.paddingRight).toFixed(2);
+            this._itemBorderLeft.value = value.borderLeft === undefined ? '' : U.convert(unit, value.borderLeft).toFixed(2);
+            this._itemBorderTop.value = value.borderTop === undefined ? '' : U.convert(unit, value.borderTop).toFixed(2);
+            this._itemBorderBottom.value = value.borderBottom === undefined ? '' : U.convert(unit, value.borderBottom).toFixed(2);
+            this._itemBorderRight.value = value.borderRight === undefined ? '' : U.convert(unit, value.borderRight).toFixed(2);
+            this._itemOverlapMethodOverlap.value = value.overlapMethod === undefined || value.overlapMethod !== FrameOverlapMethod.OVERLAP ? false : true;
+            this._itemOverlapMethodFramebox.value = value.overlapMethod === undefined || value.overlapMethod !== FrameOverlapMethod.FRAMEBOX ? false : true;
+            this._itemOverlapMethodShape.value = value.overlapMethod === undefined || value.overlapMethod !== FrameOverlapMethod.SHAPE ? false : true;
+            this._itemOverlapMethodJump.value = value.overlapMethod === undefined || value.overlapMethod !== FrameOverlapMethod.JUMP ? false : true;
+            this.enable();
+        }
     }
 
     get observable() { return this._CHANGE$; }
     get disabled() { return this._disabled; }
-    get value() { return {}; }
+    get value() {
+        const retVal: IActaFrameAttribute = {
+            width: this._itemSizeWidth.value,
+            height: this._itemSizeHeight.value,
+            paddingLeft: this._itemPaddingLeft.value,
+            paddingTop: this._itemPaddingTop.value,
+            paddingBottom: this._itemPaddingBottom.value,
+            paddingRight: this._itemPaddingRight.value,
+            borderLeft: this._itemBorderLeft.value,
+            borderTop: this._itemBorderTop.value,
+            borderBottom: this._itemBorderBottom.value,
+            borderRight: this._itemBorderRight.value
+        };
+        if (this._itemOverlapMethodOverlap.value) retVal.overlapMethod = FrameOverlapMethod.OVERLAP;
+        if (this._itemOverlapMethodFramebox.value) retVal.overlapMethod = FrameOverlapMethod.FRAMEBOX;
+        if (this._itemOverlapMethodShape.value) retVal.overlapMethod = FrameOverlapMethod.SHAPE;
+        if (this._itemOverlapMethodJump.value) retVal.overlapMethod = FrameOverlapMethod.JUMP;
+
+        return retVal;
+    }
     get el() { return this._toolbar; }
 }
 export default ActaToolbarPageObjectTransform;
