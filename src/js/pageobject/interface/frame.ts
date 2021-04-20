@@ -6,8 +6,11 @@ import U from '../../util/units';
 import { Subject, Subscription } from 'rxjs';
 
 import "../../../css/pageobject/frame.scss";
+import { filter, map } from 'rxjs/operators';
 
 type FrameMode = 'NONE' | 'MOVE' | 'EDIT';
+
+type CHANGE_ACTION = 'overlap' | 'changeselect';
 
 export enum FrameOverlapMethod {
     OVERLAP,        // 겹치기
@@ -44,9 +47,8 @@ export default abstract class IActaFrame extends IActaElement {
 
     protected _preflightProfiles: IActaPreflightProfile[];
 
-    protected _CHANGE_SELECT$: Subject<IActaFrame>;
     protected _CHANGE_SIZE$: Subject<IActaFrame>;
-    protected _OVERLAP$: Subject<IActaFrame>;
+    protected _CHaANGE$: Subject<{ action: CHANGE_ACTION, value?: any }>;
 
     static get observedAttributes() {
         return [
@@ -133,7 +135,7 @@ export default abstract class IActaFrame extends IActaElement {
         this._EMIT_CHANGE_SIZE();
     }
 
-    protected _EMIT_CHANGE_SELECT() { this._CHANGE_SELECT$.next(this); }
+    protected _EMIT_CHANGE_SELECT() { this._CHaANGE$.next({ action: 'changeselect' }); }
     protected _EMIT_CHANGE_SIZE() { this._CHANGE_SIZE$.next(this); }
 
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
@@ -148,9 +150,12 @@ export default abstract class IActaFrame extends IActaElement {
         this._mode = 'NONE';
 
         this._CHANGE_SIZE$ = new Subject();
-        this._CHANGE_SELECT$ = new Subject();
-        this._OVERLAP$ = new Subject();
-        this._OVERLAP$.subscribe(_ => this._onOverlap());
+
+        this._CHaANGE$ = new Subject();
+        this._CHaANGE$.pipe(
+            filter(v => v.action === 'overlap' && v.value),
+            map(v => v.value as IActaFrame)
+        ).subscribe(v => this._onOverlap());
 
         if (x !== undefined) this.setAttribute('x', x.toString());
         if (y !== undefined) this.setAttribute('y', y.toString());
@@ -237,11 +242,12 @@ export default abstract class IActaFrame extends IActaElement {
         let thisX2 = thisX1 + U.px(this.width) + (U.px(this.margin) * 2);
         let thisY2 = thisY1 + U.px(this.height) + (U.px(this.margin) * 2);
 
-        if (x1 < thisX2 && x2 > thisX1 && y1 < thisY2 && y2 > thisY1) {
+        if (x1 < thisX2 && x2 > thisX1 && y1 < thisY2 && y2 > thisY1 && this.overlapMethod !== FrameOverlapMethod.OVERLAP) {
             thisX1 = Math.max(0, thisX1 - x1);
             thisY1 = Math.max(0, thisY1 - y1);
             thisX2 = Math.min(x2 - x1, thisX2 - x1);
             thisY2 = Math.min(y2 - y1, thisY2 - y1);
+
             return {
                 x: [thisX1, thisX2],
                 y: [thisY1, thisY2]
@@ -299,6 +305,10 @@ export default abstract class IActaFrame extends IActaElement {
         this._EMIT_CHANGE_SELECT();
     }
 
+    EMIT_OVERLAP(src: IActaFrame) {
+        return this._CHaANGE$.next({ action: 'overlap', value: src });
+    }
+
     set x(x: string | number) { this.setAttribute('x', x.toString()); }
     set y(y: string | number) { this.setAttribute('y', y.toString()); }
     set width(width: string | number) { this.setAttribute('width', width.toString()); }
@@ -316,7 +326,9 @@ export default abstract class IActaFrame extends IActaElement {
     set overlapMethod(overlapMethod: FrameOverlapMethod) {
         if (this._overlapMethod !== overlapMethod) {
             this._overlapMethod = overlapMethod;
-            this._EMIT_CHANGE_SIZE();
+            for (const frame of this.overlapFrames) {
+                frame._EMIT_CHANGE_SIZE();
+            }
         }
     }
     set mode(mode: FrameMode) {
@@ -345,7 +357,6 @@ export default abstract class IActaFrame extends IActaElement {
     get rotate() { return parseFloat(this.getAttribute('rotate') || '0'); }
     get overlapFrames() { return this._overlapFrames; }
     get overlapMethod() { return this._overlapMethod; }
-    get overlapObservable() { return this._OVERLAP$; }
     get preflightProfiles() { return this._preflightProfiles; }
     get mode() { return this._mode; }
     get savedPositionLeft() { return this._moveOriginalLeft || 0; }
@@ -354,7 +365,7 @@ export default abstract class IActaFrame extends IActaElement {
     get isFocused() { return this._focused; }
     get isSelected() { return (this._focused || this.classList.contains('selected')) ? true : false; }
 
-    get observableChangeSelect() { return this._CHANGE_SELECT$; }
+    get observableChangeSelect() { return this._CHaANGE$.pipe(filter(v => v.action === 'changeselect'), map(_ => this)); }
 
     get order() {
         const parentElement = this.parentElement;

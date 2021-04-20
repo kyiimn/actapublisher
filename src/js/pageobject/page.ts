@@ -93,9 +93,9 @@ export default class ActaPage extends IActaElement {
         this._CHANGE_FRAME_STYLE$ = new Subject();
         this._CHANGE_FRAME_STYLE$.subscribe(src => {
             for (const dest of src.overlapFrames) {
-                dest.overlapObservable.next(src);
+                dest.EMIT_OVERLAP(src);
             }
-            src.overlapObservable.next(src);
+            src.EMIT_OVERLAP(src);
         });
 
         this._CHANGE_SELECT_FRAMES$ = new Subject();
