@@ -3,12 +3,15 @@ import IActaFrame from './interface/frame';
 import IActaElement from './interface/element';
 import U from '../util/units';
 
-import { fromEvent, Subject } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import "../../css/pageobject/page.scss";
 
 export default class ActaPage extends IActaElement {
+    private _subscriptionChangeSelectFrames?: Subscription;
+    private _guide: ActaGuide | undefined;
+
     private _CHANGE_PAGE_STYLE$: Subject<string>;
     private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;
     private _CHANGE_FOCUS$: Subject<IActaFrame>;
@@ -18,8 +21,6 @@ export default class ActaPage extends IActaElement {
 
     private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
     private _OBSERVER_CHANGE_FRAME_STYLE$: MutationObserver;
-
-    private _guide: ActaGuide | undefined;
 
     static get observedAttributes() {
         return ['width', 'height', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'scale'];
@@ -76,19 +77,18 @@ export default class ActaPage extends IActaElement {
         return frames;
     }
 
-    private subscribeChangeSelectFrame(observer: Subject<IActaFrame>) {
-        observer.subscribe(_ => {
-            this._CHANGE_SELECT_FRAMES$.next(this.selectedFrames);
-        });
-    }
-
     constructor(width?: string | number, height?: string | number) {
         super();
 
         this._CHANGE_SCALE$ = new Subject();
-
         this._CHANGE_PAGE_STYLE$ = new Subject();
+
         this._CHANGE_FOCUS$ = new Subject();
+        this._CHANGE_FOCUS$.subscribe(focusedFrame => {
+            for (const frame of this.allFrames) {
+                frame.EMIT_CHANGE_FOCUS(focusedFrame);
+            }
+        });
 
         this._CHANGE_FRAME_STYLE$ = new Subject();
         this._CHANGE_FRAME_STYLE$.subscribe(src => {
@@ -117,8 +117,7 @@ export default class ActaPage extends IActaElement {
                         node.unsubscribeChangePageSize();
                     } else if (removedNode instanceof IActaFrame) {
                         const node = removedNode as IActaFrame;
-                        node.unsubscribeChangeFocus();
-                        node.observableChangeSelect.unsubscribe();
+                        node.onChangeSelect = null;
                     }
                 }
                 for (let i = 0; i < m.addedNodes.length; i++) {
@@ -140,9 +139,7 @@ export default class ActaPage extends IActaElement {
                         })).subscribe(target => {
                             this._CHANGE_FOCUS$.next(target);
                         });
-                        node.subscribeChangeFocus(this._CHANGE_FOCUS$);
-
-                        this.subscribeChangeSelectFrame(node.observableChangeSelect);
+                        node.onChangeSelect = _ => this._CHANGE_SELECT_FRAMES$.next(this.selectedFrames);
                     }
                 }
             });
@@ -180,38 +177,35 @@ export default class ActaPage extends IActaElement {
         if (this._guide) this.prepend(this._guide);
     }
 
+    set onChangeSelectFrames(handler: ((frames: IActaFrame[]) => void) | null) {
+        if (this._subscriptionChangeSelectFrames) this._subscriptionChangeSelectFrames.unsubscribe();
+        if (handler) {
+            this._subscriptionChangeSelectFrames = this._CHANGE_SELECT_FRAMES$.pipe(distinctUntilChanged((a, b) => {
+                if (a.length !== b.length) return false;
+                for (const c of a) {
+                    if (b.indexOf(c) < 0) return false;
+                }
+                return true;
+            })).subscribe(frames => handler(frames));
+        } else {
+            this._subscriptionChangeSelectFrames = undefined;
+        }
+    }
+
     get width() { return this.getAttribute('width') || ''; }
     get height() { return this.getAttribute('height') || ''; }
     get paddingTop() { return this.getAttribute('padding-top') || ''; }
     get paddingBottom() { return this.getAttribute('padding-bottom') || ''; }
     get paddingLeft() { return this.getAttribute('padding-left') || ''; }
     get paddingRight() { return this.getAttribute('padding-right') || ''; }
-
     get scale() { return parseFloat(this.getAttribute('scale') || '1'); }
     get scaledWidth() { return U.px(this.width) * this.scale; }
     get scaledHeight() { return U.px(this.height) * this.scale; }
     get scale$() { return this._CHANGE_SCALE$; }
-
     get guide() { return this._guide; }
 
-    get observableChangeSelectFrames() {
-        return this._CHANGE_SELECT_FRAMES$.pipe(distinctUntilChanged((a, b) => {
-            if (a.length !== b.length) return false;
-            for (const c of a) {
-                if (b.indexOf(c) < 0) return false;
-            }
-            return true;
-        }));
-    }
-
-    get topFrames() {
-        return this._getChildFrames();
-    }
-
-    get selectedFrames() {
-        return [... this.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected')];
-    }
-
+    get selectedFrames() { return [... this.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected')]; }
+    get topFrames() { return this._getChildFrames(); }
     get allFrames() {
         const children = this.querySelectorAll('*');
         const frames: IActaFrame[] = [];

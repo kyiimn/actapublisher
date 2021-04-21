@@ -420,7 +420,7 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
                     );
-                    paragraph.observable.subscribe(x => this._onParagraphChange(x.paragraph, x.action, x.value));
+                    paragraph.onChange = (p, a, v) => this._onParagraphChange(p, a, v);
                     changetool = EditorTool.TEXT_MODE;
                     frame = paragraph;
                 }
@@ -431,7 +431,7 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultTitleTextStyle
                     );
-                    paragraph.observable.subscribe(x => this._onParagraphChange(x.paragraph, x.action, x.value));
+                    paragraph.onChange = (p, a, v) => this._onParagraphChange(p, a, v);
                     changetool = EditorTool.TEXT_MODE;
                     frame = paragraph;
                 }
@@ -453,7 +453,7 @@ export default class ActaEditor {
             case 'changeeditable':
                 if (!value) this._EVENT$.next({ action: 'textstyle', value: null });
                 break;
-            case 'cursormove':
+            case 'changecursor':
                 this._onParagraphCursorMove(paragraph);
                 break;
             default:
@@ -535,10 +535,7 @@ export default class ActaEditor {
             this._element.style.height = `${size.height}px`;
         });
         this._page.scale = 1;
-
-        this._page.observableChangeSelectFrames.subscribe(frames => {
-            this._EVENT$.next({ action: 'selectframe', value: frames });
-        });
+        this._page.onChangeSelectFrames = frames => this._EVENT$.next({ action: 'selectframe', value: frames });
 
         fromEvent<WheelEvent>(this._element, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => {
             e.preventDefault();
