@@ -42,12 +42,12 @@ class ActaToolbarPageObjectTransform {
         this._toolbar.classList.add('toolbar');
         this._toolbar.classList.add('pageobject-transform');
 
-        this._itemSizeWidth = formbuilder.inputNumber({ attr: { action: 'width' }, icon: 'arrows-alt-v', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_WIDTH, width: '3.6em', step: .01, min: 0 });
-        this._itemSizeHeight = formbuilder.inputNumber({ attr: { action: 'height' }, icon: 'arrows-alt-h', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_HEIGHT, width: '3.6em', step: .01, min: 0 });
-        this._itemPaddingLeft = formbuilder.inputNumber({ attr: { action: 'padding-left' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_LEFT, width: '3.6em', step: .01, min: 0 });
+        this._itemSizeWidth = formbuilder.inputNumber({ attr: { action: 'width' }, icon: 'arrows-alt-h', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_WIDTH, width: '3.6em', step: .01, min: 0 });
+        this._itemSizeHeight = formbuilder.inputNumber({ attr: { action: 'height' }, icon: 'arrows-alt-v', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_HEIGHT, width: '3.6em', step: .01, min: 0 });
+        this._itemPaddingLeft = formbuilder.inputNumber({ attr: { action: 'padding-left' }, icon: 'padding', icontype: 'material', iconrotate: 270, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_LEFT, width: '3.6em', step: .01, min: 0 });
         this._itemPaddingTop = formbuilder.inputNumber({ attr: { action: 'padding-top' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_TOP, width: '3.6em', step: .01, min: 0 });
-        this._itemPaddingBottom = formbuilder.inputNumber({ attr: { action: 'padding-bottom' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_BOTTOM, width: '3.6em', step: .01, min: 0 });
-        this._itemPaddingRight = formbuilder.inputNumber({ attr: { action: 'padding-right' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_RIGHT, width: '3.6em', step: .01, min: 0 });
+        this._itemPaddingBottom = formbuilder.inputNumber({ attr: { action: 'padding-bottom' }, icon: 'padding', icontype: 'material', iconrotate: 180, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_BOTTOM, width: '3.6em', step: .01, min: 0 });
+        this._itemPaddingRight = formbuilder.inputNumber({ attr: { action: 'padding-right' }, icon: 'padding', icontype: 'material', iconrotate: 90, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_RIGHT, width: '3.6em', step: .01, min: 0 });
         this._itemBorderLeft = formbuilder.inputNumber({ attr: { action: 'border-left' }, icon: 'border_left', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_BORDER_LEFT, width: '3.6em', step: .01, min: 0 });
         this._itemBorderTop = formbuilder.inputNumber({ attr: { action: 'border-top' }, icon: 'border_top', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_BORDER_TOP, width: '3.6em', step: .01, min: 0 });
         this._itemBorderBottom = formbuilder.inputNumber({ attr: { action: 'border-bottom' }, icon: 'border_bottom', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_BORDER_BOTTOM, width: '3.6em', step: .01, min: 0 });

@@ -12,6 +12,7 @@ type UIFormButtonOptions = {
     id?: string,
     icon?: string,
     icontype?: string,
+    iconrotate?: number,
     class?: string,
     attr?: AttrMap,
     label: string
@@ -44,6 +45,7 @@ type UIFormInputNumberOptions = {
     suffix?: string,
     icon?: string,
     icontype?: string,
+    iconrotate?: number,
     min?: number,
     max?: number,
     step?: number,
@@ -181,17 +183,19 @@ class ActaUIFormBuilder {
     private static _sequence: number = 1000;
     private constructor() {}
 
-    private static _makeIconElement(iconname: string, icontype?: string) {
+    private static _makeIconElement(opt: { iconname: string, icontype?: string, iconrotate?: number }) {
         const icon = document.createElement('i');
-        if (icontype === 'material') {
+        if (opt.icontype === 'material') {
             icon.className = 'material-icons';
-            icon.innerHTML = iconname;
+            icon.innerHTML = opt.iconname;
             icon.style.fontSize = 'inherit';
-        } else if (icontype === 'custom') {
-            icon.className = `custom-icons ${iconname}`;
+        } else if (opt.icontype === 'custom') {
+            icon.className = `custom-icons ${opt.iconname}`;
         } else {
-            icon.className = `${icontype || 'fa'} fa-${iconname}`;
+            icon.className = `${opt.icontype || 'fa'} fa-${opt.iconname}`;
         }
+        if (opt.iconrotate) icon.style.transform = `rotate(${opt.iconrotate}deg)`;
+
         return icon;
     }
 
@@ -215,7 +219,7 @@ class ActaUIFormBuilder {
         text.innerText = opts.label;
 
         if (opts.icon) button.appendChild(
-            this._makeIconElement(opts.icon, opts.icontype)
+            this._makeIconElement({ iconname: opts.icon, icontype: opts.icontype, iconrotate: opts.iconrotate })
         );
         button.appendChild(text);
         li.appendChild(button);
@@ -238,7 +242,7 @@ class ActaUIFormBuilder {
         const button = document.createElement('button');
 
         if (opts.icon) button.appendChild(
-            this._makeIconElement(opts.icon, opts.icontype)
+            this._makeIconElement({ iconname: opts.icon, icontype: opts.icontype, iconrotate: opts.iconrotate })
         );
         li.appendChild(button);
 
@@ -381,7 +385,7 @@ class ActaUIFormBuilder {
             label.setAttribute('id', `${opts.id}-LABEL`);
             label.setAttribute('for', `${opts.id}-INPUT`);
             if (opts.icon) {
-                const icon = this._makeIconElement(opts.icon, opts.icontype);
+                const icon = this._makeIconElement({ iconname: opts.icon, icontype: opts.icontype, iconrotate: opts.iconrotate });
                 icon.style.fontSize = (opts.icontype === 'material') ? '1.4em' : '1.2em';
                 icon.style.verticalAlign = 'middle';
                 label.classList.add('icon');
