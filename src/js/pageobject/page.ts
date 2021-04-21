@@ -54,6 +54,7 @@ export default class ActaPage extends IActaElement {
             const srcY1 = U.px(src.y);
             const srcX2 = srcX1 + U.px(src.width);
             const srcY2 = srcY1 + U.px(src.height);
+            const oldOverlapFrames = src.overlapFrames;
             src.overlapFrames = [];
 
             for (const dest of childNodes) {
@@ -65,6 +66,8 @@ export default class ActaPage extends IActaElement {
                 const destY2 = destY1 + U.px(dest.height) + (U.px(dest.margin) * 2);
                 if (srcX1 < destX2 && srcX2 > destX1 && srcY1 < destY2 && srcY2 > destY1) src.overlapFrames.push(dest);
             }
+            const diffFrames = oldOverlapFrames.filter(x => !src.overlapFrames.includes(x));
+            if (diffFrames.length > 0) src.EMIT_CHANGE_OVERLAP(diffFrames);
         }
     }
 

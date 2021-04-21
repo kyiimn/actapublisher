@@ -10,7 +10,7 @@ import { filter, map } from 'rxjs/operators';
 
 type FrameMode = 'NONE' | 'MOVE' | 'EDIT';
 
-type EVENT_TYPE = 'overlap' | 'changeselect' | 'changefocus' | 'changesize';
+type EVENT_TYPE = 'overlap' | 'changeselect' | 'changefocus' | 'changesize' | 'changeoverlap';
 
 export enum FrameOverlapMethod {
     OVERLAP,        // 겹치기
@@ -171,6 +171,15 @@ export default abstract class IActaFrame extends IActaElement {
         ).subscribe(v => this._onOverlap());
 
         this._EVENT$.pipe(
+            filter(v => v.type === 'changeoverlap' && v.value),
+            map(v => v.value as IActaFrame[])
+        ).subscribe(frames => {
+            for (const frame of frames) {
+                frame.EMIT_OVERLAP(this);
+            }
+        });
+
+        this._EVENT$.pipe(
             filter(v => v.type === 'changefocus' && v.value),
             map(v => v.value as IActaFrame)
         ).subscribe(v => this._onChangeFocus(v));
@@ -304,6 +313,10 @@ export default abstract class IActaFrame extends IActaElement {
 
     EMIT_OVERLAP(frame: IActaFrame) {
         return this._EVENT$.next({ type: 'overlap', value: frame });
+    }
+
+    EMIT_CHANGE_OVERLAP(frames: IActaFrame[]) {
+        return this._EVENT$.next({ type: 'changeoverlap', value: frames });
     }
 
     EMIT_CHANGE_FOCUS(frame: IActaFrame) {
