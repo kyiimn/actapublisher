@@ -4,6 +4,8 @@ import U from '../util/units';
 import { Subject, Subscription } from 'rxjs';
 
 import "../../css/pageobject/guide.scss";
+import { convertRuleOptions } from "tslint/lib/configuration";
+import ActaPage from "./page";
 
 type ColumnLineData = {
     lineHeight: number
@@ -12,7 +14,6 @@ type ColumnLineData = {
 }
 
 export default class ActaGuide extends IActaElement {
-    private _subscriptionChangePageSize?: Subscription;
     private _columnLineData?: ColumnLineData;
 
     static get observedAttributes() {
@@ -92,21 +93,15 @@ export default class ActaGuide extends IActaElement {
         for (const attr of ActaGuide.observedAttributes) {
             this._applyAttribute(attr, this.getAttribute(attr) || '');
         }
+        if (this.parentElement instanceof ActaPage) {
+            const page = this.parentElement as ActaPage;
+            page.onChangePageStyle = _ => this._updateSize();
+        }
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (oldValue === newValue) return;
         this._applyAttribute(name, newValue);
-    }
-
-    subscribeChangePageSize(observer: Subject<string>) {
-        this._subscriptionChangePageSize = observer.subscribe(_ => this._updateSize());
-        this._updateSize();
-    }
-
-    unsubscribeChangePageSize() {
-        if (this._subscriptionChangePageSize) this._subscriptionChangePageSize.unsubscribe();
-        this._subscriptionChangePageSize = undefined;
     }
 
     set columnCount(count: number) { this.setAttribute('column-count', Math.max(count, 1).toString()); }

@@ -420,7 +420,8 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
                     );
-                    paragraph.onChange = (p, a, v) => this._onParagraphChange(p, a, v);
+                    paragraph.onChangeCursor = p => this._onParagraphChangeCursor(p);
+                    paragraph.onChangeEditable = _ => this._onParagraphChangeEditable();
                     changetool = EditorTool.TEXT_MODE;
                     frame = paragraph;
                 }
@@ -431,7 +432,8 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultTitleTextStyle
                     );
-                    paragraph.onChange = (p, a, v) => this._onParagraphChange(p, a, v);
+                    paragraph.onChangeCursor = p => this._onParagraphChangeCursor(p);
+                    paragraph.onChangeEditable = _ => this._onParagraphChangeEditable();
                     changetool = EditorTool.TEXT_MODE;
                     frame = paragraph;
                 }
@@ -448,20 +450,11 @@ export default class ActaEditor {
         if (changetool) this._EVENT$.next({ action: 'changetool', value: changetool });
     }
 
-    private _onParagraphChange(paragraph: ActaParagraph, action: string, value: any) {
-        switch (action) {
-            case 'changeeditable':
-                if (!value) this._EVENT$.next({ action: 'textstyle', value: null });
-                break;
-            case 'changecursor':
-                this._onParagraphCursorMove(paragraph);
-                break;
-            default:
-                break;
-        }
+    private _onParagraphChangeEditable() {
+        this._EVENT$.next({ action: 'textstyle', value: null });
     }
 
-    private _onParagraphCursorMove(paragraph: ActaParagraph) {
+    private _onParagraphChangeCursor(paragraph: ActaParagraph) {
         const textStyle = paragraph.getTextStyleAtCursor(true);
         const textAttr = paragraph.getTextAttributeAtCursor(true);
         const tbData: IActaEditorTextAttribute = {};
@@ -530,10 +523,10 @@ export default class ActaEditor {
         };
 
         this._element.appendChild(this._page);
-        this._page.scale$.subscribe(size => {
-            this._element.style.width = `${size.width}px`;
-            this._element.style.height = `${size.height}px`;
-        });
+        this._page.onChangeScale = (width, height) => {
+            this._element.style.width = `${width}px`;
+            this._element.style.height = `${height}px`;
+        };
         this._page.scale = 1;
         this._page.onChangeSelectFrames = frames => this._EVENT$.next({ action: 'selectframe', value: frames });
 

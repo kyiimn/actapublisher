@@ -13,7 +13,7 @@ import ActaTextChar from './text/textchar';
 import textstylemgr from './textstyle/textstylemgr';
 import { CharType } from './text/textchar';
 
-import { Subject, fromEvent, Observable, Subscription } from 'rxjs';
+import { Subject, fromEvent, Subscription } from 'rxjs';
 import { distinctUntilChanged, debounceTime, filter, map } from 'rxjs/operators';
 
 import Hangul from 'hangul-js';
@@ -22,7 +22,6 @@ import U from '../util/units';
 
 import "../../css/pageobject/paragraph.scss";
 
-const INTERNAL_EVENT = ['repaint', 'cursorrepaint'];
 type EVENT_TYPE = 'changecursor' | 'changeeditable' | 'repaint' | 'cursorrepaint';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
@@ -127,7 +126,8 @@ class ActaParagraphEmpty extends IActaPreflightProfile {
 
 // tslint:disable-next-line: max-classes-per-file
 export default class ActaParagraph extends IActaFrame {
-    private _subscriptionChange?: Subscription;
+    private _subscriptionChangeCursor?: Subscription;
+    private _subscriptionChangeEditable?: Subscription;
 
     private _columnCount: number;
     private _cursor: number | null;
@@ -1325,14 +1325,26 @@ export default class ActaParagraph extends IActaFrame {
         this._readonly = val;
     }
 
-    set onChange(handler: ((paragraph: ActaParagraph, action: EVENT_TYPE, value: any) => void | null)) {
-        if (this._subscriptionChange) this._subscriptionChange.unsubscribe();
+    set onChangeCursor(handler: ((paragraph: ActaParagraph, pos: number) => void) | null) {
+        if (this._subscriptionChangeCursor) this._subscriptionChangeCursor.unsubscribe();
         if (handler) {
-            this._subscriptionChange = this._EVENT_PARAGRAPH$.pipe(
-                filter(v => INTERNAL_EVENT.indexOf(v.type) < 0)
-            ).subscribe(v => handler(this, v.type, v.value));
+            this._subscriptionChangeCursor = this._EVENT_PARAGRAPH$.pipe(
+                filter(v => v.type === 'changecursor'),
+                map(v => v.value as number)
+            ).subscribe(pos => handler(this, pos));
         } else {
-            this._subscriptionChange = undefined;
+            this._subscriptionChangeCursor = undefined;
+        }
+    }
+
+    set onChangeEditable(handler: ((paragraph: ActaParagraph, editable: boolean) => void) | null) {
+        if (this._subscriptionChangeEditable) this._subscriptionChangeEditable.unsubscribe();
+        if (handler) {
+            this._subscriptionChangeEditable = this._EVENT_PARAGRAPH$.pipe(
+                filter(v => v.type === 'changeeditable')
+            ).subscribe(_ => handler(this, this.isEditable));
+        } else {
+            this._subscriptionChangeEditable = undefined;
         }
     }
 

@@ -8,16 +8,16 @@ import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import "../../css/pageobject/page.scss";
 
+type EVENT_TYPE = 'scale' | 'changeselectframes' | 'changeframestyle' | 'changepagestyle' | 'changefocus';
+
 export default class ActaPage extends IActaElement {
     private _subscriptionChangeSelectFrames?: Subscription;
+    private _subscriptionChangeScale?: Subscription;
+    private _subscriptionChangePageStyle?: Subscription;
+
     private _guide: ActaGuide | undefined;
 
-    private _CHANGE_PAGE_STYLE$: Subject<string>;
-    private _CHANGE_FRAME_STYLE$: Subject<IActaFrame>;
-    private _CHANGE_FOCUS$: Subject<IActaFrame>;
-    private _CHANGE_SCALE$: Subject<{ width: number, height: number }>;
-
-    private _CHANGE_SELECT_FRAMES$: Subject<IActaFrame[]>;
+    private _EVENT$: Subject<{ type: EVENT_TYPE, value: any }>;
 
     private _OBSERVER_ADDREMOVE_GUIDE$: MutationObserver;
     private _OBSERVER_CHANGE_FRAME_STYLE$: MutationObserver;
@@ -30,7 +30,7 @@ export default class ActaPage extends IActaElement {
         if (name === 'scale') {
             const num = parseFloat(value || '1');
             this.style.transform = !isNaN(num) ? `scale(${num})` : '';
-            this._CHANGE_SCALE$.next({ width: this.scaledWidth, height: this.scaledHeight });
+            this._EVENT$.next({ type: 'scale', value: { width: this.scaledWidth, height: this.scaledHeight } });
         } else {
             const num = U.px(value);
             switch (name) {
@@ -80,30 +80,30 @@ export default class ActaPage extends IActaElement {
     constructor(width?: string | number, height?: string | number) {
         super();
 
-        this._CHANGE_SCALE$ = new Subject();
-        this._CHANGE_PAGE_STYLE$ = new Subject();
+        this._EVENT$ = new Subject();
+        this._EVENT$.pipe(
+            filter(v => v.type === 'changeframestyle'),
+            map(v => v.value as IActaFrame)
+        ).subscribe(frame => {
+            for (const dest of frame.overlapFrames) {
+                dest.EMIT_OVERLAP(frame);
+            }
+            frame.EMIT_OVERLAP(frame);
+        });
 
-        this._CHANGE_FOCUS$ = new Subject();
-        this._CHANGE_FOCUS$.subscribe(focusedFrame => {
+        this._EVENT$.pipe(
+            filter(v => v.type === 'changefocus'),
+            map(v => v.value as IActaFrame)
+        ).subscribe(focusedFrame => {
             for (const frame of this.allFrames) {
                 frame.EMIT_CHANGE_FOCUS(focusedFrame);
             }
         });
 
-        this._CHANGE_FRAME_STYLE$ = new Subject();
-        this._CHANGE_FRAME_STYLE$.subscribe(src => {
-            for (const dest of src.overlapFrames) {
-                dest.EMIT_OVERLAP(src);
-            }
-            src.EMIT_OVERLAP(src);
-        });
-
-        this._CHANGE_SELECT_FRAMES$ = new Subject();
-
         this._OBSERVER_CHANGE_FRAME_STYLE$ = new MutationObserver(mutations => {
             if (mutations.length > 0) this._updateOverlapFrameList();
             mutations.forEach(m => {
-                this._CHANGE_FRAME_STYLE$.next(m.target as IActaFrame);
+                this._EVENT$.next({ type: 'changeframestyle', value: m.target as IActaFrame });
             });
         });
 
@@ -112,23 +112,17 @@ export default class ActaPage extends IActaElement {
                 if (m.type !== 'childList') return;
                 for (let i = 0; i < m.removedNodes.length; i++) {
                     const removedNode = m.removedNodes.item(i);
-                    if (removedNode instanceof ActaGuide) {
-                        const node = removedNode as ActaGuide;
-                        node.unsubscribeChangePageSize();
-                    } else if (removedNode instanceof IActaFrame) {
+                    if (removedNode instanceof IActaFrame) {
                         const node = removedNode as IActaFrame;
                         node.onChangeSelect = null;
                     }
                 }
                 for (let i = 0; i < m.addedNodes.length; i++) {
                     const addedNode = m.addedNodes.item(i);
-                    if (addedNode instanceof ActaGuide) {
-                        const node = addedNode as ActaGuide;
-                        node.subscribeChangePageSize(this._CHANGE_PAGE_STYLE$);
-                    } else if (addedNode instanceof IActaFrame) {
+                    if (addedNode instanceof IActaFrame) {
                         const node = addedNode as IActaFrame;
                         this._updateOverlapFrameList();
-                        this._CHANGE_FRAME_STYLE$.next(node);
+                        this._EVENT$.next({ type: 'changeframestyle', value: node });
                         this._OBSERVER_CHANGE_FRAME_STYLE$.observe(node, {
                             attributes: true,
                             attributeFilter: IActaFrame.observedAttributes
@@ -137,9 +131,9 @@ export default class ActaPage extends IActaElement {
                             e.preventDefault();
                             return e.target as IActaFrame;
                         })).subscribe(target => {
-                            this._CHANGE_FOCUS$.next(target);
+                            this._EVENT$.next({ type: 'changefocus', value: target });
                         });
-                        node.onChangeSelect = _ => this._CHANGE_SELECT_FRAMES$.next(this.selectedFrames);
+                        node.onChangeSelect = _ => this._EVENT$.next({ type: 'changeselectframes', value: this.selectedFrames });
                     }
                 }
             });
@@ -160,7 +154,7 @@ export default class ActaPage extends IActaElement {
         if (oldValue === newValue) return;
 
         this._applyAttribute(name, newValue);
-        this._CHANGE_PAGE_STYLE$.next(name);
+        this._EVENT$.next({ type: 'changepagestyle', value: name });
     }
 
     set width(width: string | number) { this.setAttribute('width', width.toString()); }
@@ -180,15 +174,43 @@ export default class ActaPage extends IActaElement {
     set onChangeSelectFrames(handler: ((frames: IActaFrame[]) => void) | null) {
         if (this._subscriptionChangeSelectFrames) this._subscriptionChangeSelectFrames.unsubscribe();
         if (handler) {
-            this._subscriptionChangeSelectFrames = this._CHANGE_SELECT_FRAMES$.pipe(distinctUntilChanged((a, b) => {
-                if (a.length !== b.length) return false;
-                for (const c of a) {
-                    if (b.indexOf(c) < 0) return false;
-                }
-                return true;
-            })).subscribe(frames => handler(frames));
+            this._subscriptionChangeSelectFrames = this._EVENT$.pipe(
+                filter(v => v.type === 'changeselectframes'),
+                map(v => v.value as IActaFrame[]),
+                distinctUntilChanged((a, b) => {
+                    if (a.length !== b.length) return false;
+                    for (const c of a) {
+                        if (b.indexOf(c) < 0) return false;
+                    }
+                    return true;
+                })
+            ).subscribe(frames => handler(frames));
         } else {
             this._subscriptionChangeSelectFrames = undefined;
+        }
+    }
+
+    set onChangeScale(handler: ((width: number, height: number) => void) | null) {
+        if (this._subscriptionChangeScale) this._subscriptionChangeScale.unsubscribe();
+        if (handler) {
+            this._subscriptionChangeScale = this._EVENT$.pipe(
+                filter(v => v.type === 'scale'),
+                map(v => v.value as { width: number, height: number })
+            ).subscribe(v => handler(v.width, v.height));
+        } else {
+            this._subscriptionChangeScale = undefined;
+        }
+    }
+
+    set onChangePageStyle(handler: ((name: string) => void) | null) {
+        if (this._subscriptionChangePageStyle) this._subscriptionChangePageStyle.unsubscribe();
+        if (handler) {
+            this._subscriptionChangePageStyle = this._EVENT$.pipe(
+                filter(v => v.type === 'changepagestyle'),
+                map(v => v.value as string)
+            ).subscribe(name => handler(name));
+        } else {
+            this._subscriptionChangePageStyle = undefined;
         }
     }
 
@@ -201,7 +223,6 @@ export default class ActaPage extends IActaElement {
     get scale() { return parseFloat(this.getAttribute('scale') || '1'); }
     get scaledWidth() { return U.px(this.width) * this.scale; }
     get scaledHeight() { return U.px(this.height) * this.scale; }
-    get scale$() { return this._CHANGE_SCALE$; }
     get guide() { return this._guide; }
 
     get selectedFrames() { return [... this.querySelectorAll<IActaFrame>('.frame.focus, .frame.selected')]; }
