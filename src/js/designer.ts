@@ -83,9 +83,11 @@ class Designer {
 
     private _initToolbar() {
         this._layout.toolbar.appendChild(this._toolbarPODraw.el);
-        this._layout.topbar.appendChild(this._toolbarPOControl.el);
+
         this._layout.topbar.appendChild(this._toolbarPOTransform.el);
+        this._layout.topbar.appendChild(this._toolbarPOControl.el);
         this._layout.topbar.appendChild(this._toolbarText.el);
+
         this._layout.documentStatusbar.appendChild(this._toolbarDocStatus.el);
 
         this._toolbarPODraw.disable();

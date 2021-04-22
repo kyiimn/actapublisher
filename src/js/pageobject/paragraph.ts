@@ -22,7 +22,7 @@ import U from '../util/units';
 
 import "../../css/pageobject/paragraph.scss";
 
-type EVENT_TYPE = 'changecursor' | 'changeeditable' | 'repaint' | 'cursorrepaint';
+type EVENT_TYPE = 'changecursor' | 'changeeditable' | 'repaint' | 'cursorrepaint' | 'changecolumn';
 
 const KEYCODE_CHAR_MAP: { [key: string]: string[] } = {
     'Q': ['Q','ㅃ'], 'q': ['q','ㅂ'],
@@ -128,6 +128,7 @@ class ActaParagraphEmpty extends IActaPreflightProfile {
 export default class ActaParagraph extends IActaFrame {
     private _subscriptionChangeCursor?: Subscription;
     private _subscriptionChangeEditable?: Subscription;
+    private _subscriptionChangeColumn?: Subscription;
 
     private _columnCount: number;
     private _cursor: number | null;
@@ -896,6 +897,10 @@ export default class ActaParagraph extends IActaFrame {
         this._EVENT_PARAGRAPH$.next({ type: 'cursorrepaint', value: JSON.stringify(state) });
     }
 
+    private _EMIT_CHANGE_COLUMN() {
+        this._EVENT_PARAGRAPH$.next({ type: 'changecolumn' });
+    }
+
     private _getOverlapAreaWithOtherFrames(textRow: ActaTextRow, height?: number) {
         const x1 = U.px(this.x) + textRow.column.offsetLeft;
         const y1 = U.px(this.y) + textRow.offsetTop;
@@ -920,109 +925,7 @@ export default class ActaParagraph extends IActaFrame {
         return [overlapX1, overlapX2];
     }
 
-    private get columns(): ActaParagraphColumn[] {
-        return Array.prototype.slice.call(
-            this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col')
-        );
-    }
-
-    private get canvas() {
-        const canvas: SVGElement[] = [];
-        this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col').forEach(col => canvas.push(col.canvas));
-        return canvas;
-    }
-
-    private get cursor() {
-        return this._cursor;
-    }
-
-    private set cursor(pos) {
-        if (pos !== null && this._cursor !== pos) this._cursorTextAttribute = undefined;
-        this._cursor = pos;
-        if (pos !== null) this._CURSOR_MOVE$.next(pos);
-    }
-
-    private set selectionStart(pos) {
-        if (pos !== null && this._selectionStart !== pos) this._cursorTextAttribute = undefined;
-        this._selectionStart = pos;
-        if (pos !== null) this._CURSOR_MOVE$.next(pos);
-    }
-
-    private get selectionStart() {
-        return this._selectionStart;
-    }
-
-    private set editable(value) {
-        this._editable = value;
-        if (this._editable) {
-            this.classList.add('editable');
-            this._EVENT_PARAGRAPH$.next({ type: 'changeeditable', value: true });
-        } else {
-            this.classList.remove('editable');
-            this._EVENT_PARAGRAPH$.next({ type: 'changeeditable', value: false });
-        }
-    }
-
-    private get editable() {
-        return this._editable;
-    }
-
-    protected _onOverlap() {
-        this._EMIT_REPAINT();
-    }
-
-    protected _onFocus() {
-        this._EMIT_CURSOR_REPAINT();
-    }
-
-    protected _onBlur() {
-        this.selectionStart = null;
-        this.cursor = null;
-        this.editable = false;
-        this._hideCursor();
-    }
-
-    constructor(
-        x: string | number, y: string | number, width: string | number, height: string | number,
-        defaultTextStyle: string, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []
-    ) {
-        super(x, y, width, height);
-
-        this._EVENT_PARAGRAPH$ = new Subject();
-        this._EVENT_PARAGRAPH$.pipe(filter(v => v.type === 'repaint'), debounceTime(.005)).subscribe(() => this._repaint());
-        this._EVENT_PARAGRAPH$.pipe(filter(v => v.type === 'cursorrepaint' && v.value), map(v => v.value as string), distinctUntilChanged()).subscribe(() => this._repaintCursor());
-
-        this._CURSOR_MOVE$ = new Subject();
-        this._CURSOR_MOVE$.pipe(
-            filter(pos => [CursorMode.INPUT, CursorMode.NONE].indexOf(this._cursorMode) < 0 && this.isFocused && this.editable),
-            distinctUntilChanged()
-        ).subscribe(pos => this._EVENT_PARAGRAPH$.next({ type: 'changecursor', value: pos }));
-
-        this._columnCount = 1;
-        this._innerMargin = 0;
-        this._textStore = new ActaTextStore();
-
-        if (!textstylemgr.get(defaultTextStyle)) throw new Error(`Invalid TextStyle Name. "${defaultTextStyle}"`);
-        this._defaultTextStyle = defaultTextStyle;
-
-        this._readonly = false;
-        this._editable = false;
-        this._selectionStart = null;
-        this._cursorMode = CursorMode.NONE;
-        this._cursor = null;
-        this._inputChar = '';
-        this._overflow = false;
-
-        this.columnCount = columnCount;
-        for (let i = 0; i < columnCount; i++) {
-            if (columnWidths[i]) this.columnWidth(i, columnWidths[i]);
-        }
-        this.innerMargin = innerMargin;
-
-        this.value = '';
-
-        this._onChangeSize = _ => this._EMIT_REPAINT();
-
+    private _initEvent() {
         fromEvent<KeyboardEvent>(this, 'keydown').pipe(filter(e => {
             if (this.mode !== 'NONE') return false;
             if (!this.editable) return false;
@@ -1139,10 +1042,117 @@ export default class ActaParagraph extends IActaFrame {
         });
     }
 
+    private get columns(): ActaParagraphColumn[] {
+        return Array.prototype.slice.call(
+            this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col')
+        );
+    }
+
+    private get canvas() {
+        const canvas: SVGElement[] = [];
+        this.querySelectorAll<ActaParagraphColumn>('x-paragraph-col').forEach(col => canvas.push(col.canvas));
+        return canvas;
+    }
+
+    private get cursor() {
+        return this._cursor;
+    }
+
+    private set cursor(pos) {
+        if (pos !== null && this._cursor !== pos) this._cursorTextAttribute = undefined;
+        this._cursor = pos;
+        if (pos !== null) this._CURSOR_MOVE$.next(pos);
+    }
+
+    private set selectionStart(pos) {
+        if (pos !== null && this._selectionStart !== pos) this._cursorTextAttribute = undefined;
+        this._selectionStart = pos;
+        if (pos !== null) this._CURSOR_MOVE$.next(pos);
+    }
+
+    private get selectionStart() {
+        return this._selectionStart;
+    }
+
+    private set editable(value) {
+        this._editable = value;
+        if (this._editable) {
+            this.classList.add('editable');
+            this._EVENT_PARAGRAPH$.next({ type: 'changeeditable', value: true });
+        } else {
+            this.classList.remove('editable');
+            this._EVENT_PARAGRAPH$.next({ type: 'changeeditable', value: false });
+        }
+    }
+
+    private get editable() {
+        return this._editable;
+    }
+
+    protected _onOverlap() {
+        this._EMIT_REPAINT();
+    }
+
+    protected _onFocus() {
+        this._EMIT_CURSOR_REPAINT();
+    }
+
+    protected _onBlur() {
+        this.selectionStart = null;
+        this.cursor = null;
+        this.editable = false;
+        this._hideCursor();
+    }
+
+    constructor(
+        x: string | number, y: string | number, width: string | number, height: string | number,
+        defaultTextStyle: string, columnCount: number = 1, innerMargin: string | number = 0, columnWidths: string[] | number[] = []
+    ) {
+        super(x, y, width, height);
+
+        this._EVENT_PARAGRAPH$ = new Subject();
+        this._EVENT_PARAGRAPH$.pipe(filter(v => v.type === 'repaint'), debounceTime(.005)).subscribe(() => this._repaint());
+        this._EVENT_PARAGRAPH$.pipe(filter(v => v.type === 'cursorrepaint' && v.value), map(v => v.value as string), distinctUntilChanged()).subscribe(() => this._repaintCursor());
+        this._EVENT_PARAGRAPH$.pipe(filter(v => v.type === 'changecolumn')).subscribe(() => this._EMIT_REPAINT());
+
+        this._CURSOR_MOVE$ = new Subject();
+        this._CURSOR_MOVE$.pipe(
+            filter(pos => [CursorMode.INPUT, CursorMode.NONE].indexOf(this._cursorMode) < 0 && this.isFocused && this.editable),
+            distinctUntilChanged()
+        ).subscribe(pos => this._EVENT_PARAGRAPH$.next({ type: 'changecursor', value: pos }));
+
+        this._columnCount = 1;
+        this._innerMargin = 0;
+        this._textStore = new ActaTextStore();
+
+        if (!textstylemgr.get(defaultTextStyle)) throw new Error(`Invalid TextStyle Name. "${defaultTextStyle}"`);
+        this._defaultTextStyle = defaultTextStyle;
+
+        this._readonly = false;
+        this._editable = false;
+        this._selectionStart = null;
+        this._cursorMode = CursorMode.NONE;
+        this._cursor = null;
+        this._inputChar = '';
+        this._overflow = false;
+
+        this.columnCount = columnCount;
+        for (let i = 0; i < columnCount; i++) {
+            if (columnWidths[i]) this.columnWidth(i, columnWidths[i]);
+        }
+        this.innerMargin = innerMargin;
+
+        this.value = '';
+
+        this._onChangeSize = _ => this._EMIT_REPAINT();
+
+        this._initEvent();
+    }
+
     columnWidth(idx: number, val: string | number) {
         if (arguments.length > 1) {
             this.columns[idx].setAttribute('width', (val || 0).toString());
-            this._EMIT_CHANGE_SIZE();
+            this._EMIT_CHANGE_COLUMN();
         } else {
             return this.columns[idx].getAttribute('width') || false;
         }
@@ -1305,7 +1315,7 @@ export default class ActaParagraph extends IActaFrame {
             margin.setAttribute('width', this.innerMargin.toString());
             this.appendChild(margin);
         }
-        this._EMIT_CHANGE_SIZE();
+        this._EMIT_CHANGE_COLUMN();
     }
 
     set innerMargin(innerMargin) {
@@ -1313,7 +1323,7 @@ export default class ActaParagraph extends IActaFrame {
         for (const margin of this.querySelectorAll('x-paragraph-margin')) {
             margin.setAttribute('width', innerMargin.toString());
         }
-        this._EMIT_CHANGE_SIZE();
+        this._EMIT_CHANGE_COLUMN();
     }
 
     set defaultTextStyle(styleName: string) {
@@ -1345,6 +1355,17 @@ export default class ActaParagraph extends IActaFrame {
             ).subscribe(_ => handler(this, this.isEditable));
         } else {
             this._subscriptionChangeEditable = undefined;
+        }
+    }
+
+    set onChangeColumn(handler: ((paragraph: ActaParagraph) => void) | null) {
+        if (this._subscriptionChangeColumn) this._subscriptionChangeColumn.unsubscribe();
+        if (handler) {
+            this._subscriptionChangeColumn = this._EVENT_PARAGRAPH$.pipe(
+                filter(v => v.type === 'changecolumn')
+            ).subscribe(_ => handler(this));
+        } else {
+            this._subscriptionChangeColumn = undefined;
         }
     }
 

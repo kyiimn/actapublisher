@@ -420,6 +420,7 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultBodyTextStyle, this.page.guide ? size.columnCount : 1, this.page.guide?.innerMargin
                     );
+                    paragraph.onChangeColumn = p => this._onParagraphChangeColumn(p);
                     paragraph.onChangeCursor = p => this._onParagraphChangeCursor(p);
                     paragraph.onChangeEditable = _ => this._onParagraphChangeEditable();
                     changetool = EditorTool.TEXT_MODE;
@@ -432,6 +433,7 @@ export default class ActaEditor {
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
                         accountInfo.defaultTitleTextStyle
                     );
+                    paragraph.onChangeColumn = p => this._onParagraphChangeColumn(p);
                     paragraph.onChangeCursor = p => this._onParagraphChangeCursor(p);
                     paragraph.onChangeEditable = _ => this._onParagraphChangeEditable();
                     changetool = EditorTool.TEXT_MODE;
@@ -475,6 +477,10 @@ export default class ActaEditor {
         if (this._tool !== EditorTool.TEXT_MODE) {
             this._EVENT$.next({ action: 'changetool', value: EditorTool.TEXT_MODE });
         }
+    }
+
+    private _onParagraphChangeColumn(paragraph: ActaParagraph) {
+
     }
 
     private _onPageChangeSelectFrames() {
