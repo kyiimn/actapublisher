@@ -3,7 +3,7 @@ import ActaGuide from '../pageobject/guide';
 import ActaParagraph from '../pageobject/paragraph';
 import ActaTextAttribute from '../pageobject/textstyle/textattribute';
 import ActaImage from '../pageobject/image';
-import IActaFrame, { FrameOverlapMethod } from '../pageobject/interface/frame';
+import IActaFrame, { FrameOverlapMethod, IActaFrameAttribute } from '../pageobject/interface/frame';
 import accountInfo from '../info/account';
 import groupmgr from '../pageobject/groupmgr';
 import U from '../util/units';
@@ -65,7 +65,7 @@ type Boundary = {
     y: number[]
 };
 
-type EVENT_TYPE = 'append' | 'changetool' | 'textstyle' | 'scale' | 'selectframe';
+type EVENT_TYPE = 'append' | 'changetool' | 'textstyle' | 'scale' | 'frameattribute';
 
 export default class ActaEditor {
     private _element: HTMLElement;
@@ -192,10 +192,10 @@ export default class ActaEditor {
     }
 
     private _calcGuideBoundary() {
-        const guides = this._page.guide?.querySelectorAll('x-guide-col, x-guide-margin');
+        const guides = this.page.guide?.querySelectorAll('x-guide-col, x-guide-margin');
         if (guides && guides.length > 0) {
-            const guideTop = U.px(this._page.paddingTop);
-            const guideLeft = U.px(this._page.paddingLeft);
+            const guideTop = U.px(this.page.paddingTop);
+            const guideLeft = U.px(this.page.paddingLeft);
 
             this._pageGuideBoundary = { x: [guideLeft], y: [guideTop] };
             for (const guide of guides) {
@@ -241,7 +241,7 @@ export default class ActaEditor {
             for (const selectedFrame of this.page.selectedFrames) {
                 selectedFrame.unselect();
             }
-            const members = groupmgr.getMember(this._page, frame) || [];
+            const members = groupmgr.getMember(this.page, frame) || [];
             for (const member of members) {
                 if (member === frame) continue;
                 member.select();
@@ -264,22 +264,22 @@ export default class ActaEditor {
         if (!this._mouseMovePreviousEvent) return;
 
         const selectedFrames = this.page.selectedFrames;
-        const mx = (e.clientX - this._mouseMovePreviousEvent.clientX) / this._page.scale;
-        const my = (e.clientY - this._mouseMovePreviousEvent.clientY) / this._page.scale;
+        const mx = (e.clientX - this._mouseMovePreviousEvent.clientX) / this.page.scale;
+        const my = (e.clientY - this._mouseMovePreviousEvent.clientY) / this.page.scale;
 
         if (selectedFrames.length > 1) {
             const rect = this._getSelectedBoundingClientRect(true);
             if (!rect) return;
 
-            let x1 = Math.min(U.px(this._page.width) - rect.width, Math.max(0, rect.x + mx));
-            let y1 = Math.min(U.px(this._page.height) - rect.height, Math.max(0, rect.y + my));
+            let x1 = Math.min(U.px(this.page.width) - rect.width, Math.max(0, rect.x + mx));
+            let y1 = Math.min(U.px(this.page.height) - rect.height, Math.max(0, rect.y + my));
 
             if (this._pageGuideBoundary && !e.ctrlKey) {
                 const x2 = x1 + rect.width;
                 const y2 = y1 + rect.height;
 
-                const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
-                const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
+                const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this.page.scale, true);
+                const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this.page.scale, false);
 
                 if (nspos.x !== x1) x1 = nspos.x;
                 else if (nepos.x !== x2) x1 = nepos.x - rect.width;
@@ -294,16 +294,16 @@ export default class ActaEditor {
             }
         } else if (selectedFrames.length === 1) {
             const frame = selectedFrames[0];
-            let x1 = Math.min(U.px(this._page.width) - U.px(frame.width), Math.max(0, U.px(frame.savedPositionLeft) + mx));
-            let y1 = Math.min(U.px(this._page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
+            let x1 = Math.min(U.px(this.page.width) - U.px(frame.width), Math.max(0, U.px(frame.savedPositionLeft) + mx));
+            let y1 = Math.min(U.px(this.page.height) - U.px(frame.height), Math.max(0, U.px(frame.savedPositionTop) + my));
 
             if (this._pageGuideBoundary && !e.ctrlKey) {
                 if (frame instanceof ActaParagraph || frame instanceof ActaImage) {
                     const x2 = x1 + U.px(frame.width);
                     const y2 = y1 + U.px(frame.height);
 
-                    const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, true);
-                    const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this._page.scale, false);
+                    const nspos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this.page.scale, true);
+                    const nepos = ActaEditor.getValidMagnetPosition({ x: x2, y: y2 }, this._pageGuideBoundary, this._magnetRange / this.page.scale, false);
 
                     if (nspos.x !== x1) x1 = nspos.x;
                     else if (nepos.x !== x2) x1 = nepos.x - U.px(frame.width);
@@ -311,7 +311,7 @@ export default class ActaEditor {
                     if (nspos.y !== y1) y1 = nspos.y;
                     else if (nepos.y !== y2) y1 = nepos.y - U.px(frame.height);
                 } else {
-                    const npos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this._page.scale);
+                    const npos = ActaEditor.getValidMagnetPosition({ x: x1, y: y1 }, this._pageGuideBoundary, this._magnetRange / this.page.scale);
                     x1 = npos.x;
                     y1 = npos.y;
                 }
@@ -367,7 +367,7 @@ export default class ActaEditor {
                 this._mouseEventStartPosition = pos;
                 this._mouseEventDragGuide = document.createElement('div');
                 this._mouseEventDragGuide.classList.add('draw-guide');
-                this._page.appendChild(this._mouseEventDragGuide);
+                this.page.appendChild(this._mouseEventDragGuide);
             }
         } finally {
             if (previousDragGuide) previousDragGuide.remove();
@@ -418,7 +418,7 @@ export default class ActaEditor {
                 {
                     const paragraph = new ActaParagraph(
                         U.pt(size.x, U.PX), U.pt(size.y, U.PX), U.pt(size.width, U.PX), U.pt(size.height, U.PX),
-                        accountInfo.defaultBodyTextStyle, this._page.guide ? size.columnCount : 1, this._page.guide?.innerMargin
+                        accountInfo.defaultBodyTextStyle, this.page.guide ? size.columnCount : 1, this.page.guide?.innerMargin
                     );
                     paragraph.onChangeCursor = p => this._onParagraphChangeCursor(p);
                     paragraph.onChangeEditable = _ => this._onParagraphChangeEditable();
@@ -442,7 +442,7 @@ export default class ActaEditor {
         }
         if (!frame) return;
 
-        this._page.appendChild(frame as IActaFrame);
+        this.page.appendChild(frame as IActaFrame);
         this._EVENT$.next({ action: 'append', value: frame as IActaFrame });
 
         // 프레임을 페이지에 추가 후 렌더링 이후에 실행
@@ -477,6 +477,31 @@ export default class ActaEditor {
         }
     }
 
+    private _onPageChangeSelectFrames() {
+        const frames = this.page.selectedFrames;
+        let attr: IActaFrameAttribute | null = null;
+        if (frames.length > 0) {
+            attr = frames[0].frameAttribute;
+            for (const frame of frames) {
+                const fattr = frame.frameAttribute;
+                if (U.pt(attr.x) !== U.pt(fattr.x)) attr.x = undefined;
+                if (U.pt(attr.y) !== U.pt(fattr.y)) attr.y = undefined;
+                if (U.pt(attr.width) !== U.pt(fattr.width)) attr.width = undefined;
+                if (U.pt(attr.height) !== U.pt(fattr.height)) attr.height = undefined;
+                if (U.pt(attr.paddingLeft) !== U.pt(fattr.paddingLeft)) attr.paddingLeft = undefined;
+                if (U.pt(attr.paddingTop) !== U.pt(fattr.paddingTop)) attr.paddingTop = undefined;
+                if (U.pt(attr.paddingBottom) !== U.pt(fattr.paddingBottom)) attr.paddingBottom = undefined;
+                if (U.pt(attr.paddingRight) !== U.pt(fattr.paddingRight)) attr.paddingRight = undefined;
+                if (U.pt(attr.borderLeft) !== U.pt(fattr.borderLeft)) attr.borderLeft = undefined;
+                if (U.pt(attr.borderTop) !== U.pt(fattr.borderTop)) attr.borderTop = undefined;
+                if (U.pt(attr.borderBottom) !== U.pt(fattr.borderBottom)) attr.borderBottom = undefined;
+                if (U.pt(attr.borderRight) !== U.pt(fattr.borderRight)) attr.borderRight = undefined;
+                if (U.pt(attr.overlapMethod) !== U.pt(fattr.overlapMethod)) attr.overlapMethod = undefined;
+            }
+        }
+        this._EVENT$.next({ action: 'frameattribute', value: attr });
+    }
+
     private get _editableParagraph() {
         for (const frame of this.page.allFrames) {
             if (!(frame instanceof ActaParagraph)) continue;
@@ -495,53 +520,19 @@ export default class ActaEditor {
         return null;
     }
 
-    constructor(pageSize: CodePageSize) {
-        this._EVENT$ = new Subject();
-
-        this._tool = EditorTool.SELECT;
-        this._readonly = false;
-        this._magnetRange = 24;
-        this._ignoreMoveLimit = 2;
-
-        this._element = document.createElement('div');
-        this._element.classList.add('editor');
-
-        this._page = new ActaPage(
-            `${pageSize.paperWidth}mm`,
-            `${pageSize.paperHeight}mm`
-        );
-        this._page.paddingTop = `${pageSize.lineMarginTop}mm`;
-        this._page.paddingBottom = `${pageSize.lineMarginBottom}mm`;
-        this._page.paddingLeft = `${pageSize.columnMarginInside}mm`;
-        this._page.paddingRight = `${pageSize.columnMarginOutside}mm`;
-
-        this._page.guide = new ActaGuide(pageSize.columnCount, `${pageSize.columnSpacing}mm`);
-        this._page.guide.lineMarker = {
-            lineHeight: U.px(`${pageSize.lineHeight}mm`),
-            lineSpacing: U.px(`${pageSize.lineSpacing}mm`),
-            lineCount: pageSize.lineCount
-        };
-
-        this._element.appendChild(this._page);
-        this._page.onChangeScale = (width, height) => {
-            this._element.style.width = `${width}px`;
-            this._element.style.height = `${height}px`;
-        };
-        this._page.scale = 1;
-        this._page.onChangeSelectFrames = frames => this._EVENT$.next({ action: 'selectframe', value: frames });
-
+    private _initPageEvent() {
         fromEvent<WheelEvent>(this._element, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => {
             e.preventDefault();
 
-            let scale = this._page.scale;
+            let scale = this.page.scale;
             if (e.deltaY < 0) scale += 0.05; else scale -= 0.05;
             scale = Math.max(0.05, scale);
-            this._page.scale = scale;
+            this.page.scale = scale;
 
             this._EVENT$.next({ action: 'scale', value: scale });
         });
 
-        fromEvent<MouseEvent>(this._page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
+        fromEvent<MouseEvent>(this.page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
                 this._onDrawGuideStart(e)
             } else if (EditorToolSelect.indexOf(this._tool) > -1) {
@@ -552,7 +543,7 @@ export default class ActaEditor {
             e.preventDefault();
             e.stopPropagation();
         });
-        fromEvent<MouseEvent>(this._page, 'mousemove').subscribe(e => {
+        fromEvent<MouseEvent>(this.page, 'mousemove').subscribe(e => {
             if (e.buttons === 4) {
                 this._onScrollMove(e);
             } else if (this._tool === EditorTool.FRAME_MOVE_MODE) {
@@ -563,7 +554,7 @@ export default class ActaEditor {
             e.preventDefault();
             e.stopPropagation();
         });
-        fromEvent<MouseEvent>(this._page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => {
+        fromEvent<MouseEvent>(this.page, 'mouseup').pipe(filter(_ => this._mouseMovePreviousEvent !== undefined)).subscribe(e => {
             try {
                 if (EditorToolDrawFrames.indexOf(this._tool) > -1) {
                     this._onDrawGuideEnd(e);
@@ -585,6 +576,51 @@ export default class ActaEditor {
                 e.stopPropagation();
             }
         });
+    }
+
+    constructor(pageSize: CodePageSize) {
+        this._EVENT$ = new Subject();
+
+        this._tool = EditorTool.SELECT;
+        this._readonly = false;
+        this._magnetRange = 24;
+        this._ignoreMoveLimit = 2;
+
+        this._element = document.createElement('div');
+        this._element.classList.add('editor');
+
+        this._page = new ActaPage(
+            `${pageSize.paperWidth}mm`,
+            `${pageSize.paperHeight}mm`
+        );
+        this.page.paddingTop = `${pageSize.lineMarginTop}mm`;
+        this.page.paddingBottom = `${pageSize.lineMarginBottom}mm`;
+        this.page.paddingLeft = `${pageSize.columnMarginInside}mm`;
+        this.page.paddingRight = `${pageSize.columnMarginOutside}mm`;
+
+        this.page.guide = new ActaGuide(pageSize.columnCount, `${pageSize.columnSpacing}mm`);
+        this.page.guide.lineMarker = {
+            lineHeight: U.px(`${pageSize.lineHeight}mm`),
+            lineSpacing: U.px(`${pageSize.lineSpacing}mm`),
+            lineCount: pageSize.lineCount
+        };
+
+        this._element.appendChild(this.page);
+        this.page.onChangeScale = (width, height) => {
+            this._element.style.width = `${width}px`;
+            this._element.style.height = `${height}px`;
+        };
+        this.page.scale = 1;
+        this.page.onChangeSelectFrames = _ => this._onPageChangeSelectFrames();
+        this.page.onChangeFrameSize = frame => {
+            if (this.page.selectedFrames.indexOf(frame) < 0) return;
+            this._onPageChangeSelectFrames();
+        }
+        this.page.onMoveFrame = frame => {
+            if (this.page.selectedFrames.indexOf(frame) < 0) return;
+            this._onPageChangeSelectFrames();
+        }
+        this._initPageEvent();
     }
 
     onKeydown(e: KeyboardEvent) {
@@ -628,11 +664,11 @@ export default class ActaEditor {
                 if (target.indexOf('up') > -1) {
                     for (const frame of selectedFrames) frame.y = Math.max(U.pt(frame.y) - step, 0);
                 } else if (target.indexOf('down') > -1) {
-                    for (const frame of selectedFrames) frame.y = Math.min(U.pt(frame.y) + step, U.pt(this._page.height) - U.pt(frame.height));
+                    for (const frame of selectedFrames) frame.y = Math.min(U.pt(frame.y) + step, U.pt(this.page.height) - U.pt(frame.height));
                 } else if (target.indexOf('left') > -1) {
                     for (const frame of selectedFrames) frame.x = Math.max(U.pt(frame.x) - step, 0);
                 } else if (target.indexOf('right') > -1) {
-                    for (const frame of selectedFrames) frame.x = Math.min(U.pt(frame.x) + step, U.pt(this._page.width) - U.pt(frame.width));
+                    for (const frame of selectedFrames) frame.x = Math.min(U.pt(frame.x) + step, U.pt(this.page.width) - U.pt(frame.width));
                 }
             } else if (actionType === 'rotate') {
                 const target = action.split('-')[1];
@@ -655,7 +691,7 @@ export default class ActaEditor {
                         for (const frame of selectedFrames) {
                             if (frame.previousElementSibling) {
                                 const prevEl = frame.previousElementSibling;
-                                if (prevEl) this._page.insertBefore(frame, prevEl);
+                                if (prevEl) this.page.insertBefore(frame, prevEl);
                             }
                         }
                         break;
@@ -663,7 +699,7 @@ export default class ActaEditor {
                         for (const frame of selectedFrames) {
                             if (frame.nextElementSibling) {
                                 const nextEl = frame.nextElementSibling;
-                                if (nextEl) this._page.insertBefore(frame, nextEl.nextElementSibling);
+                                if (nextEl) this.page.insertBefore(frame, nextEl.nextElementSibling);
                             }
                         }
                         break;
@@ -715,7 +751,7 @@ export default class ActaEditor {
     }
 
     setTextAttribute(attr: string, value: IActaEditorTextAttribute) {
-        const paragraph = this._page.querySelector<ActaParagraph>('x-paragraph.focus.editable');
+        const paragraph = this.page.querySelector<ActaParagraph>('x-paragraph.focus.editable');
         if (!paragraph) return;
 
         if (attr === 'textstyle') {
@@ -744,6 +780,8 @@ export default class ActaEditor {
                 if (value === 'shape') frame.overlapMethod = FrameOverlapMethod.SHAPE;
                 if (value === 'jump') frame.overlapMethod = FrameOverlapMethod.JUMP;
             }
+            if (attr === 'x') frame.x = value;
+            if (attr === 'y') frame.y = value;
             if (attr === 'width') frame.width = value;
             if (attr === 'height') frame.height = value;
             if (attr === 'padding-left') frame.paddingLeft = value;
@@ -795,10 +833,10 @@ export default class ActaEditor {
         }
     }
 
-    set scale(scale: number) { this._page.scale = scale; }
+    set scale(scale: number) { this.page.scale = scale; }
     set readonly(value: boolean) { this._readonly = value; }
 
-    get scale() { return this._page.scale; }
+    get scale() { return this.page.scale; }
     get tool() { return this._tool; }
     get readonly() { return this._readonly; }
 

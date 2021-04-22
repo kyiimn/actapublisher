@@ -1021,7 +1021,7 @@ export default class ActaParagraph extends IActaFrame {
 
         this.value = '';
 
-        this.onChangeSize = _ => this._EMIT_REPAINT();
+        this._onChangeSize = _ => this._EMIT_REPAINT();
 
         fromEvent<KeyboardEvent>(this, 'keydown').pipe(filter(e => {
             if (this.mode !== 'NONE') return false;

@@ -279,7 +279,7 @@ export default class ActaImage extends IActaFrame {
 
         this._rememberOverlapCalc = {};
 
-        this.onChangeSize = _ => {
+        this._onChangeSize = _ => {
             this._resize();
             this._repaint();
         };

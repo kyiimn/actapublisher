@@ -158,7 +158,7 @@ class Designer {
             } else if (data.action === 'add') {
                 const editor = this._layout.active;
                 if (!editor) return;
-                editor.observable.subscribe(rdata => this.initEditorEvent(editor, rdata.action, rdata.value));
+                editor.observable.subscribe(rdata => this._initEditorEvent(editor, rdata.action, rdata.value));
                 editor.scale = parseFloat(((this._layout.documents.clientHeight - 48) / editor.el.clientHeight).toFixed(2));
                 this._toolbarDocStatus.data = {
                     scale: Math.round(editor.scale * 100)
@@ -185,12 +185,7 @@ class Designer {
         });
     }
 
-    static getInstance() {
-        if (!Designer._instance) Designer._instance = new Designer();
-        return Designer._instance;
-    }
-
-    initEditorEvent(editor: Editor, action: string, value: any) {
+    private _initEditorEvent(editor: Editor, action: string, value: any) {
         const isActive = this._layout.active === editor;
         if (action === 'scale' && isActive) {
             this._toolbarDocStatus.data = {
@@ -202,31 +197,21 @@ class Designer {
             this._toolbarPODraw.value = value;
         } else if (action === 'textstyle') {
             this._toolbarText.data = value;
-        } else if (action === 'selectframe') {
-            const frames = value as IActaFrame[];
-            if (frames.length < 1) {
-                this._toolbarPOControl.disable();
-                this._toolbarPOTransform.value = null;
-            } else {
-                const attr: IActaFrameAttribute = frames[0].frameAttribute;
-                for (const frame of value) {
-                    const fattr = frame.frameAttribute;
-                    if (U.pt(attr.width) !== U.pt(fattr.width)) attr.width = undefined;
-                    if (U.pt(attr.height) !== U.pt(fattr.height)) attr.height = undefined;
-                    if (U.pt(attr.paddingLeft) !== U.pt(fattr.paddingLeft)) attr.paddingLeft = undefined;
-                    if (U.pt(attr.paddingTop) !== U.pt(fattr.paddingTop)) attr.paddingTop = undefined;
-                    if (U.pt(attr.paddingBottom) !== U.pt(fattr.paddingBottom)) attr.paddingBottom = undefined;
-                    if (U.pt(attr.paddingRight) !== U.pt(fattr.paddingRight)) attr.paddingRight = undefined;
-                    if (U.pt(attr.borderLeft) !== U.pt(fattr.borderLeft)) attr.borderLeft = undefined;
-                    if (U.pt(attr.borderTop) !== U.pt(fattr.borderTop)) attr.borderTop = undefined;
-                    if (U.pt(attr.borderBottom) !== U.pt(fattr.borderBottom)) attr.borderBottom = undefined;
-                    if (U.pt(attr.borderRight) !== U.pt(fattr.borderRight)) attr.borderRight = undefined;
-                    if (U.pt(attr.overlapMethod) !== U.pt(fattr.overlapMethod)) attr.overlapMethod = undefined;
-                }
+        } else if (action === 'frameattribute') {
+            const attr = value as IActaFrame | null;
+            if (attr) {
                 this._toolbarPOControl.enable();
                 this._toolbarPOTransform.value = attr;
+            } else {
+                this._toolbarPOControl.disable();
+                this._toolbarPOTransform.value = null;
             }
         }
+    }
+
+    static getInstance() {
+        if (!Designer._instance) Designer._instance = new Designer();
+        return Designer._instance;
     }
 
     async run() {

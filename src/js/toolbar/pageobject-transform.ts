@@ -12,6 +12,8 @@ type CHANGE_ATTR = 'overlap' | 'width' | 'height' | 'padding-left' | 'padding-to
 
 class ActaToolbarPageObjectTransform {
     private _toolbar: HTMLUListElement;
+    private _itemX;
+    private _itemY;
     private _itemSizeWidth;
     private _itemSizeHeight;
     private _itemPaddingLeft;
@@ -42,8 +44,10 @@ class ActaToolbarPageObjectTransform {
         this._toolbar.classList.add('toolbar');
         this._toolbar.classList.add('pageobject-transform');
 
-        this._itemSizeWidth = formbuilder.inputNumber({ attr: { action: 'width' }, icon: 'arrows-alt-h', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_WIDTH, width: '3.6em', step: .01, min: 0 });
-        this._itemSizeHeight = formbuilder.inputNumber({ attr: { action: 'height' }, icon: 'arrows-alt-v', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_HEIGHT, width: '3.6em', step: .01, min: 0 });
+        this._itemX = formbuilder.inputNumber({ attr: { action: 'x' }, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_X, width: '4.4em', step: .01, min: 0 });
+        this._itemY = formbuilder.inputNumber({ attr: { action: 'y' }, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_Y, width: '4.4em', step: .01, min: 0 });
+        this._itemSizeWidth = formbuilder.inputNumber({ attr: { action: 'width' }, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_WIDTH, width: '4.4em', step: .01, min: 0 });
+        this._itemSizeHeight = formbuilder.inputNumber({ attr: { action: 'height' }, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_HEIGHT, width: '4.4em', step: .01, min: 0 });
         this._itemPaddingLeft = formbuilder.inputNumber({ attr: { action: 'padding-left' }, icon: 'padding', icontype: 'material', iconrotate: 270, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_LEFT, width: '3.6em', step: .01, min: 0 });
         this._itemPaddingTop = formbuilder.inputNumber({ attr: { action: 'padding-top' }, icon: 'padding', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_TOP, width: '3.6em', step: .01, min: 0 });
         this._itemPaddingBottom = formbuilder.inputNumber({ attr: { action: 'padding-bottom' }, icon: 'padding', icontype: 'material', iconrotate: 180, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_PADDING_BOTTOM, width: '3.6em', step: .01, min: 0 });
@@ -58,6 +62,9 @@ class ActaToolbarPageObjectTransform {
         this._itemOverlapMethodShape = formbuilder.iconButton({ icon: 'flow-shape', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_SHAPE });
         this._itemOverlapMethodJump = formbuilder.iconButton({ icon: 'flow-jump', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_JUMP });
 
+        this._toolbar.appendChild(this._itemX.el);
+        this._toolbar.appendChild(this._itemY.el);
+        this._toolbar.appendChild(formbuilder.separater);
         this._toolbar.appendChild(this._itemSizeWidth.el);
         this._toolbar.appendChild(this._itemSizeHeight.el);
         this._toolbar.appendChild(formbuilder.separater);
@@ -90,7 +97,9 @@ class ActaToolbarPageObjectTransform {
         });
 
         merge<any[]>(
-            this._itemSizeWidth.observable.pipe(map(e => [ 'width', e.value] )),
+            this._itemX.observable.pipe(map(e => ['x', e.value] )),
+            this._itemY.observable.pipe(map(e => ['y', e.value] )),
+            this._itemSizeWidth.observable.pipe(map(e => ['width', e.value] )),
             this._itemSizeHeight.observable.pipe(map(e => ['height', e.value] )),
             this._itemPaddingLeft.observable.pipe(map(e => ['padding-left', e.value] )),
             this._itemPaddingTop.observable.pipe(map(e => ['padding-top', e.value] )),
@@ -106,6 +115,8 @@ class ActaToolbarPageObjectTransform {
     }
 
     enable() {
+        this._itemX.disabled = false;
+        this._itemY.disabled = false;
         this._itemSizeWidth.disabled = false;
         this._itemSizeHeight.disabled = false;
         this._itemPaddingLeft.disabled = false;
@@ -127,6 +138,8 @@ class ActaToolbarPageObjectTransform {
     }
 
     disable() {
+        this._itemX.disabled = true;
+        this._itemY.disabled = true;
         this._itemSizeWidth.disabled = true;
         this._itemSizeHeight.disabled = true;
         this._itemPaddingLeft.disabled = true;
@@ -148,9 +161,9 @@ class ActaToolbarPageObjectTransform {
     }
 
     set value(value: IActaFrameAttribute | null) {
-        const unit = accountInfo.frameUnitType;
-
         if (value === null) {
+            this._itemX.value = '';
+            this._itemY.value = '';
             this._itemSizeWidth.value = '';
             this._itemSizeHeight.value = '';
             this._itemPaddingLeft.value = '';
@@ -167,6 +180,9 @@ class ActaToolbarPageObjectTransform {
             this._itemOverlapMethodJump.value = false;
             this.disable();
         } else {
+            const unit = accountInfo.frameUnitType;
+            this._itemX.value = value.x === undefined ? '' : U.convert(unit, value.x).toFixed(2);
+            this._itemY.value = value.y === undefined ? '' : U.convert(unit, value.y).toFixed(2);
             this._itemSizeWidth.value = value.width === undefined ? '' : U.convert(unit, value.width).toFixed(2);
             this._itemSizeHeight.value = value.height === undefined ? '' : U.convert(unit, value.height).toFixed(2);
             this._itemPaddingLeft.value = value.paddingLeft === undefined ? '' : U.convert(unit, value.paddingLeft).toFixed(2);
@@ -188,17 +204,20 @@ class ActaToolbarPageObjectTransform {
     get observable() { return this._CHANGE$; }
     get disabled() { return this._disabled; }
     get value() {
+        const unit = accountInfo.frameUnitType;
         const retVal: IActaFrameAttribute = {
-            width: this._itemSizeWidth.value,
-            height: this._itemSizeHeight.value,
-            paddingLeft: this._itemPaddingLeft.value,
-            paddingTop: this._itemPaddingTop.value,
-            paddingBottom: this._itemPaddingBottom.value,
-            paddingRight: this._itemPaddingRight.value,
-            borderLeft: this._itemBorderLeft.value,
-            borderTop: this._itemBorderTop.value,
-            borderBottom: this._itemBorderBottom.value,
-            borderRight: this._itemBorderRight.value
+            x: U.pt(this._itemX.value, unit),
+            y: U.pt(this._itemY.value, unit),
+            width: U.pt(this._itemSizeWidth.value, unit),
+            height: U.pt(this._itemSizeHeight.value, unit),
+            paddingLeft: U.pt(this._itemPaddingLeft.value, unit),
+            paddingTop: U.pt(this._itemPaddingTop.value, unit),
+            paddingBottom: U.pt(this._itemPaddingBottom.value, unit),
+            paddingRight: U.pt(this._itemPaddingRight.value, unit),
+            borderLeft: U.pt(this._itemBorderLeft.value, unit),
+            borderTop: U.pt(this._itemBorderTop.value, unit),
+            borderBottom: U.pt(this._itemBorderBottom.value, unit),
+            borderRight: U.pt(this._itemBorderRight.value, unit)
         };
         if (this._itemOverlapMethodOverlap.value) retVal.overlapMethod = FrameOverlapMethod.OVERLAP;
         if (this._itemOverlapMethodFramebox.value) retVal.overlapMethod = FrameOverlapMethod.FRAMEBOX;

@@ -10,7 +10,7 @@ import { filter, map } from 'rxjs/operators';
 
 type FrameMode = 'NONE' | 'MOVE' | 'EDIT';
 
-type EVENT_TYPE = 'overlap' | 'changeselect' | 'changefocus' | 'changesize' | 'changeoverlap';
+type EVENT_TYPE = 'overlap' | 'changeselect' | 'changefocus' | 'changesize' | 'changeoverlap' | 'move';
 
 export enum FrameOverlapMethod {
     OVERLAP,        // 겹치기
@@ -20,6 +20,8 @@ export enum FrameOverlapMethod {
 };
 
 export interface IActaFrameAttribute {
+    x?: number | string;
+    y?: number | string;
     width?: number | string,
     height?: number | string,
     paddingLeft?: number | string,
@@ -36,8 +38,10 @@ export interface IActaFrameAttribute {
 export default abstract class IActaFrame extends IActaElement {
     private _subscriptionChangeSelect?: Subscription;
     private _subscriptionChangeSize?: Subscription;
+    private _subscriptionMove?: Subscription;
 
     private _overlapFrames: IActaFrame[];
+    private _overlapMethod: FrameOverlapMethod;
     private _margin: number | string;
     private _focused: boolean;
 
@@ -45,11 +49,9 @@ export default abstract class IActaFrame extends IActaElement {
     private _moveOriginalLeft?: number | string;
     private _moveOriginalTop?: number | string;
 
-    private _overlapMethod: FrameOverlapMethod;
+    private _EVENT$: Subject<{ type: EVENT_TYPE, value?: any }>;
 
     protected _preflightProfiles: IActaPreflightProfile[];
-
-    protected _EVENT$: Subject<{ type: EVENT_TYPE, value?: any }>;
 
     static get observedAttributes() {
         return [
@@ -150,8 +152,13 @@ export default abstract class IActaFrame extends IActaElement {
         this._EMIT_CHANGE_SIZE();
     }
 
+    protected set _onChangeSize(handler: ((frame: IActaFrame) => void)) {
+        this._EVENT$.pipe(filter(v => v.type === 'changesize')).subscribe(_ => handler(this));
+    }
+
     protected _EMIT_CHANGE_SELECT() { this._EVENT$.next({ type: 'changeselect' }); }
     protected _EMIT_CHANGE_SIZE() { this._EVENT$.next({ type: 'changesize' }); }
+    protected _EMIT_MOVE() { this._EVENT$.next({ type: 'move' }); }
 
     protected constructor(x: string | number, y: string | number, width: string | number, height: string | number) {
         super();
@@ -214,8 +221,8 @@ export default abstract class IActaFrame extends IActaElement {
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (oldValue === newValue) return;
         switch (name) {
-            case 'x': this._applyX(); break;
-            case 'y': this._applyY(); break;
+            case 'x': this._applyX(); this._EMIT_MOVE(); break;
+            case 'y': this._applyY(); this._EMIT_MOVE(); break;
 
             case 'width': this._applyWidth(); this._EMIT_CHANGE_SIZE(); break;
             case 'height': this._applyHeight(); this._EMIT_CHANGE_SIZE(); break;
@@ -368,9 +375,22 @@ export default abstract class IActaFrame extends IActaElement {
     set onChangeSize(handler: ((frame: IActaFrame) => void) | null) {
         if (this._subscriptionChangeSize) this._subscriptionChangeSize.unsubscribe();
         if (handler) {
-            this._subscriptionChangeSize = this._EVENT$.pipe(filter(v => v.type === 'changesize')).subscribe(_ => handler(this));
+            this._subscriptionChangeSize = this._EVENT$.pipe(filter(v => {
+                return v.type === 'changesize';
+            })).subscribe(_ => handler(this));
         } else {
             this._subscriptionChangeSize = undefined;
+        }
+    }
+
+    set onMove(handler: ((frame: IActaFrame) => void) | null) {
+        if (this._subscriptionMove) this._subscriptionMove.unsubscribe();
+        if (handler) {
+            this._subscriptionMove = this._EVENT$.pipe(filter(v => {
+                return v.type === 'move';
+            })).subscribe(_ => handler(this));
+        } else {
+            this._subscriptionMove = undefined;
         }
     }
 
@@ -407,6 +427,8 @@ export default abstract class IActaFrame extends IActaElement {
 
     get frameAttribute(): IActaFrameAttribute {
         return {
+            x: this.x,
+            y: this.y,
             width: this.width,
             height: this.height,
             paddingTop: this.paddingTop,

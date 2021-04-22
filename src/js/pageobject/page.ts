@@ -8,12 +8,14 @@ import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import "../../css/pageobject/page.scss";
 
-type EVENT_TYPE = 'scale' | 'changeselectframes' | 'changeframestyle' | 'changepagestyle' | 'changefocus';
+type EVENT_TYPE = 'scale' | 'changeselectframes' | 'changeframestyle' | 'changepagestyle' | 'changefocus' | 'changeframesize' | 'moveframe';
 
 export default class ActaPage extends IActaElement {
     private _subscriptionChangeSelectFrames?: Subscription;
     private _subscriptionChangeScale?: Subscription;
     private _subscriptionChangePageStyle?: Subscription;
+    private _subscriptionChangeFrameSize?: Subscription;
+    private _subscriptionMoveFrame?: Subscription;
 
     private _guide: ActaGuide | undefined;
 
@@ -118,6 +120,8 @@ export default class ActaPage extends IActaElement {
                     if (removedNode instanceof IActaFrame) {
                         const node = removedNode as IActaFrame;
                         node.onChangeSelect = null;
+                        node.onChangeSize = null;
+                        node.onMove = null;
                     }
                 }
                 for (let i = 0; i < m.addedNodes.length; i++) {
@@ -137,6 +141,8 @@ export default class ActaPage extends IActaElement {
                             this._EVENT$.next({ type: 'changefocus', value: target });
                         });
                         node.onChangeSelect = _ => this._EVENT$.next({ type: 'changeselectframes', value: this.selectedFrames });
+                        node.onChangeSize = frame => this._EVENT$.next({ type: 'changeframesize', value: frame });
+                        node.onMove = frame => this._EVENT$.next({ type: 'moveframe', value: frame });
                     }
                 }
             });
@@ -214,6 +220,30 @@ export default class ActaPage extends IActaElement {
             ).subscribe(name => handler(name));
         } else {
             this._subscriptionChangePageStyle = undefined;
+        }
+    }
+
+    set onChangeFrameSize(handler: ((frame: IActaFrame) => void) | null) {
+        if (this._subscriptionChangeFrameSize) this._subscriptionChangeFrameSize.unsubscribe();
+        if (handler) {
+            this._subscriptionChangeFrameSize = this._EVENT$.pipe(
+                filter(v => v.type === 'changeframesize'),
+                map(v => v.value as IActaFrame)
+            ).subscribe(frame => handler(frame));
+        } else {
+            this._subscriptionChangeFrameSize = undefined;
+        }
+    }
+
+    set onMoveFrame(handler: ((frame: IActaFrame) => void) | null) {
+        if (this._subscriptionMoveFrame) this._subscriptionMoveFrame.unsubscribe();
+        if (handler) {
+            this._subscriptionMoveFrame = this._EVENT$.pipe(
+                filter(v => v.type === 'moveframe'),
+                map(v => v.value as IActaFrame)
+            ).subscribe(frame => handler(frame));
+        } else {
+            this._subscriptionMoveFrame = undefined;
         }
     }
 

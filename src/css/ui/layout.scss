@@ -149,7 +149,8 @@ body {
 
                 label {
                     color: $layoutTopbarColor;
-                    font-size: .8em;
+                    font-size: .7em;
+                    line-height: 1em;
                     user-select: none;
                     transition: color .2s;
                     white-space: nowrap;
@@ -174,6 +175,7 @@ body {
                     border-width: 1px;
                     background-color: $layoutTopbarFormBackgroundColor;
                     color: $layoutTopbarFormColor;
+                    font-size: .74em;
                     padding: 2px 4px;
 
                     &:disabled {
