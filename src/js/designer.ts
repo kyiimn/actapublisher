@@ -1,6 +1,7 @@
 import ToolbarPODraw from './toolbar/pageobject-draw';
 import ToolbarPOControl from './toolbar/pageobject-control';
 import ToolbarPOTransform from './toolbar/pageobject-transform';
+import ToolbarPOColumn from './toolbar/pageobject-column';
 import ToolbarText from './toolbar/text';
 import ToolbarDocStatus from './toolbar/document-status';
 import Editor from './editor/editor';
@@ -16,8 +17,7 @@ import formbuilder from './ui/form';
 import uialert from './ui/alert';
 import waitbar from './ui/waitbar';
 
-import IActaFrame, { IActaFrameAttribute } from './pageobject/interface/frame';
-import U from './util/units';
+import IActaFrame from './pageobject/interface/frame';
 
 import { fromEvent, merge } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
@@ -28,6 +28,7 @@ class Designer {
     private static _instance: Designer;
 
     private _toolbarPODraw;
+    private _toolbarPOColumn;
     private _toolbarPOControl;
     private _toolbarPOTransform;
     private _toolbarText;
@@ -43,6 +44,7 @@ class Designer {
 
     private constructor() {
         this._toolbarPODraw = new ToolbarPODraw();
+        this._toolbarPOColumn = new ToolbarPOColumn();
         this._toolbarPOControl = new ToolbarPOControl();
         this._toolbarPOTransform = new ToolbarPOTransform();
         this._toolbarText = new ToolbarText();
@@ -87,10 +89,12 @@ class Designer {
         this._layout.topbar.appendChild(this._toolbarPOTransform.el);
         this._layout.topbar.appendChild(this._toolbarPOControl.el);
         this._layout.topbar.appendChild(this._toolbarText.el);
+        this._layout.topbar.appendChild(this._toolbarPOColumn.el);
 
         this._layout.documentStatusbar.appendChild(this._toolbarDocStatus.el);
 
         this._toolbarPODraw.disable();
+        this._toolbarPOColumn.disable();
         this._toolbarPOControl.disable();
         this._toolbarPOTransform.disable();
         this._toolbarText.disable();
@@ -141,6 +145,7 @@ class Designer {
                 if (data.value) {
                     const editor = data.value as Editor;
                     this._toolbarPODraw.enable();
+                    this._toolbarPOColumn.enable();
                     this._toolbarPOControl.enable();
                     this._toolbarPOTransform.enable();
                     this._toolbarText.enable();
@@ -152,6 +157,7 @@ class Designer {
                     editor.tool = this._toolbarPODraw.value;
                 } else {
                     this._toolbarPODraw.disable();
+                    this._toolbarPOColumn.disable();
                     this._toolbarPOControl.disable();
                     this._toolbarPOTransform.disable();
                     this._toolbarText.disable();

@@ -102,6 +102,9 @@ export default {
         PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_SHAPE: '테두리',
         PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_JUMP: '줄넘기',
 
+        PAGEOBJECT_COLUMN_COUNT: '컬럼',
+        PAGEOBJECT_COLUMN_INNERMARGIN: '컬럼간격',
+
         DOCUMENTSTATUS_SCALE: '비율',
     },
     UI: {

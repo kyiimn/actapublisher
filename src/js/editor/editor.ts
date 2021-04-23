@@ -53,6 +53,11 @@ export interface IActaEditorTextAttribute {
     textAlign?: TextAlign
 };
 
+export interface IActaEditorParagraphColumnAttribute {
+    columnCount?: number,
+    innerMargin?: number | string;
+};
+
 type Position = {
     x: number,
     y: number,
