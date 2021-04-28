@@ -50,6 +50,8 @@ class Designer {
         this._toolbarText = new ToolbarText();
         this._toolbarDocStatus = new ToolbarDocStatus();
 
+        this._toolbarPOColumn.mergeTo(this._toolbarText);
+
         this._headerMenuItemNew = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_NEW, icon: 'file', icontype: 'far' });
         this._headerMenuItemOpen = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_OPEN, icon: 'folder-open' });
         this._headerMenuItemSave = formbuilder.appButton({ label: message.MENUITEM.DESIGNER_SAVE, icon: 'save' });
@@ -89,7 +91,6 @@ class Designer {
         this._layout.topbar.appendChild(this._toolbarPOTransform.el);
         this._layout.topbar.appendChild(this._toolbarPOControl.el);
         this._layout.topbar.appendChild(this._toolbarText.el);
-        this._layout.topbar.appendChild(this._toolbarPOColumn.el);
 
         this._layout.documentStatusbar.appendChild(this._toolbarDocStatus.el);
 

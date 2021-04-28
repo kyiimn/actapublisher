@@ -1,33 +1,29 @@
+import IActaToolbar from './toolbar';
+
 import message from '../ui/message';
-import formbuilder from '../ui/form';
+import formbuilder, { ActaUIFormButtonItem } from '../ui/form';
 import { EditorTool } from '../editor/editor';
+
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-class ActaToolbarPageObjectDraw {
-    private _toolbar: HTMLUListElement;
-    private _itemSelect;
-    private _itemFrameEditMode;
-    private _itemFrameMoveMode;
-    private _itemTextMode;
-    private _itemEmptyFrame;
-    private _itemTitleFrame;
-    private _itemTextFrame;
-    private _itemImageFrame;
-    private _itemLine;
+class ActaToolbarPageObjectDraw extends IActaToolbar {
+    private _itemSelect!: ActaUIFormButtonItem;
+    private _itemFrameEditMode!: ActaUIFormButtonItem;
+    private _itemFrameMoveMode!: ActaUIFormButtonItem;
+    private _itemTextMode!: ActaUIFormButtonItem;
+    private _itemEmptyFrame!: ActaUIFormButtonItem;
+    private _itemTitleFrame!: ActaUIFormButtonItem;
+    private _itemTextFrame!: ActaUIFormButtonItem;
+    private _itemImageFrame!: ActaUIFormButtonItem;
+    private _itemLine!: ActaUIFormButtonItem;
 
-    private _disabled: boolean;
+    private _CHANGE$!: Subject<EditorTool>;
 
-    private _CHANGE$: Subject<EditorTool>;
-
-    constructor() {
+    protected _initToolbar() {
         this._CHANGE$ = new Subject();
 
-        this._disabled = false;
-
-        this._toolbar = document.createElement('ul');
-        this._toolbar.classList.add('toolbar');
-        this._toolbar.classList.add('pageobject-draw');
+        this.el.classList.add('pageobject-draw');
 
         this._itemSelect = formbuilder.iconButton({ attr: { action: 'select' }, icon: 'mouse-pointer', label: message.TOOLBAR.PAGEOBJECT_DRAW_SELECT });
         this._itemFrameEditMode = formbuilder.iconButton({ attr: { action: 'frame-mode' }, icon: 'draw-polygon', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_DRAW_FRAME_EDITMODE });
@@ -41,19 +37,21 @@ class ActaToolbarPageObjectDraw {
 
         this._itemSelect.value = true;
 
-        this._toolbar.appendChild(this._itemSelect.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemFrameEditMode.el);
-        this._toolbar.appendChild(this._itemFrameMoveMode.el);
-        this._toolbar.appendChild(this._itemTextMode.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemEmptyFrame.el);
-        this._toolbar.appendChild(this._itemTitleFrame.el);
-        this._toolbar.appendChild(this._itemTextFrame.el);
-        this._toolbar.appendChild(this._itemImageFrame.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemLine.el);
+        this.el.appendChild(this._itemSelect.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemFrameEditMode.el);
+        this.el.appendChild(this._itemFrameMoveMode.el);
+        this.el.appendChild(this._itemTextMode.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemEmptyFrame.el);
+        this.el.appendChild(this._itemTitleFrame.el);
+        this.el.appendChild(this._itemTextFrame.el);
+        this.el.appendChild(this._itemImageFrame.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemLine.el);
+    }
 
+    protected _initEvent() {
         merge(
             this._itemSelect.observable.pipe(map(_ => this._itemSelect)),
             this._itemFrameEditMode.observable.pipe(map(_ => this._itemFrameEditMode)),
@@ -93,7 +91,7 @@ class ActaToolbarPageObjectDraw {
         this._itemImageFrame.disabled = false;
         this._itemLine.disabled = false;
 
-        this._disabled = false;
+        this.disabled = false;
     }
 
     disable() {
@@ -107,7 +105,7 @@ class ActaToolbarPageObjectDraw {
         this._itemImageFrame.disabled = true;
         this._itemLine.disabled = true;
 
-        this._disabled = true;
+        this.disabled = true;
     }
 
     onKeydown(e: KeyboardEvent) {
@@ -141,7 +139,6 @@ class ActaToolbarPageObjectDraw {
         this._itemTextFrame.value = value === EditorTool.DRAW_TEXT_FRAME ? true : false;
         this._itemImageFrame.value = value === EditorTool.DRAW_IMAGE_FRAME ? true : false;
         this._itemLine.value = value === EditorTool.DRAW_LINE ? true : false;
-
         this._changeValues();
     }
 
@@ -159,7 +156,5 @@ class ActaToolbarPageObjectDraw {
         return value;
     }
     get observable() { return this._CHANGE$; }
-    get disabled() { return this._disabled; }
-    get el() { return this._toolbar; }
 }
 export default ActaToolbarPageObjectDraw;

@@ -1,7 +1,9 @@
+import IActaToolbar from './toolbar';
+
 import fontmgr from '../pageobject/font/fontmgr';
 import textstylemgr from '../pageobject/textstyle/textstylemgr';
 import message from '../ui/message';
-import formbuilder from '../ui/form';
+import formbuilder, { ActaUIFormInputItem, ActaUIFormButtonItem } from '../ui/form';
 import accountInfo from '../info/account';
 import U from '../util/units';
 
@@ -12,34 +14,27 @@ import { map } from 'rxjs/operators';
 
 type CHANGE_ATTR = 'textstyle' | 'font' | 'fontsize' | 'indent' | 'xscale' | 'letterspacing' | 'lineheight' | 'underline' | 'strikeline' | 'align';
 
-class ActaToolbarText {
-    private _toolbar: HTMLUListElement;
-    private _itemTextStyle;
-    private _itemFont;
-    private _itemFontSize;
-    private _itemIndent;
-    private _itemXScale;
-    private _itemLetterSpacing;
-    private _itemLineHeight;
-    private _itemUnderline;
-    private _itemStrikeline;
-    private _itemAlignLeft;
-    private _itemAlignCenter;
-    private _itemAlignRight;
-    private _itemAlignJustify;
+class ActaToolbarText extends IActaToolbar {
+    private _itemTextStyle!: ActaUIFormInputItem;
+    private _itemFont!: ActaUIFormInputItem;
+    private _itemFontSize!: ActaUIFormInputItem;
+    private _itemIndent!: ActaUIFormInputItem;
+    private _itemXScale!: ActaUIFormInputItem;
+    private _itemLetterSpacing!: ActaUIFormInputItem;
+    private _itemLineHeight!: ActaUIFormInputItem;
+    private _itemUnderline!: ActaUIFormButtonItem;
+    private _itemStrikeline!: ActaUIFormButtonItem;
+    private _itemAlignLeft!: ActaUIFormButtonItem;
+    private _itemAlignCenter!: ActaUIFormButtonItem;
+    private _itemAlignRight!: ActaUIFormButtonItem;
+    private _itemAlignJustify!: ActaUIFormButtonItem;
 
-    private _disabled: boolean;
+    private _CHANGE$!: Subject<{ attr: CHANGE_ATTR; value: IActaEditorTextAttribute; }>;
 
-    private _CHANGE$: Subject<{ attr: CHANGE_ATTR, value: IActaEditorTextAttribute }>;
-
-    constructor() {
+    protected _initToolbar() {
         this._CHANGE$ = new Subject();
 
-        this._disabled = false;
-
-        this._toolbar = document.createElement('ul');
-        this._toolbar.classList.add('toolbar');
-        this._toolbar.classList.add('text');
+        this.el.classList.add('text');
 
         this._itemTextStyle = formbuilder.combobox({ items: [], width: '10em' });
         this._itemFont = formbuilder.combobox({ items: [], width: '7em' });
@@ -57,23 +52,25 @@ class ActaToolbarText {
 
         this._itemAlignLeft.value = true;
 
-        this._toolbar.appendChild(this._itemTextStyle.el);
-        this._toolbar.appendChild(this._itemFont.el);
-        this._toolbar.appendChild(this._itemFontSize.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemIndent.el);
-        this._toolbar.appendChild(this._itemXScale.el);
-        this._toolbar.appendChild(this._itemLetterSpacing.el);
-        this._toolbar.appendChild(this._itemLineHeight.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemUnderline.el);
-        this._toolbar.appendChild(this._itemStrikeline.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemAlignLeft.el);
-        this._toolbar.appendChild(this._itemAlignCenter.el);
-        this._toolbar.appendChild(this._itemAlignRight.el);
-        this._toolbar.appendChild(this._itemAlignJustify.el);
+        this.el.appendChild(this._itemTextStyle.el);
+        this.el.appendChild(this._itemFont.el);
+        this.el.appendChild(this._itemFontSize.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemIndent.el);
+        this.el.appendChild(this._itemXScale.el);
+        this.el.appendChild(this._itemLetterSpacing.el);
+        this.el.appendChild(this._itemLineHeight.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemUnderline.el);
+        this.el.appendChild(this._itemStrikeline.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemAlignLeft.el);
+        this.el.appendChild(this._itemAlignCenter.el);
+        this.el.appendChild(this._itemAlignRight.el);
+        this.el.appendChild(this._itemAlignJustify.el);
+    }
 
+    protected _initEvent() {
         fontmgr.observable.subscribe(list => {
             this._itemFont.input.innerHTML = '';
             for (const font of list) {
@@ -98,15 +95,15 @@ class ActaToolbarText {
             }
         });
 
-        this._itemTextStyle.observable.subscribe(data => {
+        this._itemTextStyle.observable.subscribe((data: { value: string; }) => {
             this._changeTextStyle(data.value);
             this._changeValues('textstyle');
         });
-        this._itemUnderline.observable.subscribe(_ => {
+        this._itemUnderline.observable.subscribe((_: any) => {
             this._itemUnderline.value = !this._itemUnderline.value;
             this._changeValues('underline');
         });
-        this._itemStrikeline.observable.subscribe(_ => {
+        this._itemStrikeline.observable.subscribe((_: any) => {
             this._itemStrikeline.value = !this._itemStrikeline.value;
             this._changeValues('strikeline');
         });
@@ -171,7 +168,7 @@ class ActaToolbarText {
         this._itemAlignRight.disabled = false;
         this._itemAlignJustify.disabled = false;
 
-        this._disabled = false;
+        this.disabled = false;
     }
 
     disable() {
@@ -189,7 +186,7 @@ class ActaToolbarText {
         this._itemAlignRight.disabled = true;
         this._itemAlignJustify.disabled = true;
 
-        this._disabled = true;
+        this.disabled = true;
     }
 
     set data(data: IActaEditorTextAttribute | null) {
@@ -254,7 +251,5 @@ class ActaToolbarText {
     }
 
     get observable() { return this._CHANGE$; }
-    get disabled() { return this._disabled; }
-    get el() { return this._toolbar; }
 }
 export default ActaToolbarText;

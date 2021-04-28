@@ -1,7 +1,8 @@
 import { IActaFrameAttribute, FrameOverlapMethod } from '../pageobject/interface/frame';
+import IActaToolbar from './toolbar';
 
 import message from '../ui/message';
-import formbuilder from '../ui/form';
+import formbuilder, { ActaUIFormInputItem, ActaUIFormButtonItem } from '../ui/form';
 import accountInfo from '../info/account';
 import U from '../util/units';
 
@@ -10,39 +11,30 @@ import { map } from 'rxjs/operators';
 
 type CHANGE_ATTR = 'overlap' | 'width' | 'height' | 'padding-left' | 'padding-top' | 'padding-bottom' | 'padding-right' | 'border-left' | 'border-top' | 'border-bottom' | 'border-right' | 'border-color' | 'border-style';
 
-class ActaToolbarPageObjectTransform {
-    private _toolbar: HTMLUListElement;
-    private _itemX;
-    private _itemY;
-    private _itemSizeWidth;
-    private _itemSizeHeight;
-    private _itemPaddingLeft;
-    private _itemPaddingTop;
-    private _itemPaddingBottom;
-    private _itemPaddingRight;
-    private _itemBorderLeft;
-    private _itemBorderTop;
-    private _itemBorderBottom;
-    private _itemBorderRight;
+class ActaToolbarPageObjectTransform extends IActaToolbar {
+    private _itemX!: ActaUIFormInputItem;
+    private _itemY!: ActaUIFormInputItem;
+    private _itemSizeWidth!: ActaUIFormInputItem;
+    private _itemSizeHeight!: ActaUIFormInputItem;
+    private _itemPaddingLeft!: ActaUIFormInputItem;
+    private _itemPaddingTop!: ActaUIFormInputItem;
+    private _itemPaddingBottom!: ActaUIFormInputItem;
+    private _itemPaddingRight!: ActaUIFormInputItem;
+    private _itemBorderLeft!: ActaUIFormInputItem;
+    private _itemBorderTop!: ActaUIFormInputItem;
+    private _itemBorderBottom!: ActaUIFormInputItem;
+    private _itemBorderRight!: ActaUIFormInputItem;
     // private _itemBorderColor;
     // private _itemBorderStyle;
-    private _itemOverlapMethodOverlap;
-    private _itemOverlapMethodFramebox;
-    private _itemOverlapMethodShape;
-    private _itemOverlapMethodJump;
+    private _itemOverlapMethodOverlap!: ActaUIFormButtonItem;
+    private _itemOverlapMethodFramebox!: ActaUIFormButtonItem;
+    private _itemOverlapMethodShape!: ActaUIFormButtonItem;
+    private _itemOverlapMethodJump!: ActaUIFormButtonItem;
 
-    private _disabled: boolean;
+    private _CHANGE$!: Subject<{ attr: CHANGE_ATTR, value: string }>;
 
-    private _CHANGE$: Subject<{ attr: CHANGE_ATTR, value: string }>;
-
-    constructor() {
-        this._CHANGE$ = new Subject();
-
-        this._disabled = false;
-
-        this._toolbar = document.createElement('ul');
-        this._toolbar.classList.add('toolbar');
-        this._toolbar.classList.add('pageobject-transform');
+    protected _initToolbar() {
+        this.el.classList.add('pageobject-transform');
 
         this._itemX = formbuilder.inputNumber({ attr: { action: 'x' }, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_X, width: '4.4em', step: .01, min: 0 });
         this._itemY = formbuilder.inputNumber({ attr: { action: 'y' }, label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_Y, width: '4.4em', step: .01, min: 0 });
@@ -62,26 +54,30 @@ class ActaToolbarPageObjectTransform {
         this._itemOverlapMethodShape = formbuilder.iconButton({ icon: 'flow-shape', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_SHAPE });
         this._itemOverlapMethodJump = formbuilder.iconButton({ icon: 'flow-jump', icontype: 'custom', label: message.TOOLBAR.PAGEOBJECT_TRANSFORM_OVERLAP_METHOD_JUMP });
 
-        this._toolbar.appendChild(this._itemX.el);
-        this._toolbar.appendChild(this._itemY.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemSizeWidth.el);
-        this._toolbar.appendChild(this._itemSizeHeight.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemPaddingLeft.el);
-        this._toolbar.appendChild(this._itemPaddingTop.el);
-        this._toolbar.appendChild(this._itemPaddingBottom.el);
-        this._toolbar.appendChild(this._itemPaddingRight.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemBorderLeft.el);
-        this._toolbar.appendChild(this._itemBorderTop.el);
-        this._toolbar.appendChild(this._itemBorderBottom.el);
-        this._toolbar.appendChild(this._itemBorderRight.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemOverlapMethodOverlap.el);
-        this._toolbar.appendChild(this._itemOverlapMethodFramebox.el);
-        this._toolbar.appendChild(this._itemOverlapMethodShape.el);
-        this._toolbar.appendChild(this._itemOverlapMethodJump.el);
+        this.el.appendChild(this._itemX.el);
+        this.el.appendChild(this._itemY.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemSizeWidth.el);
+        this.el.appendChild(this._itemSizeHeight.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemPaddingLeft.el);
+        this.el.appendChild(this._itemPaddingTop.el);
+        this.el.appendChild(this._itemPaddingBottom.el);
+        this.el.appendChild(this._itemPaddingRight.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemBorderLeft.el);
+        this.el.appendChild(this._itemBorderTop.el);
+        this.el.appendChild(this._itemBorderBottom.el);
+        this.el.appendChild(this._itemBorderRight.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemOverlapMethodOverlap.el);
+        this.el.appendChild(this._itemOverlapMethodFramebox.el);
+        this.el.appendChild(this._itemOverlapMethodShape.el);
+        this.el.appendChild(this._itemOverlapMethodJump.el);
+    }
+
+    protected _initEvent() {
+        this._CHANGE$ = new Subject();
 
         merge(
             this._itemOverlapMethodOverlap.observable.pipe(map(_ => 'overlap')),
@@ -134,7 +130,7 @@ class ActaToolbarPageObjectTransform {
         this._itemOverlapMethodShape.disabled = false;
         this._itemOverlapMethodJump.disabled = false;
 
-        this._disabled = false;
+        this.disabled = false;
     }
 
     disable() {
@@ -157,7 +153,7 @@ class ActaToolbarPageObjectTransform {
         this._itemOverlapMethodShape.disabled = true;
         this._itemOverlapMethodJump.disabled = true;
 
-        this._disabled = true;
+        this.disabled = true;
     }
 
     set value(value: IActaFrameAttribute | null) {
@@ -202,7 +198,6 @@ class ActaToolbarPageObjectTransform {
     }
 
     get observable() { return this._CHANGE$; }
-    get disabled() { return this._disabled; }
     get value() {
         const unit = accountInfo.frameUnitType;
         const retVal: IActaFrameAttribute = {
@@ -226,6 +221,5 @@ class ActaToolbarPageObjectTransform {
 
         return retVal;
     }
-    get el() { return this._toolbar; }
 }
 export default ActaToolbarPageObjectTransform;

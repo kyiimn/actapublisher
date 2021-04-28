@@ -1,5 +1,7 @@
+import IActaToolbar from './toolbar';
+
 import message from '../ui/message';
-import formbuilder from '../ui/form';
+import formbuilder, { ActaUIFormInputItem } from '../ui/form';
 import accountInfo from '../info/account';
 import U from '../util/units';
 
@@ -8,30 +10,25 @@ import { Subject } from 'rxjs';
 
 type CHANGE_ATTR = 'columncount' | 'innermargin';
 
-class ActaToolbarText {
-    private _toolbar: HTMLUListElement;
-    private _itemColumnCount;
-    private _itemInnerMargin;
+class ActaToolbarText extends IActaToolbar {
+    private _itemColumnCount!: ActaUIFormInputItem;
+    private _itemInnerMargin!: ActaUIFormInputItem;
 
-    private _disabled: boolean;
+    private _CHANGE$!: Subject<{ attr: CHANGE_ATTR, value: IActaEditorParagraphColumnAttribute }>;
 
-    private _CHANGE$: Subject<{ attr: CHANGE_ATTR, value: IActaEditorParagraphColumnAttribute }>;
-
-    constructor() {
+    protected _initToolbar() {
         this._CHANGE$ = new Subject();
 
-        this._disabled = false;
-
-        this._toolbar = document.createElement('ul');
-        this._toolbar.classList.add('toolbar');
-        this._toolbar.classList.add('pageobject-column');
+        this.el.classList.add('pageobject-column');
 
         this._itemColumnCount = formbuilder.inputNumber({ icon: 'columns', icontype: 'fas', label: message.TOOLBAR.PAGEOBJECT_COLUMN_COUNT, width: '4.2em', step: 1, min: 1 });
         this._itemInnerMargin = formbuilder.inputNumber({ icon: 'vertical_align_center', icontype: 'material', iconrotate: 90, label: message.TOOLBAR.PAGEOBJECT_COLUMN_INNERMARGIN, width: '4.2em', step: .01, min: 0 });
 
-        this._toolbar.appendChild(this._itemColumnCount.el);
-        this._toolbar.appendChild(this._itemInnerMargin.el);
+        this.el.appendChild(this._itemColumnCount.el);
+        this.el.appendChild(this._itemInnerMargin.el);
+    }
 
+    protected _initEvent() {
         this._itemColumnCount.observable.subscribe(_ => this._changeValues('columncount'));
         this._itemInnerMargin.observable.subscribe(_ => this._changeValues('innermargin'));
     }
@@ -44,14 +41,14 @@ class ActaToolbarText {
         this._itemColumnCount.disabled = false;
         this._itemInnerMargin.disabled = false;
 
-        this._disabled = false;
+        this.disabled = false;
     }
 
     disable() {
         this._itemColumnCount.disabled = true;
         this._itemInnerMargin.disabled = true;
 
-        this._disabled = true;
+        this.disabled = true;
     }
 
     set data(data: IActaEditorParagraphColumnAttribute | null) {
@@ -79,7 +76,5 @@ class ActaToolbarText {
     }
 
     get observable() { return this._CHANGE$; }
-    get disabled() { return this._disabled; }
-    get el() { return this._toolbar; }
 }
 export default ActaToolbarText;

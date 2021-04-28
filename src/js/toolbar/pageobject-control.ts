@@ -1,48 +1,43 @@
+import IActaToolbar from './toolbar';
+
 import message from '../ui/message';
-import formbuilder from '../ui/form';
+import formbuilder, { ActaUIFormButtonItem, ActaUIFormInputItem } from '../ui/form';
 import accountInfo from '../info/account';
 import U from '../util/units';
 
 import { merge, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-class ActaToolbarPageObjectControl {
-    private _toolbar: HTMLUListElement;
-    private _itemFlipToBack;
-    private _itemFlipToFront;
-    private _itemAlignCenter;
-    private _itemAlignLeft;
-    private _itemAlignRight;
-    private _itemVAlignMiddle;
-    private _itemVAlignTop;
-    private _itemVAlignBottom;
-    private _itemMoveLeft;
-    private _itemMoveUp;
-    private _itemMoveDown;
-    private _itemMoveRight;
-    private _itemMoveStep1;
-    private _itemMoveLeftUp;
-    private _itemMoveRightUp;
-    private _itemMoveLeftDown;
-    private _itemMoveRightDown;
-    private _itemMoveStep2;
-    private _itemRotateLeft;
-    private _itemRotateRight;
-    private _itemRotateStep;
-    private _itemRemove;
+class ActaToolbarPageObjectControl extends IActaToolbar {
+    private _itemFlipToBack!: ActaUIFormButtonItem;
+    private _itemFlipToFront!: ActaUIFormButtonItem;
+    private _itemAlignCenter!: ActaUIFormButtonItem;
+    private _itemAlignLeft!: ActaUIFormButtonItem;
+    private _itemAlignRight!: ActaUIFormButtonItem;
+    private _itemVAlignMiddle!: ActaUIFormButtonItem;
+    private _itemVAlignTop!: ActaUIFormButtonItem;
+    private _itemVAlignBottom!: ActaUIFormButtonItem;
+    private _itemMoveLeft!: ActaUIFormButtonItem;
+    private _itemMoveUp!: ActaUIFormButtonItem;
+    private _itemMoveDown!: ActaUIFormButtonItem;
+    private _itemMoveRight!: ActaUIFormButtonItem;
+    private _itemMoveStep1!: ActaUIFormInputItem;
+    private _itemMoveLeftUp!: ActaUIFormButtonItem;
+    private _itemMoveRightUp!: ActaUIFormButtonItem;
+    private _itemMoveLeftDown!: ActaUIFormButtonItem;
+    private _itemMoveRightDown!: ActaUIFormButtonItem;
+    private _itemMoveStep2!: ActaUIFormInputItem;
+    private _itemRotateLeft!: ActaUIFormButtonItem;
+    private _itemRotateRight!: ActaUIFormButtonItem;
+    private _itemRotateStep!: ActaUIFormInputItem;
+    private _itemRemove!: ActaUIFormButtonItem;
 
-    private _disabled: boolean;
+    private _CHANGE$!: Subject<{ action: string; step?: number; }>;
 
-    private _CHANGE$: Subject<{ action: string, step?: number }>;
-
-    constructor() {
+    protected _initToolbar() {
         this._CHANGE$ = new Subject();
 
-        this._disabled = false;
-
-        this._toolbar = document.createElement('ul');
-        this._toolbar.classList.add('toolbar');
-        this._toolbar.classList.add('pageobject-control');
+        this.el.classList.add('pageobject-control');
 
         this._itemFlipToBack = formbuilder.iconButton({ attr: { action: 'flip-to-back' }, icon: 'flip_to_back', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_FLIP_TO_BACK });
         this._itemFlipToFront = formbuilder.iconButton({ attr: { action: 'flip-to-front' }, icon: 'flip_to_front', icontype: 'material', label: message.TOOLBAR.PAGEOBJECT_CONTROL_FLIP_TO_FRONT });
@@ -71,35 +66,37 @@ class ActaToolbarPageObjectControl {
         this._itemMoveStep2.value = '2';
         this._itemRotateStep.value = '90';
 
-        this._toolbar.appendChild(this._itemFlipToBack.el);
-        this._toolbar.appendChild(this._itemFlipToFront.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemAlignCenter.el);
-        this._toolbar.appendChild(this._itemAlignLeft.el);
-        this._toolbar.appendChild(this._itemAlignRight.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemVAlignMiddle.el);
-        this._toolbar.appendChild(this._itemVAlignTop.el);
-        this._toolbar.appendChild(this._itemVAlignBottom.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemMoveLeft.el);
-        this._toolbar.appendChild(this._itemMoveUp.el);
-        this._toolbar.appendChild(this._itemMoveDown.el);
-        this._toolbar.appendChild(this._itemMoveRight.el);
-        this._toolbar.appendChild(this._itemMoveStep1.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemMoveLeftUp.el);
-        this._toolbar.appendChild(this._itemMoveRightUp.el);
-        this._toolbar.appendChild(this._itemMoveLeftDown.el);
-        this._toolbar.appendChild(this._itemMoveRightDown.el);
-        this._toolbar.appendChild(this._itemMoveStep2.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemRotateLeft.el);
-        this._toolbar.appendChild(this._itemRotateRight.el);
-        this._toolbar.appendChild(this._itemRotateStep.el);
-        this._toolbar.appendChild(formbuilder.separater);
-        this._toolbar.appendChild(this._itemRemove.el);
+        this.el.appendChild(this._itemFlipToBack.el);
+        this.el.appendChild(this._itemFlipToFront.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemAlignCenter.el);
+        this.el.appendChild(this._itemAlignLeft.el);
+        this.el.appendChild(this._itemAlignRight.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemVAlignMiddle.el);
+        this.el.appendChild(this._itemVAlignTop.el);
+        this.el.appendChild(this._itemVAlignBottom.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemMoveLeft.el);
+        this.el.appendChild(this._itemMoveUp.el);
+        this.el.appendChild(this._itemMoveDown.el);
+        this.el.appendChild(this._itemMoveRight.el);
+        this.el.appendChild(this._itemMoveStep1.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemMoveLeftUp.el);
+        this.el.appendChild(this._itemMoveRightUp.el);
+        this.el.appendChild(this._itemMoveLeftDown.el);
+        this.el.appendChild(this._itemMoveRightDown.el);
+        this.el.appendChild(this._itemMoveStep2.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemRotateLeft.el);
+        this.el.appendChild(this._itemRotateRight.el);
+        this.el.appendChild(this._itemRotateStep.el);
+        this.el.appendChild(formbuilder.separater);
+        this.el.appendChild(this._itemRemove.el);
+    }
 
+    protected _initEvent() {
         merge(
             this._itemFlipToBack.observable.pipe(map(_ => 'flip-to-back')),
             this._itemFlipToFront.observable.pipe(map(_ => 'flip-to-front')),
@@ -164,7 +161,7 @@ class ActaToolbarPageObjectControl {
         this._itemRotateStep.disabled = false;
         this._itemRemove.disabled = false;
 
-        this._disabled = false;
+        this.disabled = false;
     }
 
     disable() {
@@ -191,11 +188,9 @@ class ActaToolbarPageObjectControl {
         this._itemRotateStep.disabled = true;
         this._itemRemove.disabled = true;
 
-        this._disabled = true;
+        this.disabled = true;
     }
 
     get observable() { return this._CHANGE$; }
-    get disabled() { return this._disabled; }
-    get el() { return this._toolbar; }
 }
 export default ActaToolbarPageObjectControl;
