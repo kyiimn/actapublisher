@@ -12,6 +12,7 @@ import { CodePageSize } from '../info/code';
 import { TextAlign } from '../pageobject/textstyle/textattribute-absolute';
 import { fromEvent, Subject } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { detect } from 'detect-browser';
 
 import '../../css/editor.scss';
 
@@ -485,7 +486,8 @@ export default class ActaEditor {
     }
 
     private _onParagraphChangeColumn(paragraph: ActaParagraph) {
-
+        console.log(paragraph.columnCount);
+        console.log(paragraph.innerMargin);
     }
 
     private _onPageChangeSelectFrames() {
@@ -532,16 +534,30 @@ export default class ActaEditor {
     }
 
     private _initPageEvent() {
-        fromEvent<WheelEvent>(this._element, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => {
-            e.preventDefault();
+        const browser = detect();
+        if (browser && browser.name === 'firefox') {
+            fromEvent<WheelEvent>(this._element, 'DOMMouseScroll').pipe(filter(e => e.ctrlKey)).subscribe(e => {
+                e.preventDefault();
 
-            let scale = this.page.scale;
-            if (e.deltaY < 0) scale += 0.05; else scale -= 0.05;
-            scale = Math.max(0.05, scale);
-            this.page.scale = scale;
+                let scale = this.page.scale;
+                if (e.detail > 0) scale += 0.02; else scale -= 0.02;
+                scale = Math.max(0.05, scale);
+                this.page.scale = scale;
 
-            this._EVENT$.next({ action: 'scale', value: scale });
-        });
+                this._EVENT$.next({ action: 'scale', value: scale });
+            });
+        } else {
+            fromEvent<WheelEvent>(this._element, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => {
+                e.preventDefault();
+
+                let scale = this.page.scale;
+                if (e.deltaY < 0) scale += 0.05; else scale -= 0.05;
+                scale = Math.max(0.05, scale);
+                this.page.scale = scale;
+
+                this._EVENT$.next({ action: 'scale', value: scale });
+            });
+        }
 
         fromEvent<MouseEvent>(this.page, 'mousedown').pipe(filter(e => e.buttons === 1)).subscribe(e => {
             if (EditorToolDrawFrames.indexOf(this._tool) > -1) {

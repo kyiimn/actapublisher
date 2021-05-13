@@ -2,6 +2,7 @@ import Editor from '../editor/editor';
 import spliter from '../ui/spliter';
 import { fromEvent, Subject } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { detect } from 'detect-browser';
 
 import '../../css/ui/layout.scss';
 
@@ -99,7 +100,12 @@ class ActaUILayout {
 
         this._CHANGE$ = new Subject();
 
-        fromEvent<WheelEvent>(this._middle, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => e.preventDefault());
+        const browser = detect();
+        if (browser && browser.name === 'firefox') {
+            fromEvent<WheelEvent>(this._middle, 'DOMMouseScroll').pipe(filter(e => e.ctrlKey)).subscribe(e => e.preventDefault());
+        } else {
+            fromEvent<WheelEvent>(this._middle, 'mousewheel').pipe(filter(e => e.ctrlKey)).subscribe(e => e.preventDefault());
+        }
     }
 
     add(editor: Editor) {
